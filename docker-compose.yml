@@ -1,0 +1,84 @@
+services:
+  # --- INFRAESTRUCTURA DE DATOS ---
+  
+  # Kafka compatible (Redpanda): El sistema nervioso del pipeline
+  redpanda:
+    image: docker.redpanda.com
+    command: ["redpanda", "start", "--overprovisioned", "--kafka-addr", "0.0.0.0:9092"]
+    ports:
+      - "9092:9092"
+      - "8081:8081" # Schema Registry (opcional)
+
+  # InfluxDB: El destino final de las series temporales
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password12345
+      - DOCKER_INFLUXDB_INIT_ORG=mi_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=finanzas
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token_secreto_2026
+    volumes:
+      - ./docker_data/influxdb:/var/lib/influxdb2
+
+  # Grafana: Visualización de tus finanzas
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - influxdb
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./docker_data/grafana:/var/lib/grafana
+
+  # --- APLICACIÓN WEB-ENRICHMENT ---
+
+  # PostgreSQL: Base de datos para los estados de Rails y etiquetas
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./docker_data/postgres:/var/lib/postgresql/data
+
+  # Rails App: Servidor web para enriquecer transacciones
+  web:
+    build: ./web-enrichment-app
+    command: bundle exec rails s -p 3000 -b '0.0.0.0'
+    volumes:
+      - ./web-enrichment-app:/rails_app
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/rails_app_development
+      - KAFKA_SERVERS=redpanda:9092
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=token_secreto_2026
+      - INFLUX_ORG=mi_org
+      - INFLUX_BUCKET=finanzas
+    depends_on:
+      - db
+      - redpanda
+
+  # Karafka Worker: El proceso que escucha el Excel y lo mete a la DB
+  karafka_server:
+    build: ./web-enrichment-app
+    command: bundle exec karafka server
+    volumes:
+      - ./web-enrichment-app:/rails_app
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/rails_app_development
+      - KAFKA_SERVERS=redpanda:9092
+    depends_on:
+      - web
+      - redpanda
+
+# Persistencia de datos local
+volumes:
+  docker_data:
