@@ -6,3 +6,6 @@ db/*.sqlite3
 __pycache__/
 *.xlsx
 docker_data/
+data/
+venv/
+.venv/
