@@ -16,12 +16,6 @@ def test_extraction(bank_name, file_path):
         df['event_id'] = df.apply(generate_event_id, axis=1)
         
         # 4. Mostrar resultados
-        print("\nPrimeras filas del resultado estandarizado:")
-        print(df.head())
-        
-        print("\nTipos de datos:")
-        print(df.dtypes)
-        
         print(f"\n✅ Éxito: Se procesaron {len(df)} registros.")
 
         for _, row in df.iterrows():
