@@ -12,7 +12,7 @@ def test_extraction(bank_name, file_path):
         df = extractor_func(file_path)
         
         # 3. Aplicar lógica de secuencia e ID (Copia de main.py)
-        df['secuencia'] = df.groupby(['fecha_transaccion', 'monto', 'detalles']).cumcount()
+        # df['secuencia'] = df.groupby(['fecha_transaccion', 'monto', 'detalles']).cumcount()
         df['event_id'] = df.apply(generate_event_id, axis=1)
         
         # 4. Mostrar resultados
@@ -23,7 +23,10 @@ def test_extraction(bank_name, file_path):
         print(df.dtypes)
         
         print(f"\n✅ Éxito: Se procesaron {len(df)} registros.")
-        
+
+        for _, row in df.iterrows():
+            print(f"Evento enviado: ${row.to_dict()}")
+            
     except Exception as e:
         print("\n❌ ERROR DETALLADO:")
         # Esto imprimirá la secuencia de comandos que falló
@@ -33,3 +36,5 @@ if __name__ == "__main__":
     print(f"Extractores registrados: {list_extractors()}")
     # Ajusta la ruta al archivo que creaste
     test_extraction('visa', '../data/input/Movimientos_bbva.csv')
+    test_extraction('visa', '../data/input/Movimientos_bapro.csv')
+    test_extraction('amex', 'AMEX')

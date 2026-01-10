@@ -1,3 +1,10 @@
+# ETL y Procesamiento de Datos
 pandas
 openpyxl
+
+# Conectividad Kafka
 kafka-python-ng
+
+# Google Sheets Integration
+gspread
+oauth2client

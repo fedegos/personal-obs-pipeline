@@ -26,3 +26,4 @@ def list_extractors():
     return list(_registry.keys())
 
 from . import visa_extractor
+from . import amex_extractor

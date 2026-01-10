@@ -6,7 +6,7 @@ from utils.data_standardizer import apply_standard_format
 from . import register_extractor # Importación relativa directa al __init__
 
 @register_extractor('visa')
-def extract_bank_a(file_path: str) -> pd.DataFrame:
+def extract_visa(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path, sep=";", thousands=",", decimal=".", parse_dates=['Fecha Origen'], date_format='%d/%m/%Y')
     
     # Lógica de transformación específica VISA: renombrar columnas

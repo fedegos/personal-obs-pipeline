@@ -9,3 +9,4 @@ docker_data/
 data/
 venv/
 .venv/
+ingestion-engine/credentials.json
