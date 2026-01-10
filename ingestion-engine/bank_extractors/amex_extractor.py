@@ -44,7 +44,7 @@ def extract_amex(sheet_name: str) -> pd.DataFrame:
             df.assign(
                 red="AMEX",
                 fecha_transaccion=lambda x: pd.to_datetime(x['Fecha'], format='%d-%m-%Y', errors='coerce'),
-                numero_tarjeta=f"XXXXXXXX {sheet_title}",
+                numero_tarjeta=f"XXXXXXXXXX {sheet_title}",
                 
                 # Lógica de cuotas
                 en_cuotas=lambda x: x['Descripción'].str.contains(r'CUOTA \d{2}/\d{2}$', regex=True),
