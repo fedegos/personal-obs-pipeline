@@ -1,124 +1,96 @@
-# Asumimos que el Banco A usa columnas: 'Date', 'Amount', 'Description'
 import pandas as pd
 import numpy as np
-
-import re
-
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
+import traceback
+from . import register_extractor
 from utils.data_standardizer import apply_standard_format
-from . import register_extractor # Importación relativa directa al __init__
+
+# --- Utilidades de Limpieza ---
+
+def limpiar_moneda(columna: pd.Series) -> pd.Series:
+    """Convierte strings de moneda (ej: '$6.446,30') a float64."""
+    return (
+        columna.astype(str)
+        .str.replace(r'[^\d,.-]', '', regex=True)
+        .str.replace('.', '', regex=False)
+        .str.replace(',', '.', regex=False)
+        .pipe(pd.to_numeric, errors='coerce')
+    )
+
+# --- Lógica de Extracción ---
+
+def fetch_gsheet_data(sheet_name: str):
+    """Encapsula la comunicación con Google Sheets."""
+    gc = gspread.service_account(filename='credentials.json')
+    sh = gc.open(sheet_name)
+    worksheet = sh.get_worksheet(0)
+    
+    all_values = worksheet.get_all_values()
+    headers = all_values[0]
+    data = all_values[3:] # Salteamos filas vacías/metadatos iniciales
+    
+    return pd.DataFrame(data, columns=headers), worksheet.title
+
+# --- Transformación Principal ---
 
 @register_extractor('amex')
 def extract_amex(sheet_name: str) -> pd.DataFrame:
-
     try:
-        '''
-        # 1. Configurar Credenciales
-        scope = ["spreadsheets.google.com", "www.googleapis.com"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name('../credentials.json', scope)
-        client = gspread.authorize(creds)
+        # 1. Obtención
+        df, sheet_title = fetch_gsheet_data(sheet_name)
 
-        # 2. Abrir la hoja y obtener datos
-        sheet = client.open(sheet_name).sheet1
-        
-        # Obtener todas las filas como una lista de listas
-        '''
-        # Forma moderna de autenticar (más robusta en 2026)
-        gc = gspread.service_account(filename='credentials.json')
-        
-        # Abrir por nombre
-        sh = gc.open(sheet_name)
-        worksheet = sh.get_worksheet(0) # Abrir la primera pestaña
-    
-        all_values = worksheet.get_all_values() 
-
-        # Filtrar filas: 
-        # all_values[0] es el encabezado (fila 1)
-        # all_values[3:] son los datos desde la fila 4 en adelante (salteando 2 y 3)
-        headers = all_values[0]
-        data_rows = all_values[3:] 
-
-        # Crear el DataFrame
-        df = pd.DataFrame(data_rows, columns=headers)    # Lógica de transformación específica AMEX: renombrar columnas
-
-        '''
-        ['Fecha', 'Descripción', 'Pagos en Pesos', 'Cargos en Pesos',
-        'Pagos en Dólares', 'Cargos en Dólares']
-        '''
-
-        df["red"] = "AMEX"
-        df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d-%m-%Y')
-
-        df["numero_tarjeta"] = f"XXXXXXXX {worksheet.title}"
-        df["en_cuotas"] = df["Descripción"].str.contains(r'CUOTA \d{2}/\d{2}$', regex=True)
-
-        df["descripcion_cuota"] = np.where(
-            df['en_cuotas'], df['Descripción'].str.extract(r'(?<=CUOTA )(\d{2}/\d{2})', expand=False),
-            "-"
+        # 2. Pipeline de Transformación (Legibilidad mejorada)
+        df = (
+            df.assign(
+                red="AMEX",
+                fecha_transaccion=lambda x: pd.to_datetime(x['Fecha'], format='%d-%m-%Y', errors='coerce'),
+                numero_tarjeta=f"XXXXXXXX {sheet_title}",
+                
+                # Lógica de cuotas
+                en_cuotas=lambda x: x['Descripción'].str.contains(r'CUOTA \d{2}/\d{2}$', regex=True),
+                descripcion_cuota=lambda x: np.where(
+                    x['en_cuotas'], 
+                    x['Descripción'].str.extract(r'(?<=CUOTA )(\d{2}/\d{2})', expand=False), 
+                    "-"
+                ),
+                
+                # Limpieza numérica preliminar
+                cargos_p=lambda x: limpiar_moneda(x['Cargos en Pesos']),
+                cargos_d=lambda x: limpiar_moneda(x['Cargos en Dólares'])
             )
+            .assign(
+                # Lógica de selección de moneda y monto
+                moneda=lambda x: np.select(
+                    [x['cargos_p'] > 0, x['cargos_d'] > 0], 
+                    ['pesos', 'dólares'], 
+                    default='-'
+                ),
+                monto=lambda x: np.select(
+                    [x['cargos_p'] > 0, x['cargos_d'] > 0], 
+                    [x['cargos_p'], x['cargos_d']], 
+                    default=0.0
+                )
+            )
+            .rename(columns={'Descripción': 'detalles'})
+        )
+
+        # 3. Limpieza de columnas y filas
+        columnas_finales = [
+            'fecha_transaccion', 'detalles', 'monto', 'moneda', 
+            'red', 'numero_tarjeta', 'en_cuotas', 'descripcion_cuota'
+        ]
         
-        df["Cargos en Pesos"] = limpiar_moneda(df['Cargos en Pesos'])
-        df["Cargos en Dólares"] = limpiar_moneda(df['Cargos en Dólares'])
+        df = df[columnas_finales].copy()
+        
+        # Filtrar montos inválidos o cero
+        df = df[df['monto'] > 0].dropna(subset=['monto'])
 
-        condiciones = [
-            df['Cargos en Pesos'] > 0,
-            df['Cargos en Dólares'] > 0
-        ]
-
-        # Definir los valores para cada condición
-        opciones = ['pesos', 'dólares']
-
-        opciones_monto = [
-            df['Cargos en Pesos'], 
-            df['Cargos en Dólares']
-        ]
-
-        df['moneda'] = np.select(condiciones, opciones, default='-')
-        df['monto'] = np.select(condiciones, opciones_monto, default='-')
-
-        df = df.rename(columns={
-            'Fecha': 'fecha_transaccion',
-            'Descripción': 'detalles'
-        })
-
-        '''
-        ['Fecha', 'Descripción', 'Pagos en Pesos', 'Cargos en Pesos',
-        'Pagos en Dólares', 'Cargos en Dólares']
-        '''    
-        df = df.drop(columns=['Pagos en Pesos', 'Cargos en Pesos', 'Pagos en Dólares', 'Cargos en Dólares'])
-
-        # 2. Convertir a numérico para asegurar que la comparación funcione
-        # (errors='coerce' convertirá lo que no sea número en NaN)
-        df['monto'] = pd.to_numeric(df['monto'], errors='coerce')
-
-        # 3. ELIMINAR REGISTROS CON MONTO 0 o VACÍOS
-        df = df[df['monto'] != 0]
-
-        columnas_clave = ['fecha_transaccion', 'detalles', 'monto']
-        df['numero_operacion'] = df.groupby(columnas_clave).cumcount()
+        # 4. Generar ID único por duplicados (cumcount)
+        df['numero_operacion'] = df.groupby(['fecha_transaccion', 'detalles', 'monto']).cumcount()
 
         return apply_standard_format(df)
 
     except Exception as e:
-        print("\n❌ ERROR DETALLADO:")
-        # Esto imprimirá la secuencia de comandos que falló
-        traceback.print_exc()     
+        print(f"\n❌ ERROR en extract_amex ('{sheet_name}'):")
+        traceback.print_exc()
         raise
-
-
-def limpiar_moneda(columna):
-    """
-    Convierte strings de moneda (ej: '$6.446,30') a float (6446.30).
-    """
-    if columna is None:
-        return columna
-        
-    return (
-        columna.astype(str)
-        .str.replace(r'[^\d,.-]', '', regex=True) # Quita todo menos dígitos, coma, punto y signo menos
-        .str.replace('.', '', regex=False)        # Quita el punto de miles
-        .str.replace(',', '.', regex=False)        # Cambia la coma decimal por punto
-        .pipe(pd.to_numeric, errors='coerce')      # Convierte a número, si falla pone NaN
-    )
