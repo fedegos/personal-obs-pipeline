@@ -8,8 +8,14 @@ from bank_extractors import get_extractor, list_extractors
 
 producer = KafkaProducer(
     bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    value_serializer=lambda v: json.dumps(v, default=json_serial).encode('utf-8')
 )
+
+# Función para manejar objetos que JSON no reconoce por defecto
+def json_serial(obj):
+    if isinstance(obj, (pd.Timestamp, pd.DatetimeIndex)):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 def ingest_file(bank_name: str, file_path: str):
     try:
