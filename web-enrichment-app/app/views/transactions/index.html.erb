@@ -22,41 +22,29 @@
       </thead>
       <tbody id="transactions-table-body">
         <% @pending.each do |t| %>
-          <%# El Turbo Frame permite que la fila desaparezca sin recargar la página %>
-          <%= turbo_frame_tag dom_id(t), class: "transaction-frame" do %>
-            <tr class="transaction-row" style="border-bottom: 1px solid #eee;">
-              <td style="padding: 12px;"><%= t.fecha.strftime("%d/%m/%Y") %></td>
+          <%# Ponemos el ID directamente en el TR usando dom_id %>
+          <tr id="<%= dom_id(t) %>" class="transaction-row" style="border-bottom: 1px solid #eee;">
+            <td style="padding: 12px;"><%= t.fecha.strftime("%d/%m/%Y") %></td>
+            <td style="padding: 12px;"><small><%= t.detalles %></small></td>
+            <td style="padding: 12px;"><strong><%= number_to_currency(t.monto) %></strong></td>
+            
+            <%# Importante: SIN local: true para que Turbo intercepte el submit %>
+            <%= form_with model: t, url: approve_transaction_path(t), method: :patch do |f| %>
               <td style="padding: 12px;">
-                <div style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  <small title="<%= t.detalles %>"><%= t.detalles %></small>
+                <div style="display: flex; gap: 8px;">
+                  <%= f.text_field :categoria, placeholder: "Cat", class: "input-flat" %>
+                  <%= f.text_field :sub_categoria, placeholder: "Sub", class: "input-flat" %>
+                  <%= f.select :sentimiento, ['Necesario', 'Deseo', 'Inversión'], {}, class: "select-flat" %>
                 </div>
               </td>
               <td style="padding: 12px;">
-                <strong style="white-space: nowrap;"><%= number_to_currency(t.monto, unit: t.moneda == 'dólares' ? 'U$D ' : '$ ') %></strong>
+                <%= f.submit "✅ Aprobar", class: "btn-approve" %>
               </td>
-              
-              <%= form_with model: t, url: approve_transaction_path(t), method: :patch, class: "approval-form" do |f| %>
-                <td style="padding: 12px;">
-                  <div style="display: flex; gap: 8px;">
-                    <%= f.text_field :categoria, 
-                        placeholder: "Categoría", 
-                        class: "input-flat", 
-                        value: t.categoria %>
-                    
-                    <%= f.select :sentimiento, 
-                        ['Necesario', 'Deseo', 'Inversión'], 
-                        { selected: t.sentimiento }, 
-                        { class: "select-flat" } %>
-                  </div>
-                </td>
-                <td style="padding: 12px; text-align: center;">
-                  <%= f.submit "✅ Aprobar", class: "btn-approve", data: { turbo_submits_with: "..." } %>
-                </td>
-              <% end %>
-            </tr>
-          <% end %>
+            <% end %>
+          </tr>
         <% end %>
       </tbody>
+
     </table>
   <% else %>
     <div id="empty-state" style="text-align: center; padding: 80px 20px; background: #f9f9f9; border-radius: 8px; border: 2px dashed #ddd;">

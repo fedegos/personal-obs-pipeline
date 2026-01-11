@@ -42,15 +42,16 @@ class TransactionsController < ApplicationController
   def publish_clean_event(transaction)
     # Construimos el esquema final que Telegraf espera para InfluxDB
     payload = {
-      event_id:    transaction.event_id,
-      fecha:       transaction.fecha.iso8601, # Formato estándar para InfluxDB
-      monto:       transaction.monto.to_f,
-      moneda:      transaction.moneda,
-      detalles:    transaction.detalles,
-      categoria:   transaction.categoria,
-      sentimiento: transaction.sentimiento,
-      red:         transaction.red,
-      processed_at: Time.current.iso8601
+      event_id:      transaction.event_id,
+      fecha:         transaction.fecha.iso8601, # Formato estándar para InfluxDB
+      monto:         transaction.monto.to_f,
+      moneda:        transaction.moneda,
+      detalles:      transaction.detalles,
+      categoria:     transaction.categoria,
+      sub_categoria: transaction.sub_categoria, # Incluido para InfluxDB
+      sentimiento:   transaction.sentimiento,
+      red:           transaction.red,
+      processed_at:  Time.current.iso8601
     }
 
     # Publicación asíncrona para no bloquear la interfaz de usuario
