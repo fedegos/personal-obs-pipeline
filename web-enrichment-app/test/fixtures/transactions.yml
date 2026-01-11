@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  event_id: MyString
+  fecha: 2026-01-11 01:10:27
+  monto: 9.99
+  moneda: MyString
+  detalles: MyString
+  categoria: MyString
+  sub_categoria: MyString
+  sentimiento: MyString
+  red: MyString
+  aprobado: false
+
+two:
+  event_id: MyString
+  fecha: 2026-01-11 01:10:27
+  monto: 9.99
+  moneda: MyString
+  detalles: MyString
+  categoria: MyString
+  sub_categoria: MyString
+  sentimiento: MyString
+  red: MyString
+  aprobado: false

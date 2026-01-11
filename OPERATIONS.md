@@ -1,79 +1,90 @@
-# 🚀 Runbook: Personal Observability Pipeline
+# 🚀 Runbook: Personal Observability Pipeline (Audit-X)
+*Actualizado: 10 de enero, 2026*
 
+## 🛠 1. Gestión de Infraestructura (Docker)
+El stack completo corre en contenedores. No es necesario instalar Ruby o Kafka localmente.
 
-# 🛠 1. Gestión de Infraestructura (Docker)
-Desde la raíz del proyecto, usa estos comandos para controlar el stack:
-
-*   **Construir imágenes por primera vez:**
-    ```bash
-    docker compose build
-    ```
-*   **Levantar todos los servicios (modo background):**
+*   **Levantar el stack (Recomendado):**
     ```bash
     docker compose up -d
     ```
-*   **Ver estados y logs en tiempo real:**
+*   **Verificar salud de los servicios (Healthchecks):**
     ```bash
     docker compose ps
-    docker compose logs -f web
     ```
-*   **Apagar todo:**
+    *Nota: `redpanda` y `db` deben aparecer como `(healthy)` antes de que `web` inicie.*
+*   **Logs específicos para depurar:**
     ```bash
-    docker compose down
+    docker compose logs -f web            # Logs de la interfaz Rails
+    docker compose logs -f karafka_worker # Logs del consumidor de Kafka
+    ```
+*   **Apagar y limpiar volúmenes (Reset de DBs):**
+    ```bash
+    docker compose down -v
     ```
 
-    
-- InfluxDB: http://localhost:8086 (Admin / password12345)
-- Grafana: http://localhost:3000 (admin / admin)
-- Redpanda Console (Kafka): http://localhost:8080 (si la activaste)
+### 🌐 Dashboard de Control
+- **Audit-X (Rails):** [http://localhost:3000](http://localhost:3000) (Gestión y Aprobación)
+- **Kafka UI:** [http://localhost:8080](http://localhost:8080) (Monitoreo de tópicos)
+- **Grafana:** [http://localhost:3001](http://localhost:3001) (Visualización final)
+- **InfluxDB:** [http://localhost:8086](http://localhost:8086) (Métricas Raw)
 
-## 💎 2. Configuración Inicial de la App (Solo la primera vez)
-Una vez que los contenedores estén corriendo, debes preparar la base de datos de Rails:
-```bash
-docker compose run web bin/rails db:create db:migrate
-```
+---
 
-## 📥 3. Fase de Ingesta (Python)
-Para cargar nuevos datos desde el Excel:
+## 💎 2. Configuración Inicial (Instalación)
+Si agregaste gemas nuevas o estás en una instalación limpia:
 
-```bash
-cd ingestion
-# Instalar dependencias la primera vez:
-# pip install -r requirements.txt
-python ingest.py
-```
+1. **Sincronizar Gemas:**
+   ```bash
+   docker compose run --rm web bundle install
+   ```
+2. **Preparar Base de Datos:**
+   ```bash
+   docker compose exec web rails db:prepare
+   ```
 
-## 💎 4. Aplicación de Enriquecimiento (Rails)
-Para procesar y etiquetar los datos:
+---
 
-```bash
-cd rails_app
-# Iniciar servidor web
-bin/rails s
-# Iniciar consumidor de Kafka (¡IMPORTANTE para recibir datos del Excel!)
-bundle exec karafka server
-```
-
-## 🧹 5. Limpieza y Mantenimiento
-
-Para apagar todo y borrar volúmenes (reset total):
+## 📥 3. Fase 1: Ingesta (Python)
+Envía los datos de los extractores (Visa/Amex) hacia Kafka.
 
 ```bash
-docker compose down -v
+# Activar entorno virtual
+source .venv/bin/activate
+# Ejecutar ingesta
+python main.py
 ```
+*Los eventos quedarán en el tópico `transacciones_raw` y entrarán automáticamente a la web de Rails en estado "Pendiente".*
 
-## 📝 Notas de Mañana
+---
 
-El ID de las transacciones se genera con SHA-256 en ingest.py.
-Si el Excel se recarga, Rails ignora los IDs que ya tengan enriched: true.
+## 🔍 4. Fase 2: Curaduría y Enriquecimiento (Rails)
+En esta fase, los datos están en PostgreSQL pero **no han llegado a InfluxDB**.
 
+1. Entra a [http://localhost:3000/transactions](http://localhost:3000/transactions).
+2. Revisa las categorías sugeridas por el `CategorizerService`.
+3. Ajusta la categoría o el sentimiento si es necesario.
+4. Presiona **"Aprobar"**. 
+   *Esto publica el evento en `transacciones_clean`.*
 
-1. Karafka Worker: El servicio karafka_server en Docker debe estar corriendo para que las transacciones pasen del "Excel" a la "App Web".
-2. Idempotencia: No te preocupes por recargar el Excel; el event_id generado por Python evitará duplicados en la base de datos gracias a la validación de Rails.
-3. Persistencia: Los datos de Postgres, Influx y Grafana se guardan en la carpeta local ./docker_data.
+---
 
-### 3. Tip para VS Code
-Para que sea aún más útil mañana, presiona `Ctrl + Shift + V` (o `Cmd + Shift + V` en Mac) mientras tienes el archivo abierto en VS Code. Esto abrirá la **Vista Previa de Markdown**, permitiéndote ver los comandos y enlaces de forma interactiva y profesional. [Documentación de Markdown en VS Code](code.visualstudio.com).
+## 📊 5. Fase 3: Visualización (Telegraf + Influx + Grafana)
+El servicio **Telegraf** está configurado para mover automáticamente todo lo que aparece en el tópico `transacciones_clean` hacia InfluxDB.
 
+1. Abre **Grafana** [http://localhost:3001](http://localhost:3001).
+2. Usa el Data Source de InfluxDB (Bucket: `finanzas`).
+3. Filtra por los tags: `categoria`, `sentimiento` o `red`.
 
+---
 
+## 📝 Notas Técnicas y Mantenimiento
+
+1. **Idempotencia:** El `event_id` (hash SHA-256) previene duplicados. Si un gasto ya fue aprobado, el pipeline de Rails lo ignorará si intentas re-ingestarlo.
+2. **Karafka Boot:** Si el worker no arranca, verifica que `app/consumers/application_consumer.rb` exista y que `karafka.rb` use `"TransactionsConsumer"` como string.
+3. **Persistencia:** Los datos residen en volúmenes nombrados de Docker (`postgres_data`, `influxdb_data`). No borrar a menos que se desee un hard-reset.
+4. **Sincronización:** Recuerda: **Escribe código en local, ejecuta en Docker.** Cualquier archivo generado con `rails generate` aparecerá en tu carpeta local gracias a los volúmenes.
+
+---
+*Tip: Usa `Ctrl + Shift + V` en VS Code para previsualizar este documento.*
+```` [1], [2], [3]

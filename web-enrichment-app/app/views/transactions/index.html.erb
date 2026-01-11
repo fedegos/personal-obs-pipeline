@@ -1,0 +1,45 @@
+<div style="font-family: sans-serif; padding: 20px;">
+  <h1>💰 Enriquecimiento de Gastos</h1>
+  <p style="color: green; font-weight: bold;"><%= notice %></p>
+  <p style="color: red;"><%= alert %></p>
+
+  <hr>
+
+  <% if @pending.any? %>
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f4f4f4; text-align: left;">
+          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Fecha</th>
+          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Descripción</th>
+          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Monto</th>
+          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Categoría y Sentimiento</th>
+          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @pending.each do |t| %>
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px;"><%= t.fecha.strftime("%d/%m/%Y") %></td>
+            <td style="padding: 10px;"><small><%= t.detalles %></small></td>
+            <td style="padding: 10px;"><strong><%= t.monto %> <%= t.moneda %></strong></td>
+            
+            <%= form_with model: t, url: approve_transaction_path(t), method: :patch, local: true do |f| %>
+              <td style="padding: 10px;">
+                <%= f.text_field :categoria, placeholder: "Categoría", style: "padding: 5px;" %>
+                <%= f.select :sentimiento, ['Necesario', 'Deseo', 'Inversión'], {}, { style: "padding: 5px;" } %>
+              </td>
+              <td style="padding: 10px;">
+                <%= f.submit "✅ Aprobar", style: "background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;" %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div style="text-align: center; padding: 50px;">
+      <h2>🎉 ¡Todo al día!</h2>
+      <p>No hay transacciones pendientes de aprobación.</p>
+    </div>
+  <% end %>
+</div>

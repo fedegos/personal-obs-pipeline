@@ -122,7 +122,7 @@ services:
     container_name: karafka_worker
     command: bundle exec karafka server
     volumes:
-      - ./web-enrichment-app:/rails_app
+      - ./web-enrichment-app:/app
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/rails_app_development
       KAFKA_SERVERS: redpanda:29092
