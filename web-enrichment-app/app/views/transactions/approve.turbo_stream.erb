@@ -1,0 +1,7 @@
+<% # 1. Elimina la fila de la tabla instantáneamente %>
+<%= turbo_stream.remove "transaction_#{@transaction.id}" %>
+
+<% # 2. Inserta la notificación en el contenedor de flash %>
+<%= turbo_stream.append "flash-container" do %>
+  <%= render partial: "shared/flash", locals: { message: "Gasto enviado a InfluxDB" } %>
+<% end %>

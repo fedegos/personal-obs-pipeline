@@ -1,0 +1,14 @@
+<%# app/views/shared/_flash.html.erb %>
+<%# Verificamos si existe la variable local o si hay algo en el flash de Rails %>
+<% current_message = local_assigns[:message] || flash[:notice] || flash[:alert] %>
+
+<% if current_message.present? %>
+  <div class="toast-notification bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl border-l-4 border-green-800 animate-fade-in-out"
+       data-controller="flash" 
+       style="transition: opacity 0.5s ease-out; position: relative; margin-bottom: 0.5rem;">
+    <div class="flex items-center gap-2">
+      <span>✅</span>
+      <span><%= current_message %></span>
+    </div>
+  </div>
+<% end %>

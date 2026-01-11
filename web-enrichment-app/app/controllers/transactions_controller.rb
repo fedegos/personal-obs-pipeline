@@ -19,10 +19,8 @@ class TransactionsController < ApplicationController
 
       # 2. Responder al navegador
       respond_to do |format|
-        # Instrucción para que Turbo elimine la fila con el ID correspondiente (ej: transaction_42)
-        format.turbo_stream { render turbo_stream: turbo_stream.remove(helpers.dom_id(@transaction)) }
-        # Respaldo para navegadores sin JS o recargas manuales
-        format.html { redirect_to transactions_path, notice: "Transacción aprobada y enviada a InfluxDB." }
+        format.turbo_stream # Busca approve.turbo_stream.erb
+        format.html { redirect_to transactions_path, notice: "Aprobado." }
       end
     else
       # En caso de error de validación
@@ -36,7 +34,7 @@ class TransactionsController < ApplicationController
 
   def transaction_params
     # Permitimos los campos de enriquecimiento manual
-    params.require(:transaction).permit(:categoria, :sub_categoria, :sentimiento)
+    params.require(:transaction).permit(:categoria, :sub_categoria,:sentimiento)
   end
 
   def publish_clean_event(transaction)
