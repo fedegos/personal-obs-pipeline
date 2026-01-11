@@ -1,45 +1,67 @@
-<div style="font-family: sans-serif; padding: 20px;">
-  <h1>💰 Enriquecimiento de Gastos</h1>
-  <p style="color: green; font-weight: bold;"><%= notice %></p>
-  <p style="color: red;"><%= alert %></p>
+<div style="font-family: sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto;">
+  <header style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>💰 Enriquecimiento de Gastos</h1>
+    <div>
+      <p style="color: green; font-weight: bold; margin: 0;"><%= notice %></p>
+      <p style="color: red; margin: 0;"><%= alert %></p>
+    </div>
+  </header>
 
-  <hr>
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
   <% if @pending.any? %>
-    <table style="width: 100%; border-collapse: collapse;">
+    <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
       <thead>
-        <tr style="background: #f4f4f4; text-align: left;">
-          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Fecha</th>
-          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Descripción</th>
-          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Monto</th>
-          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Categoría y Sentimiento</th>
-          <th style="padding: 10px; border-bottom: 2px solid #ddd;">Acción</th>
+        <tr style="background: #f8f9fa; text-align: left;">
+          <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Fecha</th>
+          <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Descripción</th>
+          <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Monto</th>
+          <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Categoría y Sentimiento</th>
+          <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Acción</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="transactions-table-body">
         <% @pending.each do |t| %>
-          <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 10px;"><%= t.fecha.strftime("%d/%m/%Y") %></td>
-            <td style="padding: 10px;"><small><%= t.detalles %></small></td>
-            <td style="padding: 10px;"><strong><%= t.monto %> <%= t.moneda %></strong></td>
-            
-            <%= form_with model: t, url: approve_transaction_path(t), method: :patch, local: true do |f| %>
-              <td style="padding: 10px;">
-                <%= f.text_field :categoria, placeholder: "Categoría", style: "padding: 5px;" %>
-                <%= f.select :sentimiento, ['Necesario', 'Deseo', 'Inversión'], {}, { style: "padding: 5px;" } %>
+          <%# El Turbo Frame permite que la fila desaparezca sin recargar la página %>
+          <%= turbo_frame_tag dom_id(t), class: "transaction-frame" do %>
+            <tr class="transaction-row" style="border-bottom: 1px solid #eee;">
+              <td style="padding: 12px;"><%= t.fecha.strftime("%d/%m/%Y") %></td>
+              <td style="padding: 12px;">
+                <div style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <small title="<%= t.detalles %>"><%= t.detalles %></small>
+                </div>
               </td>
-              <td style="padding: 10px;">
-                <%= f.submit "✅ Aprobar", style: "background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;" %>
+              <td style="padding: 12px;">
+                <strong style="white-space: nowrap;"><%= number_to_currency(t.monto, unit: t.moneda == 'dólares' ? 'U$D ' : '$ ') %></strong>
               </td>
-            <% end %>
-          </tr>
+              
+              <%= form_with model: t, url: approve_transaction_path(t), method: :patch, class: "approval-form" do |f| %>
+                <td style="padding: 12px;">
+                  <div style="display: flex; gap: 8px;">
+                    <%= f.text_field :categoria, 
+                        placeholder: "Categoría", 
+                        class: "input-flat", 
+                        value: t.categoria %>
+                    
+                    <%= f.select :sentimiento, 
+                        ['Necesario', 'Deseo', 'Inversión'], 
+                        { selected: t.sentimiento }, 
+                        { class: "select-flat" } %>
+                  </div>
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                  <%= f.submit "✅ Aprobar", class: "btn-approve", data: { turbo_submits_with: "..." } %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
         <% end %>
       </tbody>
     </table>
   <% else %>
-    <div style="text-align: center; padding: 50px;">
-      <h2>🎉 ¡Todo al día!</h2>
-      <p>No hay transacciones pendientes de aprobación.</p>
+    <div id="empty-state" style="text-align: center; padding: 80px 20px; background: #f9f9f9; border-radius: 8px; border: 2px dashed #ddd;">
+      <h2 style="color: #666;">🎉 ¡Todo al día!</h2>
+      <p style="color: #888;">No hay transacciones pendientes de aprobación. Tus dashboards en Grafana están actualizados.</p>
     </div>
   <% end %>
 </div>

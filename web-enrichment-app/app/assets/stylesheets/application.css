@@ -8,3 +8,55 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+ 
+  .transaction-frame {
+    display: table-row-group; /* Mantiene la integridad de la tabla HTML */
+    transition: all 0.4s ease-in-out;
+  }
+
+  .transaction-row:hover {
+    background-color: #fcfcfc;
+  }
+
+  .input-flat, .select-flat {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    transition: border-color 0.2s;
+  }
+
+  .input-flat:focus, .select-flat:focus {
+    border-color: #28a745;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
+  }
+
+  .btn-approve {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-approve:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .btn-approve:active {
+    transform: translateY(0);
+  }
+
+  /* Animación cuando el elemento está siendo procesado */
+  .transaction-frame[busy] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
