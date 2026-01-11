@@ -6,6 +6,14 @@ class TransactionsController < ApplicationController
   def index
     # Cargamos solo las transacciones que esperan curaduría manual
     @pending = Transaction.where(aprobado: false).order(fecha: :desc)
+
+    # Obtenemos las categorías únicas ya existentes para el autocompletado
+    @categories_list = Transaction.where.not(categoria: [nil, ""])
+      .distinct
+      .pluck(:categoria)
+      .sort
+      
+    puts @categories_list
   end
 
   def approve
