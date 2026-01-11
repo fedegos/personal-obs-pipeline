@@ -21,7 +21,7 @@ class TransactionsConsumer < ApplicationConsumer
         detalles:     data['detalles'],
         red:          data['red'],
         # El servicio de categorización puede usar Regex o incluso una IA local
-        categoria:    results[:category],,
+        categoria:    results[:category],
         sub_categoria:  results[:sub_category],
         # El sentimiento ayuda a separar gastos fijos de impulsivos
         sentimiento:  SentimentService.analyze(data["detalles"])

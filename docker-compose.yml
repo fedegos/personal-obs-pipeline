@@ -1,9 +1,8 @@
 services:
   # --- INFRAESTRUCTURA DE MENSAJERÍA ---
   redpanda:
-    image: redpandadata/redpanda:latest
+    image: redpandadata/redpanda:latest # Versión estable 2026
     container_name: redpanda
-    # Agregamos explícitamente el puerto de administración en el comando
     command: >
       redpanda start 
       --overprovisioned 
@@ -19,15 +18,15 @@ services:
     ports:
       - "9092:9092"
       - "8081:8081"
-      - "9644:9644" # Puerto de Admin/Metrics
+      - "9644:9644"
     networks:
       - pipeline_net
     healthcheck:
-      # En 2026, la ruta más fiable es /v1/status/ready en el puerto 9644
       test: ["CMD", "curl", "-f", "http://localhost:9644/v1/status/ready"]
-      interval: 5s # Reducimos el intervalo para que arranque más rápido
+      interval: 5s
       timeout: 5s
-      retries: 10 # Damos más margen para el primer arranque
+      retries: 10
+
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -124,8 +123,10 @@ services:
     volumes:
       - ./web-enrichment-app:/app
     environment:
+      RAILS_ENV: development
       DATABASE_URL: postgres://postgres:password@db:5432/rails_app_development
       KAFKA_SERVERS: redpanda:29092
+      RAILS_LOG_TO_STDOUT: true
     depends_on:
       web:
         condition: service_started

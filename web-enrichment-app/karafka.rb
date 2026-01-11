@@ -1,4 +1,5 @@
 # karafka.rb
+$stdout.sync = true
 require_relative 'config/environment'
 
 class KarafkaApp < Karafka::App
@@ -8,9 +9,14 @@ class KarafkaApp < Karafka::App
   end
 
   routes.draw do
-    topic :transacciones_raw do
-      # CAMBIO CLAVE: Usar comillas para evitar el NameError al arrancar
-      consumer "TransactionsConsumer"
+    # OPCIÓN CORRECTA: El grupo envuelve al tópico
+    consumer_group :enrichment_manager_v3 do
+      topic :transacciones_raw do
+        consumer TransactionsConsumer
+      end
     end
   end
 end
+
+# Suscripción necesaria para ver logs en consola
+Karafka.monitor.subscribe(Karafka::Instrumentation::LoggerListener.new)
