@@ -21,6 +21,8 @@ services:
       - "9644:9644"
     networks:
       - pipeline_net
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9644/v1/status/ready"]
       interval: 5s
@@ -143,3 +145,4 @@ volumes:
   influxdb_data:
   grafana_data:
   postgres_data:
+  redpanda_data:
