@@ -1,87 +1,88 @@
-<%# 1. Datalist para autocompletado inteligente %>
+<%# 1. Datalist persistente para autocompletado %>
 <datalist id="categories-suggestions">
   <% @categories_list.each do |cat| %>
     <option value="<%= cat %>">
   <% end %>
-</datalist> 
+</datalist>
 
-<div style="font-family: system-ui, -apple-system, sans-serif; padding: 20px; max-width: 1250px; margin: 0 auto; color: #333;">
-  <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-<div style="width: 100%; overflow-x: auto; border-radius: 8px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-  <table style="width: 100%; border-collapse: collapse; table-layout: auto;">
-    <div style="text-align: right;">
-      <p style="color: #28a745; font-weight: bold; margin: 0;"><%= notice %></p>
-      <p style="color: #dc3545; margin: 0;"><%= alert %></p>
+<div style="max-width: 800px; margin: 0 auto; padding-bottom: 50px;">
+  <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+      <h1 style="font-size: 1.5rem; color: #1e293b; margin: 0;">📋 Gastos Pendientes</h1>
+      <p style="color: #64748b; font-size: 0.9rem; margin-top: 4px;">Revisa y categoriza tus últimos movimientos para InfluxDB.</p>
     </div>
   </header>
 
-  <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 25px;">
-
   <% if @pending.any? %>
-    <div style="overflow-x: auto; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
-      <table style="width: 100%; border-collapse: collapse; background: white; min-width: 900px;">
-        <thead>
-          <tr style="background: #f8f9fa; text-align: left; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">
-            <th style="padding: 16px; border-bottom: 2px solid #dee2e6; width: 100px;">Fecha</th>
-            <th style="padding: 16px; border-bottom: 2px solid #dee2e6;">Descripción</th>
-            <th style="padding: 16px; border-bottom: 2px solid #dee2e6; width: 120px;">Monto</th>
-            <th style="padding: 16px; border-bottom: 2px solid #dee2e6; width: 400px;">Categorización (Elegir o Crear)</th>
-            <th style="padding: 16px; border-bottom: 2px solid #dee2e6; width: 100px;">Acción</th>
-          </tr>
-        </thead>
-        <tbody id="transactions-table-body">
-          <% @pending.each do |t| %>
-            <tr id="<%= dom_id(t) %>" style="border-bottom: 1px solid #f0f0f0; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#fafafa'" onmouseout="this.style.backgroundColor='transparent'">
-              <td style="padding: 16px; font-size: 0.9rem; color: #666;"><%= t.fecha.strftime("%d/%m/%Y") %></td>
-              <td style="padding: 16px;">
-                <div style="font-size: 0.85rem; font-weight: 500; color: #1a1a1a;"><%= t.detalles %></div>
-                <div style="font-size: 0.7rem; color: #999; margin-top: 4px;"><%= t.red %></div>
-              </td>
-              <td style="padding: 16px; font-weight: 600; color: #2d3748;"><%= number_to_currency(t.monto) %></td>
-              
-              <%= form_with model: t, url: approve_transaction_path(t), method: :patch do |f| %>
-                <td style="padding: 16px;">
-                  <div data-controller="combo" style="display: flex; gap: 6px;">
-                    <%# Categoría con Datalist: Permite elegir de la lista o escribir algo nuevo %>
-                    <%= f.text_field :categoria, 
-                        list: "categories-suggestions", 
-                        placeholder: "Cat...", 
-                        autocomplete: "off",
-                        data: { 
-                          combo_target: "input", # Debe coincidir con static targets en el JS
-                          action: "input->combo#checkNew" # Evento 'input' llama a 'checkNew'
-                        },
-                        style: "width: 120px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.85rem;" %>
-                    
-                    <%= f.text_field :sub_categoria, 
-                        placeholder: "Sub...", 
-                        style: "width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.85rem;" %>
-                    
-                    <%= f.select :sentimiento, 
-                        ['Necesario', 'Deseo', 'Inversión'], 
-                        {}, 
-                        { style: "width: 120px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.85rem; background: white;" } %>
-                  </div>
-                </td>
-                <td style="padding: 16px;">
-                  <%= f.submit "✅ Aprobar", 
-                      style: "background: #38a169; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; white-space: nowrap;",
-                      onmouseover: "this.style.background='#2f855a'",
-                      onmouseout: "this.style.background='#38a169'" %>
-                </td>
-              <% end %>
-            </tr>
+    <div id="transactions-container" style="display: grid; gap: 16px; grid-template-columns: 1fr;">
+      <% @pending.each do |t| %>
+        <%# TARJETA DE TRANSACCIÓN %>
+        <div id="<%= dom_id(t) %>" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; transition: transform 0.2s;">
+          
+          <%= form_with model: t, url: approve_transaction_path(t), method: :patch do |f| %>
+            
+            <%# Header: Fecha y Monto %>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <span style="font-size: 0.85rem; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; font-weight: 600;">
+                <%= t.fecha.strftime("%d %b, %Y") %>
+              </span>
+              <span style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">
+                <%= number_to_currency(t.monto) %>
+              </span>
+            </div>
+
+            <%# Body: Detalles del comercio %>
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 1rem; font-weight: 600; color: #1e293b; line-height: 1.4;"><%= t.detalles %></div>
+              <div style="display: flex; gap: 10px; margin-top: 6px;">
+                <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">💳 <%= t.red %></span>
+                <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">🆔 <%= t.event_id.first(8) %></span>
+              </div>
+            </div>
+
+            <%# Footer: Formulario de Enriquecimiento (Diseño compacto y responsive) %>
+            <div data-controller="combo" style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #edf2f7;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <%= f.label :categoria, "Categoría", style: "font-size: 0.7rem; color: #64748b; font-weight: bold; text-transform: uppercase;" %>
+                  <%= f.text_field :categoria, 
+                      list: "categories-suggestions", 
+                      placeholder: "Ej: Hogar", 
+                      autocomplete: "off",
+                      data: { combo_target: "input", action: "input->combo#checkNew" },
+                      style: "width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" %>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <%= f.label :sub_categoria, "Subcategoría", style: "font-size: 0.7rem; color: #64748b; font-weight: bold; text-transform: uppercase;" %>
+                  <%= f.text_field :sub_categoria, 
+                      placeholder: "Ej: Luz", 
+                      style: "width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" %>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px;">
+                <%= f.label :sentimiento, "Impacto / Sentimiento", style: "font-size: 0.7rem; color: #64748b; font-weight: bold; text-transform: uppercase;" %>
+                <%= f.select :sentimiento, 
+                    ['Necesario', 'Deseo', 'Inversión'], 
+                    {}, 
+                    { style: "width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; background: white;" } %>
+              </div>
+
+              <%= f.submit "✅ Aprobar Transacción", 
+                  style: "width: 100%; background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: background 0.2s;",
+                  onmouseover: "this.style.background='#2563eb'",
+                  onmouseout: "this.style.background='#3b82f6'" %>
+            </div>
           <% end %>
-        </tbody>
-      </table>
+        </div>
+      <% end %>
     </div>
   <% else %>
-    <div id="empty-state" style="text-align: center; padding: 80px 20px; background: #f9f9f9; border-radius: 12px; border: 2px dashed #cbd5e0; margin-top: 20px;">
-      <div style="font-size: 3rem; margin-bottom: 20px;">🎉</div>
-      <h2 style="color: #4a5568; margin: 0;">¡Todo al día!</h2>
-      <p style="color: #718096; margin-top: 10px;">No hay transacciones pendientes de aprobación. Tus dashboards en Grafana están actualizados.</p>
+    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px; border: 2px dashed #cbd5e0;">
+      <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
+      <h2 style="color: #1e293b; margin: 0;">¡Todo procesado!</h2>
+      <p style="color: #64748b; margin-top: 8px;">No hay gastos pendientes de aprobación. Tu dashboard en Grafana está al día.</p>
     </div>
   <% end %>
 </div>
-
-
