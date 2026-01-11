@@ -9,7 +9,17 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <div id="flash-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2">
+    <div id="flash-container" 
+     style="position: fixed; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            z-index: 9999; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 10px; 
+            pointer-events: none;">
       <%= render "shared/flash" %>
     </div>
 
