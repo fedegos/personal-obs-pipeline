@@ -40,12 +40,16 @@
               
               <%= form_with model: t, url: approve_transaction_path(t), method: :patch do |f| %>
                 <td style="padding: 16px;">
-                  <div style="display: flex; gap: 6px;">
+                  <div data-controller="combo" style="display: flex; gap: 6px;">
                     <%# Categoría con Datalist: Permite elegir de la lista o escribir algo nuevo %>
                     <%= f.text_field :categoria, 
                         list: "categories-suggestions", 
                         placeholder: "Cat...", 
                         autocomplete: "off",
+                        data: { 
+                          combo_target: "input", # Debe coincidir con static targets en el JS
+                          action: "input->combo#checkNew" # Evento 'input' llama a 'checkNew'
+                        },
                         style: "width: 120px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.85rem;" %>
                     
                     <%= f.text_field :sub_categoria, 

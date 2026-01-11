@@ -1,18 +1,25 @@
-// app/javascript/controllers/combo_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["input"]
 
-  checkNew(event) {
-    const value = event.target.value
-    const options = Array.from(document.getElementById('categories-suggestions').options).map(o => o.value)
+  connect() {
+    // console.log("Combo controller conectado") // Verifica esto en la consola (F12)
+  }
+
+  checkNew() {
+    const value = this.inputTarget.value
+    const datalist = document.getElementById('categories-suggestions')
     
-    if (value && !options.includes(value)) {
-      // Estilo visual si es una categoría nueva para dar feedback al usuario
-      event.target.style.borderColor = "#3b82f6" // Azul para "Nuevo"
+    // Convertimos las opciones del datalist a un array de strings
+    const options = Array.from(datalist.options).map(opt => opt.value)
+
+    if (value.length === 0) {
+      this.inputTarget.style.borderColor = "#cbd5e0" // Color base
+    } else if (options.includes(value)) {
+      this.inputTarget.style.borderColor = "#38a169" // Verde: Ya existe
     } else {
-      event.target.style.borderColor = "#ccc"
+      this.inputTarget.style.borderColor = "#3b82f6" // Azul: Nuevo
     }
   }
 }
