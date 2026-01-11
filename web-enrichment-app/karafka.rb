@@ -13,6 +13,7 @@ class KarafkaApp < Karafka::App
     consumer_group :enrichment_manager_v3 do
       topic :transacciones_raw do
         consumer TransactionsConsumer
+        initial_offset "earliest"
       end
     end
   end

@@ -1,9 +1,13 @@
-<%# 1. Datalist persistente para autocompletado %>
+<%# 1. Datalist para Categorías Principales %>
 <datalist id="categories-suggestions">
   <% @categories_list.each do |cat| %>
     <option value="<%= cat %>">
   <% end %>
 </datalist>
+
+<%# 2. Datalist Vacío para Subcategorías (se llenará por JS) %>
+<datalist id="subcategories-suggestions"></datalist>
+<div id="categories-data" data-map="<%= @categories_map.to_json %>" style="display: none;"></div>
 
 <div style="max-width: 800px; margin: 0 auto; padding-bottom: 50px;">
   <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -56,7 +60,9 @@
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                   <%= f.label :sub_categoria, "Subcategoría", style: "font-size: 0.7rem; color: #64748b; font-weight: bold; text-transform: uppercase;" %>
                   <%= f.text_field :sub_categoria, 
-                      placeholder: "Ej: Luz", 
+                      list: "subcategories-suggestions", 
+                      placeholder: "Sub...", 
+                      data: { combo_target: "subInput" }, # Mantenemos el target
                       style: "width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" %>
                 </div>
               </div>

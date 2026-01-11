@@ -3,17 +3,15 @@ class TransactionsController < ApplicationController
   # Saltamos la verificación de autenticidad para facilitar pruebas locales con Turbo
   skip_before_action :verify_authenticity_token, only: [:approve]
 
-  def index
-    # Cargamos solo las transacciones que esperan curaduría manual
+ def index
     @pending = Transaction.where(aprobado: false).order(fecha: :desc)
-
-    # Obtenemos las categorías únicas ya existentes para el autocompletado
-    @categories_list = Transaction.where.not(categoria: [nil, ""])
-      .distinct
-      .pluck(:categoria)
-      .sort
-      
-    puts @categories_list
+    
+    # Creamos un hash: { "Supermercado" => ["Coto", "Dia"], "Hogar" => ["Luz", "Agua"] }
+    @categories_map = CategoryRule.roots.includes(:children).each_with_object({}) do |root, hash|
+      hash[root.name] = root.children.pluck(:name)
+    end
+    
+    @categories_list = @categories_map.keys
   end
 
   def approve

@@ -1,25 +1,42 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["input"]
+  static targets = ["input", "subInput"]
 
   connect() {
-    // console.log("Combo controller conectado") // Verifica esto en la consola (F12)
+    // Si el input ya trae un valor de la DB, actualizamos el mapa de sugerencias
+    if (this.inputTarget.value) {
+      this.updateSuggestions()
+    }
   }
 
   checkNew() {
-    const value = this.inputTarget.value
-    const datalist = document.getElementById('categories-suggestions')
-    
-    // Convertimos las opciones del datalist a un array de strings
-    const options = Array.from(datalist.options).map(opt => opt.value)
+    // Cuando el usuario escribe, limpiamos el campo de subcategoría
+    // porque la categoría principal cambió.
+    this.subInputTarget.value = ""
+    this.updateSuggestions()
+  }
 
-    if (value.length === 0) {
-      this.inputTarget.style.borderColor = "#cbd5e0" // Color base
-    } else if (options.includes(value)) {
-      this.inputTarget.style.borderColor = "#38a169" // Verde: Ya existe
+  updateSuggestions() {
+    const value = this.inputTarget.value
+    const categoriesData = document.getElementById('categories-data')
+    if (!categoriesData) return
+
+    const categoriesMap = JSON.parse(categoriesData.dataset.map)
+    const subDatalist = document.getElementById('subcategories-suggestions')
+    
+    // Limpiar sugerencias previas
+    subDatalist.innerHTML = ""
+
+    if (categoriesMap[value]) {
+      categoriesMap[value].forEach(sub => {
+        const option = document.createElement('option')
+        option.value = sub
+        subDatalist.appendChild(option)
+      })
+      this.inputTarget.style.borderColor = "#38a169" // Verde si existe
     } else {
-      this.inputTarget.style.borderColor = "#3b82f6" // Azul: Nuevo
+      this.inputTarget.style.borderColor = "#3b82f6" // Azul si es nueva
     }
   }
 }
