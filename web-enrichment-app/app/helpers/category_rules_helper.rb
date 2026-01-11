@@ -1,0 +1,2 @@
+module CategoryRulesHelper
+end

@@ -12,6 +12,8 @@ class TransactionsConsumer < ApplicationConsumer
       # Esto evita que una re-ingesta de un CSV viejo arruine tus datos curados
       next if transaction.aprobado?
 
+      results = CategorizerService.guess(data['detalles'])
+
       transaction.assign_attributes(
         fecha:        data['fecha_transaccion'],
         monto:        data['monto'],
@@ -19,8 +21,8 @@ class TransactionsConsumer < ApplicationConsumer
         detalles:     data['detalles'],
         red:          data['red'],
         # El servicio de categorización puede usar Regex o incluso una IA local
-        categoria:    CategorizerService.guess(data["detalles"]),
-        sub_categoria:  CategorizerService.guess_sub_category(data['detalles']),
+        categoria:    results[:category],,
+        sub_categoria:  results[:sub_category],
         # El sentimiento ayuda a separar gastos fijos de impulsivos
         sentimiento:  SentimentService.analyze(data["detalles"])
       )

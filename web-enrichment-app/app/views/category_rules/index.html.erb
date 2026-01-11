@@ -1,0 +1,39 @@
+<div style="font-family: sans-serif;">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>⚙️ Motor de Reglas</h1>
+    <%= link_to "➕ Nueva Regla", new_category_rule_path, style: "background: #3182ce; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;" %>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <thead>
+      <tr style="background: #f8f9fa; text-align: left;">
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Nombre</th>
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Padre (Categoría)</th>
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Patrón (Regex)</th>
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Prioridad</th>
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @category_rules.order(parent_id: :asc, priority: :desc).each do |rule| %>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 12px;">
+            <strong><%= rule.name %></strong>
+            <% if rule.parent_id.nil? %>
+              <span style="font-size: 0.7rem; background: #e2e8f0; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">RAÍZ</span>
+            <% end %>
+          </td>
+          <td style="padding: 12px; color: #666;">
+            <%= rule.parent&.name || "-" %>
+          </td>
+          <td style="padding: 12px;"><code style="background: #fff5f5; color: #c53030; padding: 2px 4px;"><%= rule.pattern %></code></td>
+          <td style="padding: 12px; text-align: center;"><%= rule.priority %></td>
+          <td style="padding: 12px;">
+            <%= link_to "✏️", edit_category_rule_path(rule), style: "text-decoration: none; margin-right: 10px;" %>
+            <%= button_to "🗑️", rule, method: :delete, data: { confirm: "¿Seguro?" }, style: "background: none; border: none; cursor: pointer; display: inline;" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

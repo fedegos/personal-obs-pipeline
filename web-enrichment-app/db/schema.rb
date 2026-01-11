@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_11_011027) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_11_185248) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "category_rules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.integer "parent_id"
+    t.string "pattern"
+    t.integer "priority"
+    t.datetime "updated_at", null: false
+    t.index ["parent_id"], name: "index_category_rules_on_parent_id"
+  end
 
   create_table "transactions", force: :cascade do |t|
     t.boolean "aprobado", default: false, null: false

@@ -1,48 +1,79 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Web Enrichment App" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Web Enrichment App">
-    <meta name="mobile-web-app-capable" content="yes">
+    <title>Audit-X 2026</title>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
-
-
-    <%= yield :head %>
-
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
-
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body style="margin: 0; background: #f8fafc; font-family: system-ui, sans-serif; display: flex;">
+    
+    <!-- 1. SIDEBAR FIJO (260px) -->
+    <nav style="width: 260px; height: 100vh; background: #1e293b; color: white; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; z-index: 1000;">
+      <div style="padding: 24px; font-size: 1.5rem; font-weight: bold; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 10px;">
+        <span>💰</span> Audit-X
+      </div>
 
-    <div id="flash-container" 
-     style="position: fixed; 
-            top: 20px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 9999; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 10px; 
-            pointer-events: none;">
-      <%= render "shared/flash" %>
-    </div>
+      <div style="flex: 1; padding: 20px 0;">
+        <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Operaciones</div>
+        <%= link_to transactions_path, class: "nav-link #{'active' if controller_name == 'transactions'}" do %>
+          <span style="width: 24px;">📋</span> Pendientes
+        <% end %>
 
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
+        <div style="height: 20px;"></div>
+
+        <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Inteligencia</div>
+        <%= link_to category_rules_path, class: "nav-link #{'active' if controller_name == 'category_rules'}" do %>
+          <span style="width: 24px;">⚙️</span> Reglas de Motor
+        <% end %>
+        
+        <div style="height: 20px;"></div>
+
+        <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Sistema</div>
+        <a href="#" class="nav-link" style="opacity: 0.5; cursor: not-allowed;">
+          <span style="width: 24px;">📤</span> Importar CSV
+        </a>
+      </div>
+
+      <div style="padding: 16px 24px; font-size: 0.75rem; color: #64748b; border-top: 1px solid #334155;">
+        v1.2.0-2026
+      </div>
+    </nav>
+
+    <!-- 2. AREA DE CONTENIDO (Desplazada 260px) -->
+    <main style="margin-left: 260px; flex: 1; min-height: 100vh; position: relative;">
+      
+      <!-- Contenedor de Notificaciones (Ahora siempre visible al centro del MAIN) -->
+      <div id="flash-container" style="position: fixed; top: 20px; left: calc(50% + 130px); transform: translateX(-50%); z-index: 9999; pointer-events: none;">
+        <%= render "shared/flash" %>
+      </div>
+
+      <div style="padding: 40px; max-width: 1100px; margin: 0 auto;">
+        <%= yield %>
+      </div>
     </main>
+
+    <style>
+      .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 24px;
+        color: #cbd5e1;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+      }
+      .nav-link:hover {
+        background: #334155;
+        color: white;
+      }
+      .nav-link.active {
+        background: #3b82f6;
+        color: white;
+        border-right: 4px solid #fff;
+      }
+    </style>
   </body>
 </html>
