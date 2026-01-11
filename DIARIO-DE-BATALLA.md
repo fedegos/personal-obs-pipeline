@@ -61,3 +61,98 @@ echo "ingestion/credentials.json" >> .gitignore
 Usa el código con precaución.
 
 Ahora tu script de Python podrá usar ese archivo para "hacerse pasar" por la cuenta de servicio y leer tus datos sin necesidad de intervención humana ni ventanas de login de navegador. Documentación de gspread.
+
+markdown
+Para avanzar con la aplicación **Rails** como motor de enriquecimiento en 2026, el flujo de trabajo se centrará en transformar los datos crudos de Kafka en información estructurada (por ejemplo, categorizar un gasto de "Supermercado" o "Suscripción") antes de enviarlos a InfluxDB.
+
+Aquí tienes los pasos para configurar esta capa de enriquecimiento:
+
+### 1. Configuración de Karafka (Consumidor)
+En 2026, **Karafka** es el estándar para integrar Kafka con Rails de forma eficiente. En tu archivo `karafka.rb`, definiremos cómo escuchar el tópico que creamos en Python:
+
+```ruby
+# karafka.rb
+class KarafkaApp < Karafka::App
+  setup do |config|
+    config.kafka = { 'bootstrap.servers': ENV['KAFKA_SERVERS'] }
+    config.client_id = 'web_enrichment_app'
+  end
+
+  routes.draw do
+    topic :transacciones_raw do
+      consumer TransactionsConsumer
+    end
+  end
+end
+```
+
+### 2. El Consumer de Enriquecimiento
+Aquí es donde ocurre la "magia". El consumidor recibirá el JSON de Python, buscará si existe en PostgreSQL (evitando duplicados) y aplicará reglas de categorización.
+
+```ruby
+# app/consumers/transactions_consumer.rb
+class TransactionsConsumer < ApplicationConsumer
+  def consume
+    messages.each do |message|
+      data = message.payload
+      
+      # 1. Idempotencia: Buscar o crear por event_id
+      transaction = Transaction.find_or_initialize_by(event_id: data['event_id'])
+      
+      # 2. Enriquecimiento: Lógica de categorías (puedes usar reglas o IA)
+      transaction.assign_attributes(
+        fecha: data['fecha_transaccion'],
+        monto: data['monto'],
+        moneda: data['moneda'],
+        descripcion: data['detalles'],
+        categoria: CategorizerService.guess(data['detalles']), # Servicio personalizado
+        red: data['red']
+      )
+
+      if transaction.save
+        # 3. Notificar a InfluxDB una vez enriquecido
+        InfluxWriterService.write_point(transaction)
+      end
+    end
+  end
+end
+```
+
+### 3. Servicio de Escritura en InfluxDB
+Usaremos la gema `influxdb-client` para enviar el dato final a tus dashboards de Grafana.
+
+```ruby
+# app/services/influx_writer_service.rb
+class InfluxWriterService
+  def self.write_point(transaction)
+    client = InfluxDB2::Client.new(
+      ENV['INFLUX_URL'], 
+      ENV['INFLUX_TOKEN'],
+      precision: InfluxDB2::WritePrecision::SECOND
+    )
+    
+    write_api = client.create_write_api
+    
+    point = InfluxDB2::Point.new(name: 'consumos')
+      .add_tag('categoria', transaction.categoria)
+      .add_tag('moneda', transaction.moneda)
+      .add_tag('red', transaction.red)
+      .add_field('valor', transaction.monto.to_f)
+      .time(transaction.fecha.to_time.to_i)
+
+    write_api.write(data: point, bucket: ENV['INFLUX_BUCKET'], org: ENV['INFLUX_ORG'])
+  end
+end
+```
+
+### 4. Ventajas de este Refactor en Rails
+*   **PostgreSQL como Buffer:** Mantener las transacciones en Postgres te permite crear una interfaz web en Rails (puerto 3000) para corregir manualmente categorías mal asignadas.
+*   **Actualización en Cascada:** Si corriges una categoría en la web, puedes disparar un evento que actualice InfluxDB una vez enriquecido.
+*   **Escalabilidad:** Al usar el puerto `29092` interno en Docker, tu worker de Karafka procesará miles de registros por segundo sin latencia.
+
+### Próximo Paso Sugerido
+Para que el sistema sea funcional en tu entorno Docker actual, asegúrate de correr las migraciones en el contenedor de Rails:
+`docker compose exec web bundle exec rails db:prepare`
+
+Y luego inicia el worker para empezar a recibir los datos de tu script de Python:
+`docker compose up karafka_server`
