@@ -5,6 +5,7 @@ import hashlib
 
 from utils.data_standardizer import generate_event_id
 from bank_extractors import get_extractor, list_extractors
+from utils.s3_client import get_s3_client
 
 producer = KafkaProducer(
     bootstrap_servers='localhost:9092',
@@ -16,6 +17,28 @@ def json_serial(obj):
     if isinstance(obj, (pd.Timestamp, pd.DatetimeIndex)):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
+
+def ingest_from_s3(bank_name: str, bucket_name: str, s3_key: str):
+    s3 = get_s3_client()
+    
+    try:
+        # 1. Descargar archivo de LocalStack S3
+        print(f"📥 Descargando {s3_key} desde S3...")
+        response = s3.get_object(Bucket=bucket_name, Key=s3_key)
+        file_content = response['Body'].read()
+                
+        # 2. Obtener el extractor y procesar
+        extractor_func = get_extractor(bank_name)
+        df = extractor_func(file_content)
+        
+        # 3. Publicar en Kafka (tu lógica actual de producer.send)
+        # ...
+        print(f"✅ Ingesta de '{bank_name}' completada para {len(df)} registros.")
+        
+    except Exception as e:
+        print(f"❌ Error en la ingesta: {e}")
+
+
 
 def ingest_file(bank_name: str, file_path: str):
     try:
@@ -38,6 +61,10 @@ def ingest_file(bank_name: str, file_path: str):
 if __name__ == "__main__":
     # Ejemplo de uso: 
 
-    ingest_file('visa', '../data/input/Movimientos_bbva.csv')
-    ingest_file('visa', '../data/input/Movimientos_bapro.csv')
+    # ingest_file('visa', '../data/input/Movimientos_bbva.csv')
+    # ingest_file('visa', '../data/input/Movimientos_bapro.csv')
+
+    ingest_from_s3('visa', 'bank-ingestion', 'raw/Movimientos_bbva.csv')
+    ingest_from_s3('visa', 'bank-ingestion', 'raw/Movimientos_bapro.csv')
+
     ingest_file('amex', 'AMEX')

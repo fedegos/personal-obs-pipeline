@@ -137,11 +137,29 @@ services:
     networks:
       - pipeline_net
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack_s3
+    ports:
+      - "4566:4566"            # Puerto para S3 y otros servicios de AWS
+      - "4510-4559:4510-4559"  # Puertos internos necesarios para LocalStack
+    environment:
+      - SERVICES=s3            # Solo habilitamos S3 para ahorrar memoria
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - PERSISTENCE=1  # IMPORTANTE: Indica a LocalStack que guarde datos en disco
+    volumes:
+      - "./docker_data/localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - pipeline_net
+
 networks:
   pipeline_net:
     driver: bridge
 
 volumes:
+  localstack_data:
   influxdb_data:
   grafana_data:
   postgres_data:

@@ -1,10 +1,12 @@
 import pandas as pd
 import numpy as np
+import io
+
 from . import register_extractor
 from utils.data_standardizer import apply_standard_format
 
 @register_extractor('visa')
-def extract_visa(file_path: str) -> pd.DataFrame:
+def extract_visa(file_content: bytes) -> pd.DataFrame:
     """
     Extractor para consumos de Visa desde archivos CSV (resumen descargado).
     Espera formato con separador ';' y fechas 'dd/mm/YYYY'.
@@ -14,7 +16,7 @@ def extract_visa(file_path: str) -> pd.DataFrame:
         # Nota: Cargamos 'Importe' como string si sospechamos que puede traer formatos mixtos,
         # o directamente como float si el CSV es estándar.
         df_raw = pd.read_csv(
-            file_path, 
+            io.BytesIO(file_content), 
             sep=";", 
             thousands=",", 
             decimal=".", 
@@ -67,5 +69,5 @@ def extract_visa(file_path: str) -> pd.DataFrame:
         return apply_standard_format(df)
 
     except Exception as e:
-        print(f"❌ Error procesando archivo Visa: {file_path}")
+        print(f"❌ Error procesando archivo Visa.")
         raise e
