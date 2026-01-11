@@ -17,5 +17,19 @@ class CategorizerService
     
     category ? category.first : 'Varios'
   end
+
+  def self.guess_sub_category(text)
+    return nil if text.blank?
+    
+    # Lógica simple: si el texto contiene una marca específica
+    if text.match?(/NETFLIX/i) then 'Netflix'
+    elsif text.match?(/SPOTIFY/i) then 'Spotify'
+    elsif text.match?(/UBER/i) then 'Uber'
+    elsif text.match?(/COTO/i) then 'Coto'
+    else nil
+    end
+  end
+
+
 end
 

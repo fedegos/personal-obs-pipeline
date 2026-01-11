@@ -36,7 +36,7 @@ class TransactionsController < ApplicationController
 
   def transaction_params
     # Permitimos los campos de enriquecimiento manual
-    params.require(:transaction).permit(:categoria, :sentimiento)
+    params.require(:transaction).permit(:categoria, :sub_categoria, :sentimiento)
   end
 
   def publish_clean_event(transaction)
