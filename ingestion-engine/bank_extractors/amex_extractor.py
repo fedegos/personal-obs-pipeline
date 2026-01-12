@@ -7,7 +7,7 @@ from utils.data_standardizer import apply_standard_format
 
 # --- Utilidades de Limpieza ---
 
-def limpiar_moneda(columna: pd.Series) -> pd.Series:
+def limpiar_moneda(columna: pd.Series, **kwargs) -> pd.Series:
     """Convierte strings de moneda (ej: '$6.446,30') a float64."""
     return (
         columna.astype(str)

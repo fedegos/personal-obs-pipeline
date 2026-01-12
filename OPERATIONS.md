@@ -43,6 +43,7 @@ Si agregaste gemas nuevas o estás en una instalación limpia:
    docker compose exec web rails db:prepare
    ```
 
+
 ---
 
 ## 📥 3. Fase 1: Ingesta (Python)
@@ -56,6 +57,14 @@ python main.py
 ```
 *Los eventos quedarán en el tópico `transacciones_raw` y entrarán automáticamente a la web de Rails en estado "Pendiente".*
 
+2. **Listar archivos en s3:**
+```bash
+docker exec -it minio_s3 mc alias set local http://localhost:9000 {user} {password}
+```
+
+```bash
+docker exec -it minio_s3 mc du local/bank-ingestion
+```
 ---
 
 ## 🔍 4. Fase 2: Curaduría y Enriquecimiento (Rails)
@@ -83,7 +92,7 @@ El servicio **Telegraf** está configurado para mover automáticamente todo lo q
 1. **Idempotencia:** El `event_id` (hash SHA-256) previene duplicados. Si un gasto ya fue aprobado, el pipeline de Rails lo ignorará si intentas re-ingestarlo.
 2. **Karafka Boot:** Si el worker no arranca, verifica que `app/consumers/application_consumer.rb` exista y que `karafka.rb` use `"TransactionsConsumer"` como string.
 3. **Persistencia:** Los datos residen en volúmenes nombrados de Docker (`postgres_data`, `influxdb_data`). No borrar a menos que se desee un hard-reset.
-4. **Sincronización:** Recuerda: **Escribe código en local, ejecuta en Docker.** Cualquier archivo generado con `rails generate` aparecerá en tu carpeta local gracias a los volúmenes.
+4. **Sincronización:** Recuerda: **Escribe código en local, ejecuta en Docker.** Cualquier archivo generado con `rails generate` aparecerá en tu carpeta local gracias a los 
 
 ---
 *Tip: Usa `Ctrl + Shift + V` en VS Code para previsualizar este documento.*

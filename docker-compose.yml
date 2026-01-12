@@ -137,29 +137,46 @@ services:
     networks:
       - pipeline_net
 
-  localstack:
-    image: localstack/localstack:latest
-    container_name: localstack_s3
+  s3_server:
+    image: minio/minio:latest
+    container_name: minio_s3
     ports:
-      - "4566:4566"            # Puerto para S3 y otros servicios de AWS
-      - "4510-4559:4510-4559"  # Puertos internos necesarios para LocalStack
+      - "4566:9000"    # Puerto API S3 (Lo mapeamos a 4566 para no cambiar tu Python)
+      - "9001:9001"    # Interfaz Web de MinIO
     environment:
-      - SERVICES=s3            # Solo habilitamos S3 para ahorrar memoria
-      - DEBUG=1
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - PERSISTENCE=1  # IMPORTANTE: Indica a LocalStack que guarde datos en disco
+      MINIO_ROOT_USER: test
+      MINIO_ROOT_PASSWORD: password123
     volumes:
-      - "./docker_data/localstack:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - minio_data:/data
+    command: server /data --console-address ":9001"
     networks:
       - pipeline_net
+
+  telegraf:
+      image: telegraf:latest
+      container_name: telegraf_connector
+      environment:
+        - INFLUX_TOKEN=token_secreto_2026
+        - INFLUX_ORG=mi_org
+        - INFLUX_BUCKET=finanzas
+      volumes:
+        # Mapeamos tu archivo local al archivo de configuración interno del contenedor
+        # El ':ro' significa Read-Only (el contenedor solo lo lee, no lo modifica)
+        - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      depends_on:
+        redpanda:
+          condition: service_healthy
+        influxdb:
+          condition: service_started
+      networks:
+        - pipeline_net
 
 networks:
   pipeline_net:
     driver: bridge
 
 volumes:
-  localstack_data:
+  minio_data:
   influxdb_data:
   grafana_data:
   postgres_data:

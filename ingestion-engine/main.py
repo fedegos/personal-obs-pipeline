@@ -18,7 +18,7 @@ def json_serial(obj):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
 
-def ingest_from_s3(bank_name: str, bucket_name: str, s3_key: str):
+def ingest_from_s3(bank_name: str, bucket_name: str, s3_key: str, **kwargs):
     s3 = get_s3_client()
     
     try:
@@ -29,7 +29,7 @@ def ingest_from_s3(bank_name: str, bucket_name: str, s3_key: str):
                 
         # 2. Obtener el extractor y procesar
         extractor_func = get_extractor(bank_name)
-        df = extractor_func(file_content)
+        df = extractor_func(file_content, **kwargs)
         
         # 3. Publicar en Kafka (tu lógica actual de producer.send)
         # ...
@@ -40,14 +40,14 @@ def ingest_from_s3(bank_name: str, bucket_name: str, s3_key: str):
 
 
 
-def ingest_file(bank_name: str, file_path: str):
+def ingest_file(bank_name: str, file_path: str, **kwargs):
     try:
         extractor_func = get_extractor(bank_name)
     except ValueError as e:
         print(f"Error al obtener extractor: {e}. Extractores disponibles: {list_extractors()}")
         return
     
-    df = extractor_func(file_path)
+    df = extractor_func(file_path, **kwargs)
     
     # Aplicamos la lógica de secuencia e ID único
     df['event_id'] = df.apply(generate_event_id, axis=1)

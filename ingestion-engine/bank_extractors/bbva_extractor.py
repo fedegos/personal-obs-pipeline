@@ -5,23 +5,19 @@ import io
 from . import register_extractor
 from utils.data_standardizer import apply_standard_format
 
-@register_extractor('visa')
-def extract_visa(file_content: bytes, **kwargs) -> pd.DataFrame:
+@register_extractor('bbva')
+def extract_bbva(file_content: bytes, **kwargs) -> pd.DataFrame:
     """
     Extractor para consumos de Visa desde archivos CSV (resumen descargado).
     Espera formato con separador ';' y fechas 'dd/mm/YYYY'.
     """
     try:
         # 1. Carga inicial
-        # Nota: Cargamos 'Importe' como string si sospechamos que puede traer formatos mixtos,
-        # o directamente como float si el CSV es estándar.
-        df_raw = pd.read_csv(
-            io.BytesIO(file_content), 
-            sep=";", 
-            thousands=",", 
-            decimal=".", 
-            parse_dates=['Fecha Origen'], 
-            date_format='%d/%m/%Y'
+        df_raw = pd.read_excel(
+            io.BytesIO(file_content),
+            header=2,
+            parse_dates=['Fecha y hora'], 
+            date_format='%d/%m/%y'
         )
 
         # 2. Pipeline de Transformación
