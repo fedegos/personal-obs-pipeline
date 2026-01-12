@@ -1,7 +1,7 @@
 services:
   # --- INFRAESTRUCTURA DE MENSAJERÍA ---
   redpanda:
-    image: redpandadata/redpanda:latest # Versión estable 2026
+    image: redpandadata/redpanda:latest
     container_name: redpanda
     command: >
       redpanda start 
@@ -29,7 +29,6 @@ services:
       timeout: 5s
       retries: 10
 
-
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -54,10 +53,10 @@ services:
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=password12345
-      - DOCKER_INFLUXDB_INIT_ORG=mi_org
-      - DOCKER_INFLUXDB_INIT_BUCKET=finanzas
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token_secreto_2026
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${POSTGRES_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
     volumes:
       - influxdb_data:/var/lib/influxdb2
     networks:
@@ -71,7 +70,7 @@ services:
     depends_on:
       - influxdb
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
@@ -82,14 +81,14 @@ services:
     image: postgres:15-alpine
     container_name: postgres_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - pipeline_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -104,12 +103,12 @@ services:
       - "3000:3000"
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://postgres:password@db:5432/rails_app_development
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/rails_app_development
       KAFKA_SERVERS: redpanda:29092
       INFLUX_URL: http://influxdb:8086
-      INFLUX_TOKEN: token_secreto_2026
-      INFLUX_ORG: mi_org
-      INFLUX_BUCKET: finanzas
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
     depends_on:
       db:
         condition: service_healthy
@@ -126,9 +125,9 @@ services:
       - ./web-enrichment-app:/app
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://postgres:password@db:5432/rails_app_development
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/rails_app_development
       KAFKA_SERVERS: redpanda:29092
-      RAILS_LOG_TO_STDOUT: true
+      RAILS_LOG_TO_STDOUT: "true"
     depends_on:
       web:
         condition: service_started
@@ -141,11 +140,11 @@ services:
     image: minio/minio:latest
     container_name: minio_s3
     ports:
-      - "4566:9000"    # Puerto API S3 (Lo mapeamos a 4566 para no cambiar tu Python)
-      - "9001:9001"    # Interfaz Web de MinIO
+      - "4566:9000"
+      - "9001:9001"
     environment:
-      MINIO_ROOT_USER: test
-      MINIO_ROOT_PASSWORD: password123
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -153,23 +152,21 @@ services:
       - pipeline_net
 
   telegraf:
-      image: telegraf:latest
-      container_name: telegraf_connector
-      environment:
-        - INFLUX_TOKEN=token_secreto_2026
-        - INFLUX_ORG=mi_org
-        - INFLUX_BUCKET=finanzas
-      volumes:
-        # Mapeamos tu archivo local al archivo de configuración interno del contenedor
-        # El ':ro' significa Read-Only (el contenedor solo lo lee, no lo modifica)
-        - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
-      depends_on:
-        redpanda:
-          condition: service_healthy
-        influxdb:
-          condition: service_started
-      networks:
-        - pipeline_net
+    image: telegraf:latest
+    container_name: telegraf_connector
+    environment:
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
+    volumes:
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
+    networks:
+      - pipeline_net
 
 networks:
   pipeline_net:

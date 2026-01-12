@@ -27,3 +27,4 @@ def list_extractors():
 
 from . import visa_extractor
 from . import amex_extractor
+from . import bbva_extractor
