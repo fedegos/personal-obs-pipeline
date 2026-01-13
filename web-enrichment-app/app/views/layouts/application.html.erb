@@ -11,37 +11,39 @@
 
   <body style="margin: 0; background: #f8fafc; font-family: system-ui, sans-serif; display: flex; max-width: 100vw; overflow-x: hidden;">
     
-    <!-- 1. SIDEBAR FIJO (260px) -->
-    <nav style="width: 260px; height: 100vh; background: #1e293b; color: white; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; z-index: 1000;">
-      <div style="padding: 24px; font-size: 1.5rem; font-weight: bold; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 10px;">
-        <span>💰</span> Audit-X
-      </div>
+   <!-- 1. SIDEBAR FIJO (260px) -->
+  <nav style="width: 260px; height: 100vh; background: #1e293b; color: white; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; z-index: 1000;">
+    <div style="padding: 24px; font-size: 1.5rem; font-weight: bold; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 10px;">
+      <span>💰</span> Audit-X
+    </div>
 
-      <div style="flex: 1; padding: 20px 0;">
-        <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Operaciones</div>
-        <%= link_to transactions_path, class: "nav-link #{'active' if controller_name == 'transactions'}" do %>
-          <span style="width: 24px;">📋</span> Pendientes
-        <% end %>
+    <div style="flex: 1; padding: 20px 0;">
+      <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Operaciones</div>
+      <%= link_to transactions_path, class: "nav-link #{'active' if controller_name == 'transactions'}" do %>
+        <span style="width: 24px;">📋</span> Pendientes
+      <% end %>
 
-        <div style="height: 20px;"></div>
+      <div style="height: 20px;"></div>
 
-        <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Inteligencia</div>
-        <%= link_to category_rules_path, class: "nav-link #{'active' if controller_name == 'category_rules'}" do %>
-          <span style="width: 24px;">⚙️</span> Reglas de Motor
-        <% end %>
-        
-        <div style="height: 20px;"></div>
+      <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Inteligencia</div>
+      <%= link_to category_rules_path, class: "nav-link #{'active' if controller_name == 'category_rules'}" do %>
+        <span style="width: 24px;">⚙️</span> Reglas de Motor
+      <% end %>
+      
+      <div style="height: 20px;"></div>
 
-        <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Sistema</div>
-        <a href="#" class="nav-link" style="opacity: 0.5; cursor: not-allowed;">
-          <span style="width: 24px;">📤</span> Importar CSV
-        </a>
-      </div>
+      <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Sistema</div>
+      <%# --- ENLACE ACTUALIZADO Y HABILITADO --- %>
+      <%= link_to upload_path, class: "nav-link #{'active' if controller_name == 'source_files'}" do %>
+        <span style="width: 24px;">📤</span> Ingesta de Datos
+      <% end %>
+    </div>
 
-      <div style="padding: 16px 24px; font-size: 0.75rem; color: #64748b; border-top: 1px solid #334155;">
-        v1.2.0-2026
-      </div>
-    </nav>
+    <div style="padding: 16px 24px; font-size: 0.75rem; color: #64748b; border-top: 1px solid #334155;">
+      v1.2.0-2026
+    </div>
+  </nav>
+
 
     <!-- 2. AREA DE CONTENIDO (Ancho dinámico) -->
     <main style="margin-left: 260px; width: calc(100% - 260px); min-height: 100vh; box-sizing: border-box; position: relative;">

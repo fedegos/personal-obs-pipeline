@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  bank: MyString
+  file_key: MyString
+  status: MyString
+  error_message: MyText
+  extra_params: 
+  processed_at: 2026-01-12 22:23:23
+
+two:
+  bank: MyString
+  file_key: MyString
+  status: MyString
+  error_message: MyText
+  extra_params: 
+  processed_at: 2026-01-12 22:23:23

@@ -13,3 +13,5 @@ application.register("flash", FlashController)
 import HelloController from "controllers/hello_controller"
 application.register("hello", HelloController)
 
+import ParametersController from "controllers/parameters_controller"
+application.register("parameters", ParametersController)

@@ -17,4 +17,9 @@ Rails.application.routes.draw do
   
   # Redirigir la raíz a las transacciones
   root 'transactions#index'
+
+  # Gestión de Archivos
+  get 'upload', to: 'source_files#index', as: 'upload'
+  post 'source_files', to: 'source_files#create'
+
 end

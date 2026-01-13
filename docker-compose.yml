@@ -101,6 +101,8 @@ services:
       - ./web-enrichment-app:/app
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
       RAILS_ENV: development
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/rails_app_development

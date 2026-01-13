@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_11_185248) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_12_222323) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,6 +22,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_11_185248) do
     t.integer "priority"
     t.datetime "updated_at", null: false
     t.index ["parent_id"], name: "index_category_rules_on_parent_id"
+  end
+
+  create_table "source_files", force: :cascade do |t|
+    t.string "bank"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.jsonb "extra_params"
+    t.string "file_key"
+    t.datetime "processed_at"
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.index ["file_key"], name: "index_source_files_on_file_key"
   end
 
   create_table "transactions", force: :cascade do |t|
