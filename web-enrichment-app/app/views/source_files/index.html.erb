@@ -1,8 +1,7 @@
 <!-- app/views/source_files/index.html.erb -->
 <%# Usamos la constante definida en config/initializers/bank_schemas.rb %>
-<div data-controller="parameters" 
-     data-parameters-schemas-value="<%= BANK_SCHEMAS.to_json %>"
-     style="max-width: 1200px; margin: 0 auto;">
+<div data-controller="parameters" data-parameters-schemas-value="<%= BANK_SCHEMAS.to_json %>">
+
   
   <header style="margin-bottom: 32px;">
     <h1 style="margin: 0; color: #1e293b; font-size: 1.875rem; font-weight: 700;">📤 Ingesta de Datos</h1>
@@ -36,15 +35,23 @@
       </div>
 
       <!-- CONTENEDOR DE PARÁMETROS DINÁMICOS -->
-      <div data-parameters-target="schemaContainer" 
-           style="background: #f1f5f9; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 24px; display: none;">
-        <h4 style="margin: 0 0 15px 0; font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
-          ⚙️ Parámetros del Extractor (kwargs)
-        </h4>
-        <div id="dynamic-fields" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-          <!-- Stimulus inyectará los campos aquí según BANK_SCHEMAS -->
+        <!-- Contenedor donde se inyectarán los clones -->
+        <div data-parameters-target="schemaContainer" style="display: none; background: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+            <h4 style="margin-top: 0; font-size: 0.8rem; color: #64748b; text-transform: uppercase;">Parámetros del Extractor</h4>
+            <div id="dynamic-fields" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <!-- Aquí se inyectan los campos -->
+            </div>
         </div>
-      </div>
+
+
+        <!-- TEMPLATE: Aquí vive el diseño. El JS no sabe de estilos, solo de este template. -->
+        <template data-parameters-target="fieldTemplate">
+            <div class="field-group" style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-size: 0.75rem; font-weight: 700; color: #475569;"></label>
+            <input style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            </div>
+        </template>
+
 
       <%= f.submit "🚀 Iniciar Pipeline", style: "background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; cursor: pointer;" %>
     <% end %>

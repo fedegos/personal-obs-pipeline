@@ -1,63 +1,53 @@
-// app/javascript/controllers/parameters_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["bankSelect", "schemaContainer"]
+  static targets = ["bankSelect", "schemaContainer", "fieldTemplate"]
   static values = { schemas: Object }
-
-  connect() {
-    console.log("Parameters controller connected. Schemas loaded:", this.schemasValue)
-    this.showSchema()
-  }
 
   showSchema() {
     const bank = this.bankSelectTarget.value
     const schema = this.schemasValue[bank]
-    const container = this.schemaContainerTarget
-    const fieldsDiv = container.querySelector("#dynamic-fields")
+    const fieldsDiv = this.schemaContainerTarget.querySelector("#dynamic-fields")
 
-    console.log(`Showing schema for bank: ${bank}`, schema)
+    fieldsDiv.innerHTML = "" // Limpiar
 
     if (schema && schema.length > 0) {
-      container.style.display = "block"
-      // Generamos el HTML completo para todos los campos
-      fieldsDiv.innerHTML = schema.map(field => this.generateFieldHtml(field)).join("")
+      this.schemaContainerTarget.style.display = "block"
+      schema.forEach(field => {
+        const clone = this.createFieldFromTemplate(field)
+        fieldsDiv.appendChild(clone)
+      })
     } else {
-      container.style.display = "none"
-      fieldsDiv.innerHTML = ""
+      this.schemaContainerTarget.style.display = "none"
     }
   }
 
-  generateFieldHtml(field) {
-    const isCheckbox = field.type === 'checkbox'
-    const valueAttr = field.default !== undefined && !isCheckbox ? `value="${field.default}"` : ""
-    const placeholderAttr = field.placeholder ? `placeholder="${field.placeholder}"` : ""
-    const checkedAttr = isCheckbox && field.default ? 'checked' : ''
+  createFieldFromTemplate(field) {
+    // 1. Clonar el contenido del template
+    const clone = this.fieldTemplateTarget.content.cloneNode(true)
     
-    // HTML del input
-    const inputHtml = `
-      <input type="${field.type}" 
-             name="extra_params[${field.key}]" 
-             ${valueAttr} 
-             ${placeholderAttr} 
-             ${checkedAttr}
-             style="${isCheckbox ? 'margin-top: 5px;' : 'width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;'}">
-    `
+    // 2. Buscar elementos internos
+    const label = clone.querySelector("label")
+    const input = clone.querySelector("input")
 
-    // Envolvemos en un div con label, ajustando layout para checkboxes
-    if (isCheckbox) {
-      return `
-        <div style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
-          ${inputHtml}
-          <label style="font-size: 0.85rem; font-weight: 600; color: #475569; cursor: pointer;">${field.label}</label>
-        </div>`
-    } else {
-      return `
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label style="font-size: 0.75rem; font-weight: 700; color: #475569;">${field.label}</label>
-          ${inputHtml}
-        </div>
-      `
+    // 3. Configurar datos
+    label.textContent = field.label
+    input.type = field.type || "text"
+    input.name = `extra_params[${field.key}]`
+    
+    if (field.default !== undefined) {
+      field.type === "checkbox" ? (input.checked = field.default) : (input.value = field.default)
     }
+
+    if (field.placeholder) input.placeholder = field.placeholder
+
+    // 4. Ajuste visual rápido si es checkbox
+    if (field.type === "checkbox") {
+      clone.querySelector(".field-group").style.flexDirection = "row-reverse"
+      clone.querySelector(".field-group").style.justifyContent = "flex-end"
+      clone.querySelector(".field-group").style.gap = "10px"
+    }
+
+    return clone
   }
 }
