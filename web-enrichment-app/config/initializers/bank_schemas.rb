@@ -10,4 +10,4 @@ BANK_SCHEMAS = {
     { key: 'credit_card', label: 'Número de Tarjeta', type: 'number', required: true},
     { key: 'card_number', label: 'Red', type: 'string', required: true}
   ]
-}.freeze
+}.with_indifferent_access.freeze

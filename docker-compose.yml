@@ -138,7 +138,7 @@ services:
     networks:
       - pipeline_net
 
-  s3_server:
+  s3-server:
     image: minio/minio:latest
     container_name: minio_s3
     ports:
