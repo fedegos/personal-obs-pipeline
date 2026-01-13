@@ -39,6 +39,7 @@ export default class extends Controller {
     const isNoFileBank = this.noFileBanksValue.includes(bank)
     
     if (bank && isNoFileBank) {
+      this.fileInputTarget.value =""
       this.fileInputTarget.disabled = true
       this.fileInputTarget.style.opacity = "0.4"
       this.fileInputTarget.style.cursor = "not-allowed"
@@ -48,6 +49,7 @@ export default class extends Controller {
       this.fileInputTarget.disabled = false
       this.fileInputTarget.style.opacity = "1"
       this.fileInputTarget.style.cursor = "default"
+      this.fileLabelTarget.style.opacity = "1"
       this.fileLabelTarget.innerText = "Archivo (Excel/CSV)"
     }
   }
