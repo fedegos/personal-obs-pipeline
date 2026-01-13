@@ -3,28 +3,27 @@ class SourceFilesController < ApplicationController
     @source_files = SourceFile.order(created_at: :desc).limit(15)
   end
 
+  # app/controllers/source_files_controller.rb
   def create
     bank = params[:bank]
-    
-    # Obtenemos el esquema directamente (es un Array de Hashes)
-    # Gracias a .with_indifferent_access, no importa si bank es "amex" o :amex
     schema = BANK_SCHEMAS[bank]
+    
+    # Nueva lógica: ¿Requiere archivo?
+    needs_file = !NO_FILE_BANKS.include?(bank)
+    file_present = params[:file].present?
 
-    # Validamos: archivo presente, banco registrado y campos obligatorios llenos
-    if params[:file].present? && schema.present? && required_keys_present?(schema, params[:extra_params])
-      
-      # Extraemos parámetros opcionales
+    if (file_present || !needs_file) && schema.present? && required_keys_present?(schema, params[:extra_params])
       extra_params = params.fetch(:extra_params, {}).permit!.to_h
       
-      # Llamada al servicio
+      # Pasamos nil en el archivo si no es necesario
       ExcelUploaderService.call(params[:file], bank, extra_params)
       
-      redirect_to upload_path, notice: "Archivo para #{bank.upcase} en cola de procesamiento."
+      redirect_to upload_path, notice: "Procesamiento de #{bank.upcase} iniciado correctamente."
     else
-      redirect_to upload_path, alert: "Error: Verifique que el archivo esté adjunto y todos los campos obligatorios del banco estén completos."
-    end
+      msg = file_present ? "Faltan parámetros obligatorios." : "Debe adjuntar un archivo para este banco."
+    redirect_to upload_path, alert: msg
   end
-
+end
   private
 
   def required_keys_present?(schema, submitted_params)
