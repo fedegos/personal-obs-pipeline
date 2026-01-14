@@ -102,7 +102,6 @@ def run_worker():
 
             # Parsear el evento que viene de Rails
             event_data = json.loads(msg.value().decode('utf-8'))
-            print(event_data)
             process_ingestion(event_data)
     finally:
         consumer.close()
