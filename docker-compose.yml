@@ -153,6 +153,25 @@ services:
     networks:
       - pipeline_net
 
+  ingestion_worker:
+    build:
+      context:  ./ingestion-engine  # <--- Docker entrará aquí para buscar el requirements.txt
+      dockerfile: Dockerfile
+    container_name: python_worker
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1         # <--- FUERZA LOS LOGS EN TIEMPO REAL
+      - PYTHONPATH=/app            # <--- ASEGURA QUE ENCUENTRE TUS MÓDULOS
+    volumes:
+      - ./ingestion-engine:/app
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      s3-server:
+        condition: service_started
+    networks:
+      - pipeline_net
+
   telegraf:
     image: telegraf:latest
     container_name: telegraf_connector

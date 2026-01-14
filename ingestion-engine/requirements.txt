@@ -28,3 +28,5 @@ s3transfer==0.16.0
 six==1.17.0
 tzdata==2025.3
 urllib3==2.6.3
+confluent-kafka==2.3.0
+python-dotenv==1.0.0
