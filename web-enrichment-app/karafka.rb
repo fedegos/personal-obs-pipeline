@@ -15,6 +15,14 @@ class KarafkaApp < Karafka::App
         consumer TransactionsConsumer
         initial_offset "earliest"
       end
+
+      # NUEVO: Consumidor para los resultados de archivos (S3)
+      # Ajusta el nombre del tópico y del consumidor según tu código
+      topic :file_results do 
+        consumer FileResultsConsumer
+        initial_offset "earliest"
+      end
+
     end
   end
 end

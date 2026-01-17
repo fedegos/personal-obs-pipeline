@@ -93,6 +93,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis_bus
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pipeline_net
+
   web:
     build: ./web-enrichment-app
     container_name: rails_app
@@ -111,10 +122,13 @@ services:
       INFLUX_TOKEN: ${INFLUX_TOKEN}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_BUCKET: ${INFLUX_BUCKET}
+      REDIS_URL: redis://redis:6379/1
     depends_on:
       db:
         condition: service_healthy
       redpanda:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - pipeline_net
@@ -122,6 +136,8 @@ services:
   karafka_server:
     build: ./web-enrichment-app
     container_name: karafka_worker
+    env_file:
+      - .env
     command: bundle exec karafka server
     volumes:
       - ./web-enrichment-app:/app
@@ -130,10 +146,13 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/rails_app_development
       KAFKA_SERVERS: redpanda:29092
       RAILS_LOG_TO_STDOUT: "true"
+      REDIS_URL: redis://redis:6379/1
     depends_on:
       web:
         condition: service_started
       redpanda:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - pipeline_net

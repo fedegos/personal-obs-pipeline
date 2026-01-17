@@ -5,6 +5,8 @@
     data-parameters-no-file-banks-value="<%= NO_FILE_BANKS.to_json %>"
     style="font-family: 'Inter', system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px;"
 >
+  <%# Suscripción al canal de Redis %>
+  <%= turbo_stream_from "source_files_channel" %>
 
   <header style="margin-bottom: 32px;">
     <h1 style="margin: 0; color: #1e293b; font-size: 1.875rem; font-weight: 700;">📤 Ingesta de Datos</h1>
@@ -80,36 +82,13 @@
             <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Fecha</th>
             <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Banco</th>
             <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Estado</th>
-            <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Detalles / Metadatos</th>
+            <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Detalles</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="source_files_table">
           <% @source_files.each do |sf| %>
-            <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.1s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-              <td style="padding: 14px 24px; color: #475569;"><%= sf.created_at.strftime("%d/%m/%y %H:%M") %></td>
-              <td style="padding: 14px 24px;">
-                <span style="background: #f1f5f9; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; border: 1px solid #e2e8f0;">
-                  <%= sf.bank.upcase %>
-                </span>
-              </td>
-              <td style="padding: 14px 24px;">
-                <% 
-                  badge_style = case sf.status 
-                  when 'pending'   then "background: #fef3c7; color: #92400e; border: 1px solid #fde68a;" 
-                  when 'processed' then "background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;" 
-                  when 'failed'    then "background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;" 
-                  end 
-                %>
-                <span style="<%= badge_style %> padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
-                  <%= sf.status.upcase %>
-                </span>
-              </td>
-              <td style="padding: 14px 24px;">
-                <code style="font-family: 'JetBrains Mono', 'Menlo', monospace; font-size: 0.8rem; color: #64748b; background: #f8fafc; padding: 4px; border-radius: 4px;">
-                  <%= sf.status == 'failed' ? sf.error_message : sf.extra_params.to_json %>
-                </code>
-              </td>
-            </tr>
+            <%# 2. Identificar la fila con dom_id(sf) %>
+            <%= render partial: "source_files/source_file", locals: { source_file: sf } %>
           <% end %>
         </tbody>
       </table>

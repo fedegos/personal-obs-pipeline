@@ -7,6 +7,8 @@ class Transaction < ApplicationRecord
   scope :pendientes, -> { where(aprobado: false) }
   scope :aprobadas, -> { where(aprobado: true) }
 
+  after_update_commit -> { broadcast_remove_to "transactions_channel" }
+
   # Método para verificar si está lista para ser publicada en Kafka Clean
   def ready_to_publish?
     aprobado? && categoria.present? && sentimiento.present?
