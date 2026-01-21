@@ -128,17 +128,16 @@ services:
       - s3-server
     networks:
       - internal_net
-  
+      
   telegraf:
     image: telegraf:1.30-alpine
     restart: always
     environment:
       - INFLUX_TOKEN=${INFLUX_TOKEN}
     volumes:
-      # Usamos la variable de entorno de Coolify para asegurar la ruta absoluta del repo
-      - .:/etc/telegraf/config:ro 
-    # Le indicamos a Telegraf dónde buscar el archivo específicamente
-    command: telegraf --config /etc/telegraf/config/telegraf.conf
+      # Montamos el archivo específico directamente desde la raíz del repo
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    # No hace falta el command personalizado si el archivo está en la ruta estándar
     networks:
       - internal_net
 
