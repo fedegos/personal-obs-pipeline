@@ -57,6 +57,11 @@ up: ## Levantar todo en segundo plano
 logs: ## Ver logs de todos los servicios con timestamps
 	docker compose logs -f -t
 
+down: ## Bajar todo sin limpiar volúmenes
+	docker compose down
+
+restart-all: down up ## Reiniciar todos los contenendores.
+
 down-volumes: ## Bajar todo y limpiar volúmenes (atención: borra datos persistentes)
 	docker compose down -v
 

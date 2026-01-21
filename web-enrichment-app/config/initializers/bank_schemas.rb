@@ -9,8 +9,8 @@ BANK_SCHEMAS = {
 
   ],
   'bbva' => [
-    { key: 'credit_card', label: 'Número de Tarjeta', type: 'number', required: true},
-    { key: 'card_number', label: 'Red', type: 'string', required: true}
+    { key: 'card_number', label: 'Número de Tarjeta', type: 'number', required: true},
+    { key: 'card_network', label: 'Red', type: 'string', required: true}
   ]
 }.with_indifferent_access.freeze
 
