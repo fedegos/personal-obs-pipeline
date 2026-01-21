@@ -135,7 +135,10 @@ services:
     environment:
       - INFLUX_TOKEN=${INFLUX_TOKEN}
     volumes:
-      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      # Usamos la variable de entorno de Coolify para asegurar la ruta absoluta del repo
+      - .:/etc/telegraf/config:ro 
+    # Le indicamos a Telegraf dónde buscar el archivo específicamente
+    command: telegraf --config /etc/telegraf/config/telegraf.conf
     networks:
       - internal_net
 
