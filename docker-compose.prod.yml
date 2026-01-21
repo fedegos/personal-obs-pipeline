@@ -18,6 +18,21 @@ services:
 
   # kafka-ui ELIMINADO: No se exponen herramientas de gestión en prod
 
+
+  # --- AUTOMATIZACIÓN DE TÓPICOS ---
+  redpanda_setup:
+    image: redpandadata/redpanda:v25.3.5
+    depends_on:
+      - redpanda
+    networks:
+      - internal_net
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until rpk cluster info --brokers redpanda:29092; do sleep 2; done
+        rpk topic create transacciones_raw file_results transacciones_clean --brokers redpanda:29092
+        echo "✅ Tópicos creados correctamente."
+
   # --- ALMACENAMIENTO Y VISUALIZACIÓN ---
   influxdb:
     image: influxdb:2.7-alpine
