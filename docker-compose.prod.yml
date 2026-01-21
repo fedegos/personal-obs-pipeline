@@ -5,6 +5,7 @@ services:
     restart: always
     command: >
       redpanda start 
+      --set redpanda.auto_create_topics_enabled=true
       --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false
       --kafka-addr INTERNAL://0.0.0.0:29092
       --advertise-kafka-addr INTERNAL://redpanda:29092
@@ -128,7 +129,7 @@ services:
       - s3-server
     networks:
       - internal_net
-      
+
   telegraf:
     image: telegraf:1.30-alpine
     restart: always
