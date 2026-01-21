@@ -1,0 +1,27 @@
+# Usamos una versión ligera de Python 2026
+FROM python:3.12-slim
+
+# Evita que Python genere archivos .pyc y fuerza el volcado de logs
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+WORKDIR /app
+
+# Instalamos dependencias del sistema necesarias para librerías de Kafka o S3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalamos dependencias de Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiamos el código fuente
+COPY . .
+
+# No usamos usuario root por seguridad en la nube
+RUN useradd -m auditx_worker
+USER auditx_worker
+
+CMD ["python", "main.py"]

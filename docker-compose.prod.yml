@@ -1,0 +1,153 @@
+services:
+  # --- INFRAESTRUCTURA DE MENSAJERÍA (CERRADA) ---
+  redpanda:
+    image: redpandadata/redpanda:v24.1.1 # Usar versiones fijas en prod
+    restart: always
+    command: >
+      redpanda start 
+      --smp 1 --memory 1G --reserve-memory 0M --node-id 0 --check=false
+      --kafka-addr INTERNAL://0.0.0.0:29092
+      --advertise-kafka-addr INTERNAL://redpanda:29092
+    # Eliminamos puertos públicos (9092, 8081, 9644)
+    networks:
+      - internal_net
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+
+  # kafka-ui ELIMINADO: No se exponen herramientas de gestión en prod
+
+  # --- ALMACENAMIENTO Y VISUALIZACIÓN ---
+  influxdb:
+    image: influxdb:2.7-alpine
+    restart: always
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+    # Puerto 8086 ELIMINADO de la exposición pública
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    networks:
+      - internal_net
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: always
+    ports:
+      - "3001:3000" # Único puerto de visualización
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false # Seguridad extra
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - internal_net
+      - public_net
+
+  # --- APLICACIÓN WEB-ENRICHMENT ---
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: audit_x_prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal_net
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - internal_net
+
+  web:
+    build: 
+      context: ./web-enrichment-app
+      dockerfile: Dockerfile.prod # Necesitaremos crear este archivo
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      RAILS_ENV: production
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/audit_x_prod
+      KAFKA_SERVERS: redpanda:29092
+      REDIS_URL: redis://redis:6379/1
+    depends_on:
+      - db
+      - redpanda
+    networks:
+      - internal_net
+      - public_net
+
+  karafka_server:
+    build: 
+      context: ./web-enrichment-app
+      dockerfile: Dockerfile.prod
+    command: bundle exec karafka server
+    restart: always
+    environment:
+      RAILS_ENV: production
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      KAFKA_SERVERS: redpanda:29092
+    networks:
+      - internal_net
+
+  s3-server:
+    image: minio/minio:latest
+    restart: always
+    # Puerto 9001 console ELIMINADO. Solo API interna.
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - minio_data:/data
+    command: server /data
+    networks:
+      - internal_net
+
+  ingestion_worker:
+    build:
+      context: ./ingestion-engine
+      dockerfile: Dockerfile.prod
+    restart: always
+    environment:
+      - KAFKA_BROKERS=redpanda:29092
+      - S3_ENDPOINT=http://s3-server:9000
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - BUCKET_NAME=transacciones-audit-x
+    depends_on:
+      - redpanda
+      - s3-server
+    networks:
+      - internal_net
+  
+  telegraf:
+    image: telegraf:1.30-alpine
+    restart: always
+    environment:
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+    volumes:
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks:
+      - internal_net
+
+networks:
+  internal_net:
+    internal: true # Esta red no tiene salida a internet ni mapeo de puertos
+  public_net:
+    driver: bridge
+
+volumes:
+  minio_data:
+  influxdb_data:
+  grafana_data:
+  postgres_data:
+  redpanda_data:

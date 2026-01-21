@@ -18,6 +18,9 @@ Rails.application.configure do
   # Cache assets for far-future expiry since they are all digest stamped.
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
 
+  # 4. No servir archivos estáticos (de eso se encargará el servidor web)
+  config.public_file_server.enabled = ENV["RAILS_SERVE_STATIC_FILES"].present?
+
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
@@ -28,7 +31,7 @@ Rails.application.configure do
   # config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -78,6 +81,9 @@ Rails.application.configure do
 
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
+
+  # 2. Usar las credenciales cifradas para el nombre del host
+  config.hosts << "fedegos.ar" # O el IP de tu futuro VPS
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   # config.hosts = [

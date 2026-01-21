@@ -62,6 +62,9 @@ down: ## Bajar todo sin limpiar volúmenes
 
 restart-all: down up ## Reiniciar todos los contenendores.
 
+restart-web: ## Reiniciar la web.
+	docker compose restart web
+
 down-volumes: ## Bajar todo y limpiar volúmenes (atención: borra datos persistentes)
 	docker compose down -v
 
@@ -103,3 +106,8 @@ backup-rules: ## Exportar las CategoryRules a un archivo YAML
 	docker compose exec web rails runner "File.write('db/category_rules_backup.yml', CategoryRule.all.to_yaml)"
 	@echo "💾 Reglas exportadas a db/category_rules_backup.yml"
 
+audit-gems: ## Audita las gemas de rails. 
+	docker compose exec web bundle exec bundle-audit check
+
+install-gems: ## Instala las gemas en Gemfile
+	docker compose exec web bundle install

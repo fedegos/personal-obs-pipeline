@@ -1,0 +1,60 @@
+# syntax=docker/dockerfile:1
+# 1. ETAPA DE CONSTRUCCIÓN
+FROM ruby:3.4.1-slim as base
+
+WORKDIR /app
+
+# Instalar dependencias del sistema necesarias para compilar gemas y assets
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    libpq-dev \
+    git \
+    curl \
+    nodejs \
+    npm && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Instalar dependencias de Ruby
+COPY Gemfile Gemfile.lock ./
+RUN bundle config set --local without 'development test' && \
+    bundle install --jobs 4 --retry 3
+
+# Copiar el código de la aplicación
+COPY . .
+
+# Precompilar assets (CSS/JS)
+# Se usa una SECRET_KEY_BASE dummy solo para la compilación
+RUN RAILS_ENV=production PRECOMPILE_ASSETS=true \
+    SECRET_KEY_BASE_DUMMY=1 \
+    bundle exec rails assets:precompile
+
+
+# 2. ETAPA FINAL (Imagen ligera para el VPS)
+FROM ruby:3.4.1-slim
+
+WORKDIR /app
+
+# Instalar solo las dependencias de ejecución (libpq para Postgres)
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    libpq5 \
+    curl && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Copiar gemas e instalables desde la etapa de construcción
+COPY --from=base /usr/local/bundle /usr/local/bundle
+COPY --from=base /app /app
+
+# Configuración de entorno para producción
+ENV RAILS_ENV=production \
+    RAILS_LOG_TO_STDOUT=true \
+    RAILS_SERVE_STATIC_FILES=true
+
+# Crear un usuario no-root por seguridad en la nube
+RUN useradd rails --create-home --shell /bin/bash && \
+    chown -R rails:rails db log storage tmp
+USER rails:rails
+
+EXPOSE 3000
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
