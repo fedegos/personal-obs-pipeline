@@ -27,7 +27,7 @@ services:
     command:
       - |
         until rpk cluster info --brokers redpanda:29092; do sleep 2; done
-        rpk topic create transacciones_raw file_results transacciones_clean --brokers redpanda:29092
+        rpk topic create transacciones_raw file_results file_uploaded transacciones_clean --brokers redpanda:29092
         echo "✅ Tópicos creados correctamente."
 
   # --- ALMACENAMIENTO Y VISUALIZACIÓN ---
