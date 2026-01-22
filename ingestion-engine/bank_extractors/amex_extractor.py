@@ -22,7 +22,8 @@ def limpiar_moneda(columna: pd.Series, **kwargs) -> pd.Series:
 def fetch_gsheet_data(spreadsheet_id: str, sheet_name: str):
     """Acceso a Google Sheets por ID y nombre de pestaña dinámico."""
     # El archivo credentials.json debe estar en la raíz del contenedor del worker
-    gc = gspread.service_account(filename='credentials.json')
+    # gc = gspread.service_account(filename='credentials.json')
+    gc = gspread.service_account(filename=os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'credentials.json'))
     sh = gc.open(spreadsheet_id)
     
     # En 2026, usamos el nombre de pestaña enviado desde la UI de Rails
