@@ -96,6 +96,10 @@ Rails.application.configure do
 
   config.hosts << "gosrom.com.ar" # O el IP de tu futuro VPS
 
+  config.hosts << "46.224.230.14"
+  # 2. Regla dinámica para Coolify (sslip.io)
+  config.hosts << ->(host) { host.end_with?(".sslip.io") }
+
   # Enable DNS rebinding protection and other `Host` header attacks.
   # config.hosts = [
   #   "example.com",     # Allow requests from example.com
