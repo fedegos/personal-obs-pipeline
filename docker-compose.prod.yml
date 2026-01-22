@@ -101,7 +101,12 @@ services:
     networks:
       - internal_net
       - public_net
-
+    deploy:
+      labels:
+        - "traefik.enable=true" # <--- OBLIGATORIO para tu proxy
+        - "traefik.http.services.auditx-web.loadbalancer.server.port=3000"
+        - "coolify.managed=true"
+        
   karafka_server:
     build: 
       context: ./web-enrichment-app
