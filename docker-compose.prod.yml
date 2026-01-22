@@ -113,7 +113,7 @@ services:
     restart: always
     # El comando sobreescribe el inicio para crear el JSON antes que el worker
     command: >
-      sh -c "echo \"$$GOOGLE_JSON_CONTENT\" > /app/credentials.json && python main.py"
+      sh -c "echo \"$$GOOGLE_JSON_CONTENT\" > /app/tmp/credentials.json && python main.py"
     environment:
       - KAFKA_BROKERS=redpanda:29092
       - S3_ENDPOINT=http://s3-server:9000
@@ -121,7 +121,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - BUCKET_NAME=transacciones-audit-x
       # Esta variable la busca automáticamente la librería de Google en Python
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/tmp/credentials.json
       # El contenido que pegarás en Coolify
       - GOOGLE_JSON_CONTENT=${GOOGLE_JSON_CONTENT}      
     depends_on:
