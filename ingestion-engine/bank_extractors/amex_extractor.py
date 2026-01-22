@@ -2,8 +2,11 @@ import pandas as pd
 import numpy as np
 import gspread
 import traceback
+
 from . import register_extractor
 from utils.data_standardizer import apply_standard_format
+
+import os
 
 # --- Utilidades de Limpieza ---
 
