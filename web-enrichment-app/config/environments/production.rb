@@ -86,7 +86,12 @@ Rails.application.configure do
 
   # 2. Usar las credenciales cifradas para el nombre del host
   config.hosts << /.*\.sslip\.io\z/
-  config.hosts << /46\.224\.230\.14\z/
+  config.hosts << /.*\.sslip\.io:3000\z/
+  config.hosts << "46.224.230.14"
+  config.hosts << "46.224.230.14:3000"
+
+  # 3. Asegura que Rails confíe en el Proxy de Coolify para los encabezados
+  config.assume_ssl = true # Esto le dice a Rails que confíe en que el SSL ya se manejó afuera
 
   config.hosts << "gosrom.com.ar" # O el IP de tu futuro VPS
 
