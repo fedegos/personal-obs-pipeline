@@ -113,7 +113,7 @@ services:
     restart: always
     # El comando sobreescribe el inicio para crear el JSON antes que el worker
     command: >
-      sh -c "echo '$$GOOGLE_JSON_CONTENT' | base64 -d > /tmp/credentials.json && python main.py"
+      sh -c "echo '$$GOOGLE_JSON_CONTENT' | tr -d ' \n\r' | base64 -d > /tmp/credentials.json && python main.py"
     environment:
       - KAFKA_BROKERS=redpanda:29092
       - S3_ENDPOINT=http://s3-server:9000
