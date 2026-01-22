@@ -101,12 +101,14 @@ services:
     networks:
       - internal_net
       - coolify_proxy_net # <--- Agregamos esta red específica
-
     deploy:
       labels:
         - "traefik.enable=true" # <--- OBLIGATORIO para tu proxy
         - "traefik.http.services.auditx-web.loadbalancer.server.port=3000"
+        - "traefik.http.routers.auditx-web.middlewares=auditx-headers"
+        - "traefik.http.middlewares.auditx-headers.headers.customrequestheaders.X-Forwarded-Proto=http"
         - "coolify.managed=true"
+        
         
   karafka_server:
     build: 

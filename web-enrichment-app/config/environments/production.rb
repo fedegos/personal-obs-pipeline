@@ -34,6 +34,8 @@ Rails.application.configure do
   config.force_ssl = false
   # HABILITAR DESPUES
 
+  config.action_controller.forgery_protection_origin_check = false
+
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
