@@ -22,6 +22,7 @@ services:
   # --- AUTOMATIZACIÓN DE TÓPICOS ---
   redpanda_setup:
     image: redpandadata/redpanda:v25.3.5
+    restart: "no"
     depends_on:
       - redpanda
     networks:
