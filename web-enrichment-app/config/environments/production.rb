@@ -83,7 +83,8 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # 2. Usar las credenciales cifradas para el nombre del host
-  config.hosts << ".sslip.io"
+  config.hosts << /.*\.sslip\.io\z/
+  config.hosts << /46\.224\.230\.14\z/
 
   config.hosts << "gosrom.com.ar" # O el IP de tu futuro VPS
 
