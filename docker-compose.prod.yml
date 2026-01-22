@@ -63,7 +63,7 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - internal_net
-      - public_net
+      - coolify_proxy_net 
 
   # --- APLICACIÓN WEB-ENRICHMENT ---
   db:
@@ -100,7 +100,8 @@ services:
       - redpanda
     networks:
       - internal_net
-      - public_net
+      - coolify_proxy_net # <--- Agregamos esta red específica
+
     deploy:
       labels:
         - "traefik.enable=true" # <--- OBLIGATORIO para tu proxy
@@ -165,8 +166,9 @@ services:
 networks:
   internal_net:
     internal: true # Esta red no tiene salida a internet ni mapeo de puertos
-  public_net:
-    driver: bridge
+  coolify_proxy_net:
+    external: true
+    name: coolify # <--- Esto le dice a Docker que use la red donde vive el proxy
 
 volumes:
   minio_data:
