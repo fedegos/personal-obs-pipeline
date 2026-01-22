@@ -31,8 +31,7 @@ Rails.application.configure do
   # config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = false
-  # HABILITAR DESPUES
+  config.force_ssl = true
 
   config.action_controller.forgery_protection_origin_check = false
 
@@ -87,13 +86,13 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # 2. Usar las credenciales cifradas para el nombre del host
-  config.hosts << /.*\.sslip\.io\z/
-  config.hosts << /.*\.sslip\.io:3000\z/
-  config.hosts << "46.224.230.14"
-  config.hosts << "46.224.230.14:3000"
+  # config.hosts << /.*\.sslip\.io\z/
+  # config.hosts << /.*\.sslip\.io:3000\z/
+  # config.hosts << "46.224.230.14"
+  # config.hosts << "46.224.230.14:3000"
 
   # 3. Asegura que Rails confíe en el Proxy de Coolify para los encabezados
-  config.assume_ssl = true # Esto le dice a Rails que confíe en que el SSL ya se manejó afuera
+  # config.assume_ssl = true # Esto le dice a Rails que confíe en que el SSL ya se manejó afuera
 
   config.hosts << "gosrom.com.ar" # O el IP de tu futuro VPS
 
