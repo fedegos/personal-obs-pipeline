@@ -24,12 +24,19 @@
       <% end %>
 
       <div style="height: 20px;"></div>
+      
+      <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Auditoría</div>
+        <%= link_to audit_corrections_path, class: "nav-link #{'active' if controller_name == 'audit_corrections'}" do %>
+        <span style="width: 24px;">📝</span> Correcciones
+      <% end %>
+
+      <div style="height: 20px;"></div>
 
       <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Inteligencia</div>
       <%= link_to category_rules_path, class: "nav-link #{'active' if controller_name == 'category_rules'}" do %>
         <span style="width: 24px;">⚙️</span> Reglas de Motor
       <% end %>
-      
+
       <div style="height: 20px;"></div>
 
       <div style="padding: 0 24px 10px; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Sistema</div>

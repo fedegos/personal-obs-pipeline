@@ -1,7 +1,12 @@
-<% # 1. Elimina la fila de la tabla instantáneamente %>
-<%= turbo_stream.remove "transaction_#{@transaction.id}" %>
+<%# 1. ACTUALIZA la fila en lugar de removerla (para que veas el cambio en la tabla) %>
+<%= turbo_stream.replace dom_id(@transaction) do %>
+  <%= render partial: "transaction", locals: { transaction: @transaction } %>
+<% end %>
 
-<% # 2. Inserta la notificación en el contenedor de flash %>
+<%# 2. CIERRA la tarjeta flotante (el modal) %>
+<%= turbo_stream.update "modal-container", "" %>
+
+<%# 3. NOTIFICACIÓN idéntica a la que ya usas %>
 <%= turbo_stream.append "flash-container" do %>
-  <%= render partial: "shared/flash", locals: { message: "Gasto enviado a InfluxDB" } %>
+  <%= render partial: "shared/flash", locals: { message: "Corrección sincronizada con Kafka" } %>
 <% end %>

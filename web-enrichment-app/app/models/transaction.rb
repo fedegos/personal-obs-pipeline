@@ -1,4 +1,5 @@
 class Transaction < ApplicationRecord
+  include Publishable
   # Validaciones para asegurar integridad antes de enviar a InfluxDB
   validates :event_id, presence: true, uniqueness: true
   validates :monto, :fecha, :detalles, presence: true

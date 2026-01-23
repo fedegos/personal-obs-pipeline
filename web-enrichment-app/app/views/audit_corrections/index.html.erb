@@ -1,0 +1,87 @@
+<%# app/views/audit_corrections/index.html.erb %>
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+  
+  <%# ZONA FIJA: Header + Buscador %>
+  <div style="position: sticky; top: 0; background: rgba(248, 250, 252, 0.9); backdrop-filter: blur(12px); z-index: 40; padding: 24px 0 16px; border-bottom: 1px solid #e2e8f0; margin-bottom: 32px;">
+    <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+      <div>
+        <h2 style="color: #0f172a; margin: 0; font-size: 1.5rem; letter-spacing: -0.025em;">Módulo de Correcciones</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-top: 4px;">Auditoría de movimientos aprobados y sincronización con Kafka.</p>
+      </div>
+      <div id="results-counter" style="color: #94a3b8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">
+        Mostrando registros recientes
+      </div>
+    </header>
+
+    <%# Buscador Estilizado - Corregido el ancho con Flexbox %>
+    <%= form_with url: audit_corrections_path, method: :get, 
+                  data: { controller: "search", turbo_action: "advance" }, 
+                  style: "display: flex; gap: 16px; flex-wrap: wrap; align-items: center;" do |f| %>
+      
+      <div style="position: relative; flex: 2; min-width: 300px; max-width: 600px;">
+        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;">🔍</span>
+        <%= f.text_field :query, 
+              placeholder: "Buscar por ID, detalle o categoría...", 
+              value: params[:query],
+              autocomplete: "off",
+              data: { action: "input->search#submit" }, 
+              class: "input-search-ux",
+              style: "padding-left: 40px;" %>
+      </div>
+      
+      <div style="flex: 1; min-width: 150px; max-width: 200px;">
+        <%= f.date_field :fecha, 
+              value: params[:fecha],
+              data: { action: "change->search#submit" }, 
+              class: "input-search-ux" %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# CONTENEDOR DE RESULTADOS %>
+  <div id="audit_results_container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; padding-bottom: 50px;">
+    <%= render partial: "transaction", collection: @records %>
+  </div>
+
+  <%# SCROLL INFINITO %>
+  <div id="next_page" style="margin-top: 20px; text-align: center; padding-bottom: 100px;">
+    <% if @pagy.next %>
+      <%= turbo_frame_tag "audit_table_next", 
+            src: audit_corrections_path(page: @pagy.next, query: params[:query], format: :turbo_stream), 
+            loading: :lazy %>
+    <% end %>
+  </div>
+</div>
+
+<div id="modal-container"></div>
+
+<style>
+  .input-search-ux {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    color: #1e293b;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+  }
+
+  .input-search-ux:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+  }
+
+  #audit_results_container > div {
+    animation: cardEntrance 0.5s ease-out;
+  }
+
+  @keyframes cardEntrance {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+</style>

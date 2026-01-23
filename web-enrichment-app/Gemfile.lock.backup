@@ -478,7 +478,7 @@ DEPENDENCIES
   jbuilder
   kamal
   karafka
-  pagy (~> 9.3)
+  pagy (~> 9.4)
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)

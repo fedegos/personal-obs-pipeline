@@ -1,0 +1,52 @@
+<%= turbo_stream.update "modal-container" do %>
+  <div id="modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    
+    <div style="background: white; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative; animation: slideUp 0.3s ease-out;">
+      
+      <%# Botón Cerrar %>
+      <%= link_to "✕", "#", data: { action: "click->modal#close" }, style: "position: absolute; top: 16px; right: 16px; text-decoration: none; color: #64748b; font-size: 1.2rem;" %>
+
+      <div style="padding: 24px;">
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0; color: #1e293b;">Corregir Transacción</h3>
+          <p style="margin: 4px 0 0; color: #64748b; font-size: 0.85rem;">ID: <%= @transaction.event_id.last(12) %></p>
+        </div>
+
+        <%= form_with model: @transaction, url: audit_correction_path(@transaction), method: :patch do |f| %>
+          
+          <%# Header similar a tus tarjetas %>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;"><%= @transaction.fecha.strftime("%d %b, %Y") %></span>
+            <span style="font-size: 1.1rem; font-weight: 800; color: #0f172a;"><%= number_to_currency(@transaction.monto) %></span>
+          </div>
+
+          <div style="font-size: 0.95rem; color: #1e293b; margin-bottom: 20px; font-weight: 500;"><%= @transaction.detalles %></div>
+
+          <%# Campos de Categoría y Subcategoría %>
+          <div data-controller="combo" style="display: grid; gap: 15px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <%= f.label :categoria, "Categoría", style: "font-size: 0.7rem; color: #64748b; font-weight: bold;" %>
+                <%= f.text_field :categoria, list: "categories-suggestions", data: { combo_target: "input", action: "input->combo#checkNew" }, class: "input-edit" %>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <%= f.label :sub_categoria, "Subcategoría", style: "font-size: 0.7rem; color: #64748b; font-weight: bold;" %>
+                <%= f.text_field :sub_categoria, list: "subcategories-suggestions", data: { combo_target: "subInput" }, class: "input-edit" %>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <%= f.label :sentimiento, "Impacto / Sentimiento", style: "font-size: 0.7rem; color: #64748b; font-weight: bold;" %>
+              <%= f.select :sentimiento, ['Necesario', 'Deseo', 'Inversión'], {}, { class: "input-edit", style: "background: white;" } %>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+              <%= f.submit "✅ Guardar Cambios", style: "background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer;" %>
+              <button type="button" onclick="document.getElementById('modal-overlay').remove()" style="background: #f1f5f9; color: #475569; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancelar</button>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

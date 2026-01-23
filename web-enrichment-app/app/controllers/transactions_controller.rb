@@ -21,8 +21,8 @@ class TransactionsController < ApplicationController
     if @transaction.update(transaction_params.merge(aprobado: true))
       
       # 1. Publicar el evento enriquecido en Kafka Clean (hacia Telegraf -> InfluxDB)
-      publish_clean_event(@transaction)
-
+      @transaction.publish_clean_event
+      
       # 2. Responder al navegador
       respond_to do |format|
         format.turbo_stream # Busca approve.turbo_stream.erb
@@ -43,31 +43,4 @@ class TransactionsController < ApplicationController
     params.require(:transaction).permit(:categoria, :sub_categoria,:sentimiento)
   end
 
-  def publish_clean_event(transaction)
-    # Construimos el esquema final que Telegraf espera para InfluxDB
-    payload = {
-      event_id:      transaction.event_id,
-      fecha:         transaction.fecha.iso8601, # Formato estándar para InfluxDB
-      monto:         transaction.monto.to_f,
-      moneda:        transaction.moneda,
-      detalles:      transaction.detalles,
-      categoria:     transaction.categoria,
-      sub_categoria: transaction.sub_categoria, # Incluido para InfluxDB
-      sentimiento:   transaction.sentimiento,
-      red:           transaction.red,
-      processed_at:  Time.current.iso8601
-    }
-
-    # Publicación asíncrona para no bloquear la interfaz de usuario
-    begin
-      Karafka.producer.produce_async(
-        topic: 'transacciones_clean',
-        payload: payload.to_json,
-        key: transaction.event_id
-      )
-    rescue => e
-      # Logeamos el error pero permitimos que la app siga (el registro ya está en Postgres)
-      Rails.logger.error "❌ Error publicando en Kafka Clean: #{e.message}"
-    end
-  end
 end

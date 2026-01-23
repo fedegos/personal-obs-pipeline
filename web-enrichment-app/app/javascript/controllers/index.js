@@ -15,3 +15,6 @@ application.register("hello", HelloController)
 
 import ParametersController from "controllers/parameters_controller"
 application.register("parameters", ParametersController)
+
+import SearchController from "controllers/search_controller"
+application.register("search", SearchController)
