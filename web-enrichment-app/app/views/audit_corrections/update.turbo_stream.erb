@@ -1,12 +1,12 @@
-<%# 1. Actualizamos la fila específica en la tabla %>
+<%# 1. Reemplazamos la tarjeta editada con los nuevos datos %>
 <%= turbo_stream.replace dom_id(@transaction) do %>
   <%= render partial: "transaction", locals: { transaction: @transaction } %>
 <% end %>
 
-<%# 2. Limpiamos el modal (igual que en el show) %>
+<%# 2. Limpiamos el modal (usando el ID del overlay o el contenedor) %>
 <%= turbo_stream.update "modal-container", "" %>
 
-<%# 3. Alerta evanescente %>
-<%= turbo_stream.prepend "flash-messages" do %>
-  <div class="flash-notice">Sincronizado con éxito y enviado a Kafka</div>
+<%# 3. Disparamos el flash usando tu partial compartido y el local 'message' %>
+<%= turbo_stream.append "flash-container" do %>
+  <%= render partial: "shared/flash", locals: { message: "Corrección sincronizada con Kafka ✅" } %>
 <% end %>

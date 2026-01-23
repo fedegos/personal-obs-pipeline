@@ -52,8 +52,6 @@ class AuditCorrectionsController < ApplicationController
       # El método publish_clean_event ya debería manejar el payload correcto
       @transaction.publish_clean_event
 
-      flash.now[:notice] = "Sincronizado con éxito"
-      
       respond_to do |format|
         format.turbo_stream # Renderiza update.turbo_stream.erb
         format.html { redirect_to audit_corrections_path, notice: "Registro actualizado." }
