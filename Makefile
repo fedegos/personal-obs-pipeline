@@ -16,6 +16,10 @@ help: ## Muestra esta ayuda
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
 
 
+rewind-web-transactions: ## Vuelve a emitir eventos en transacciones_clean de registros con aprobado: true
+	@echo "⏪ Reprocesando transacciones aprobadas"
+	docker compose exec web rake data:replay_clean
+
 rewind-kafka: ## Resetear el puntero de Telegraf al inicio (sin borrar el tópico)
 	@echo "⏪ Rebobinando puntero de Telegraf al inicio..."
 	docker compose stop telegraf
