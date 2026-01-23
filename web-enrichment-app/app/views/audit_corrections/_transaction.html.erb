@@ -31,7 +31,7 @@
       <%= transaction.sub_categoria %>
     </span>
     <span style="background: #fef3c7; color: #92400e; font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; border: 1px solid #fde68a;">
-      <%= transaction.sentimiento %>
+      <%= Transaction::SENTIMIENTOS[transaction.sentimiento] || transaction.sentimiento %>
     </span>
   </div>
 

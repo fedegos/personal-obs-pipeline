@@ -1,5 +1,15 @@
 class Transaction < ApplicationRecord
   include Publishable
+
+  # Definimos los sentimientos con sus emojis para la UI
+  SENTIMIENTOS = {
+    "Necesario" => "Necesario 🛠️",
+    "Deseo"     => "Deseo ✨",
+    "Inversión" => "Inversión 📈",
+    "Ahorro"    => "Ahorro 💰",
+    "Hormiga"   => "Gasto Hormiga 🐜"
+  }.freeze
+
   # Validaciones para asegurar integridad antes de enviar a InfluxDB
   validates :event_id, presence: true, uniqueness: true
   validates :monto, :fecha, :detalles, presence: true

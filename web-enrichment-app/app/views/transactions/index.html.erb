@@ -67,12 +67,13 @@
                 </div>
               </div>
 
+              <%# Dentro del formulario de aprobación de transacciones %>
               <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px;">
                 <%= f.label :sentimiento, "Impacto / Sentimiento", style: "font-size: 0.7rem; color: #64748b; font-weight: bold; text-transform: uppercase;" %>
                 <%= f.select :sentimiento, 
-                    ['Necesario', 'Deseo', 'Inversión'], 
-                    {}, 
-                    { style: "width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; background: white;" } %>
+                      Transaction::SENTIMIENTOS.map { |k, v| [v, k] }, 
+                      { prompt: "Seleccionar..." }, 
+                      { style: "width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.9rem; background: white;" } %>
               </div>
 
               <%= f.submit "✅ Aprobar Transacción", 

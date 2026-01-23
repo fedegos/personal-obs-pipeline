@@ -44,13 +44,10 @@
 
             <div style="display: flex; flex-direction: column; gap: 6px;">
               <%= f.label :sentimiento, "IMPACTO / SENTIMIENTO", style: "font-size: 0.7rem; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em;" %>
-              <%= f.select :sentimiento, [
-                    ['Necesario 🛠️', 'Necesario'], 
-                    ['Deseo ✨', 'Deseo'], 
-                    ['Inversión 📈', 'Inversión'],
-                    ['Ahorro 💰', 'Ahorro'],
-                    ['Gasto Hormiga 🐜', 'Hormiga']
-                  ], {}, { class: "input-moderno", style: "background-image: none;" } %>
+              <%= f.select :sentimiento, 
+                      Transaction::SENTIMIENTOS.map { |key, value| [value, key] }, 
+                      { prompt: "Selecciona impacto..." }, 
+                      { class: "input-moderno", style: "background-image: none;" } %>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
