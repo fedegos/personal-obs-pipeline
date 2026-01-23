@@ -1,48 +1,62 @@
+<%# app/views/audit_corrections/edit.turbo_stream.erb %>
 <%= turbo_stream.update "modal-container" do %>
   <div id="modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px;">
     
-    <div style="background: white; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative; animation: slideUp 0.3s ease-out;">
+    <div style="background: white; border-radius: 20px; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; overflow: hidden;">
       
-      <%# Botón Cerrar %>
-      <%= link_to "✕", "#", data: { action: "click->modal#close" }, style: "position: absolute; top: 16px; right: 16px; text-decoration: none; color: #64748b; font-size: 1.2rem;" %>
+      <%# Botón Cerrar mejorado %>
+      <button type="button" onclick="document.getElementById('modal-overlay').remove()" 
+              style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; cursor: pointer; font-weight: bold;">✕</button>
 
-      <div style="padding: 24px;">
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0; color: #1e293b;">Corregir Transacción</h3>
-          <p style="margin: 4px 0 0; color: #64748b; font-size: 0.85rem;">ID: <%= @transaction.event_id.last(12) %></p>
+      <div style="padding: 32px;">
+        <div style="margin-bottom: 24px;">
+          <h3 style="margin: 0; color: #0f172a; font-size: 1.25rem;">Corregir Transacción</h3>
+          <p style="margin: 4px 0 0; color: #64748b; font-size: 0.8rem; font-family: monospace;">UUID: <%= @transaction.event_id.last(12) %></p>
         </div>
 
         <%= form_with model: @transaction, url: audit_correction_path(@transaction), method: :patch do |f| %>
           
-          <%# Header similar a tus tarjetas %>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
-            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;"><%= @transaction.fecha.strftime("%d %b, %Y") %></span>
-            <span style="font-size: 1.1rem; font-weight: 800; color: #0f172a;"><%= number_to_currency(@transaction.monto) %></span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <span style="font-size: 0.9rem; color: #475569; font-weight: 600;">📅 <%= @transaction.fecha.strftime("%d %b, %Y") %></span>
+            <span style="font-size: 1.25rem; font-weight: 900; color: #0f172a;"><%= number_to_currency(@transaction.monto) %></span>
           </div>
 
-          <div style="font-size: 0.95rem; color: #1e293b; margin-bottom: 20px; font-weight: 500;"><%= @transaction.detalles %></div>
+          <div style="font-size: 1rem; color: #334155; margin-bottom: 24px; font-weight: 500; line-height: 1.5; padding: 0 4px;">
+            <%= @transaction.detalles %>
+          </div>
 
-          <%# Campos de Categoría y Subcategoría %>
-          <div data-controller="combo" style="display: grid; gap: 15px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <%= f.label :categoria, "Categoría", style: "font-size: 0.7rem; color: #64748b; font-weight: bold;" %>
-                <%= f.text_field :categoria, list: "categories-suggestions", data: { combo_target: "input", action: "input->combo#checkNew" }, class: "input-edit" %>
+          <div data-controller="combo" style="display: grid; gap: 20px;">
+            <%# Datalists para el controlador Combo %>
+            <div id="categories-data" data-map="<%= @categories_map.to_json %>" style="display: none;"></div>
+            <datalist id="categories-suggestions"><% @categories_list.each do |cat| %><option value="<%= cat %>"><% end %></datalist>
+            <datalist id="subcategories-suggestions"></datalist>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <%= f.label :categoria, "CATEGORÍA", style: "font-size: 0.7rem; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em;" %>
+                <%= f.text_field :categoria, list: "categories-suggestions", data: { combo_target: "input", action: "input->combo#checkNew" }, class: "input-moderno" %>
               </div>
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <%= f.label :sub_categoria, "Subcategoría", style: "font-size: 0.7rem; color: #64748b; font-weight: bold;" %>
-                <%= f.text_field :sub_categoria, list: "subcategories-suggestions", data: { combo_target: "subInput" }, class: "input-edit" %>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <%= f.label :sub_categoria, "SUBCATEGORÍA", style: "font-size: 0.7rem; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em;" %>
+                <%= f.text_field :sub_categoria, list: "subcategories-suggestions", data: { combo_target: "subInput" }, class: "input-moderno" %>
               </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <%= f.label :sentimiento, "Impacto / Sentimiento", style: "font-size: 0.7rem; color: #64748b; font-weight: bold;" %>
-              <%= f.select :sentimiento, ['Necesario', 'Deseo', 'Inversión'], {}, { class: "input-edit", style: "background: white;" } %>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <%= f.label :sentimiento, "IMPACTO / SENTIMIENTO", style: "font-size: 0.7rem; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em;" %>
+              <%= f.select :sentimiento, [
+                    ['Necesario 🛠️', 'Necesario'], 
+                    ['Deseo ✨', 'Deseo'], 
+                    ['Inversión 📈', 'Inversión'],
+                    ['Ahorro 💰', 'Ahorro'],
+                    ['Gasto Hormiga 🐜', 'Hormiga']
+                  ], {}, { class: "input-moderno", style: "background-image: none;" } %>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-              <%= f.submit "✅ Guardar Cambios", style: "background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer;" %>
-              <button type="button" onclick="document.getElementById('modal-overlay').remove()" style="background: #f1f5f9; color: #475569; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancelar</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+              <%= f.submit "✅ Guardar Cambios", style: "background: #0f172a; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;" %>
+              <button type="button" onclick="document.getElementById('modal-overlay').remove()" 
+                      style="background: #f1f5f9; color: #475569; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer;">Cancelar</button>
             </div>
           </div>
         <% end %>
