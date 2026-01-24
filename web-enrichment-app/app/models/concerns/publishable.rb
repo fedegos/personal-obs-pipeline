@@ -13,8 +13,7 @@ module Publishable
       categoria:     categoria,
       sub_categoria: sub_categoria,
       sentimiento:   sentimiento,
-      red:           red,
-      processed_at:  Time.current.iso8601
+      red:           red
     }
 
     begin
