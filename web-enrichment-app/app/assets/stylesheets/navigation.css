@@ -1,0 +1,37 @@
+/* app/assets/stylesheets/navigation.css */
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.nav-link:hover {
+  background: #334155;
+  color: white;
+}
+
+.nav-link.active {
+  background: #3b82f6;
+  color: white;
+  border-right: 4px solid #fff;
+}
+
+.logout-icon {
+  background: #334155;
+  padding: 6px;
+  border-radius: 6px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.logout-icon:hover {
+  background: #ef4444;
+}

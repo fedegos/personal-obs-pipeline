@@ -8,7 +8,10 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
- 
+
+  @import url("layout.css");
+  @import url("navigation.css");
+
   .transaction-frame {
     display: table-row-group; /* Mantiene la integridad de la tabla HTML */
     transition: all 0.4s ease-in-out;
