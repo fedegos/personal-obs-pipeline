@@ -1,0 +1,25 @@
+<%# app/views/layouts/_sidebar_user_profile.html.erb %>
+<% if user_signed_in? %>
+  <div class="sidebar-user-box">
+    <div class="user-status-label">Sesión Activa</div>
+    
+    <div class="user-profile">
+      <div class="user-avatar">
+        <%= current_user.email.first.upcase %>
+      </div>
+
+      <div class="user-info">
+        <div class="user-name" title="<%= current_user.email %>">
+          <%= current_user.email.split('@').first %>
+        </div>
+      </div>
+
+      <%= link_to destroy_user_session_path, 
+                  data: { turbo_method: :delete }, 
+                  class: "logout-icon", 
+                  title: "Cerrar Sesión" do %>
+        <span>🚪</span>
+      <% end %>
+    </div>
+  </div>
+<% end %>

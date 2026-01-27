@@ -1,0 +1,94 @@
+/* Contenedor principal de la tarjeta */
+.transaction-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+  min-height: 220px;
+}
+
+/* El ID en mono y el monto */
+.transaction-card-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 12px;
+}
+
+.transaction-id-tag {
+  font-size: 0.75rem; 
+  font-family: monospace; 
+  color: #94a3b8; 
+  background: #f8fafc; 
+  padding: 4px 8px; 
+  border-radius: 6px; 
+  border: 1px solid #f1f5f9;
+}
+
+.transaction-amount {
+  font-weight: 800; 
+  color: #0f172a; 
+  font-size: 1.2rem;
+}
+
+/* Cuerpo de la tarjeta */
+.transaction-card-body {
+  margin-bottom: 16px;
+}
+
+.transaction-details {
+  font-weight: 600; 
+  color: #1e293b; 
+  font-size: 1rem; 
+  line-height: 1.4; 
+  margin-bottom: 4px;
+}
+
+.transaction-date {
+  font-size: 0.85rem; 
+  color: #64748b; 
+  display: flex; 
+  align-items: center; 
+  gap: 4px;
+}
+
+/* Pie de la tarjeta y botón */
+.transaction-card-footer {
+  margin-top: auto; 
+  padding-top: 16px; 
+  border-top: 1px dashed #e2e8f0; 
+  display: flex; 
+  justify-content: center;
+}
+
+.btn-correction-outline {
+  width: fit-content; 
+  min-width: 160px; 
+  text-align: center; 
+  background: #f1f5f9; 
+  color: #475569; 
+  padding: 8px 20px; 
+  border-radius: 8px; 
+  text-decoration: none; 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  transition: all 0.2s; 
+  border: 1px solid #cbd5e1; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 8px;
+}
+
+.btn-correction-outline:hover {
+  background: #e2e8f0; /* Valor del onmouseover original */
+  transform: translateY(-1px);
+}
+
+.btn-correction-outline:active {
+  transform: translateY(0);
+}

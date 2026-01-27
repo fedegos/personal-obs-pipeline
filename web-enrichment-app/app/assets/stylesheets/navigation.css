@@ -35,3 +35,112 @@
 .logout-icon:hover {
   background: #ef4444;
 }
+
+/* Contenedor principal del Sidebar */
+.sidebar-layout {
+  width: 260px; 
+  height: 100vh; 
+  background: #1e293b; 
+  color: white; 
+  position: fixed; 
+  left: 0; 
+  top: 0; 
+  display: flex; 
+  flex-direction: column; 
+  z-index: 1000;
+}
+
+/* Header del Sidebar */
+.sidebar-header {
+  padding: 24px; 
+  font-size: 1.5rem; 
+  font-weight: bold; 
+  border-bottom: 1px solid #334155; 
+  display: flex; 
+  align-items: center; 
+  gap: 10px;
+}
+
+/* Títulos de sección (Operaciones, Auditoría, etc.) */
+.nav-section-title {
+  padding: 0 24px 10px; 
+  font-size: 0.7rem; 
+  color: #94a3b8; 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em;
+}
+
+/* Espaciadores entre secciones */
+.nav-spacer {
+  height: 20px;
+}
+
+/* Contenedor de Usuario / Sesión */
+.sidebar-user-box {
+  padding: 16px; 
+  background: #0f172a; 
+  border-top: 1px solid #334155;
+}
+
+/* Versión en el footer */
+.sidebar-version {
+  padding: 16px 24px; 
+  font-size: 0.75rem; 
+  color: #64748b; 
+  border-top: 1px solid #334155;
+}
+
+/* Ajuste para los iconos de los links */
+.nav-link span {
+  width: 24px;
+  display: inline-block;
+}
+
+.nav-content {
+  flex: 1; 
+  padding: 20px 0;
+}
+
+/* Información del Usuario */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.user-status-label {
+  padding: 0 8px 10px;
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}

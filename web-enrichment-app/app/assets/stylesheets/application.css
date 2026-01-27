@@ -11,6 +11,9 @@
 
   @import url("layout.css");
   @import url("navigation.css");
+  @import url("badges.css");
+  @import url("cards.css");
+
 
   .transaction-frame {
     display: table-row-group; /* Mantiene la integridad de la tabla HTML */

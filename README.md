@@ -143,3 +143,49 @@ fi
 ```
 
 **Tip de 2026:** Puedes mantener este archivo abierto en una pestaña lateral de VS Code (modo Runme Dashboard) para operar el sistema sin salir de tu editor de código.
+
+### 📋 Volcar vistas (Audit de Clases)
+
+Este comando recorre tus vistas y copia todo al portapapeles de Windows desde WSL.
+
+```bash {"label":"dump-views"}
+find web-enrichment-app/app/views -type f -name "*.erb" -print0 | xargs -0 -I {} sh -c 'echo "--- FILE: {} ---"; cat {}; echo -e "\n"' | clip.exe
+```
+
+### 🔍 Buscador de Clases Huérfanas
+
+Si querés chequear una clase específica rápido:
+
+```bash {"label":"check-class"}
+# Reemplaza 'badge-category' por la clase que sospeches huérfana
+grep -r "badge" web-enrichment-app/app/views
+```
+
+### 📂 Generar Dump Unificado de Vistas
+
+Este comando crea un archivo llamado `vistas_audit_x.txt` con todo el contenido de `app/views`.
+Una vez ejecutado, podés adjuntar ese archivo al chat.
+
+```bash {"label":"generate-view-dump"}
+### 📂 Generar Dump Unificado de Vistas (Corregido)
+Este comando asegura que la carpeta de destino exista y guarda todo el contenido en la ruta especificada.
+
+```bash {"label": "generate-view-dump"}
+# 1. Definimos la ruta completa
+OUTPUT_FILE="data/dumps/vistas_audit_x.txt"
+
+# 2. Aseguramos que el directorio exista
+mkdir -p "$(dirname "$OUTPUT_FILE")"
+
+# 3. Limpiamos el archivo si ya existe
+> "$OUTPUT_FILE"
+
+# 4. Buscamos y concatenamos usando la variable de salida
+# Ajusta 'web-enrichment-app/app/views' si tu shell ya está dentro de esa carpeta
+find web-enrichment-app/app/views -type f -name "*.erb" -print0 | xargs -0 -I {} sh -c 'echo "--- FILE: {} ---" >> "'"$OUTPUT_FILE"'"; cat "{}" >> "'"$OUTPUT_FILE"'"; echo -e "\n\n" >> "'"$OUTPUT_FILE"'"'
+
+echo "✅ Proceso completado."
+echo "📍 Archivo generado en: $OUTPUT_FILE"
+echo "📏 Tamaño del archivo: $(du -h "$OUTPUT_FILE" | cut -f1)"
+```
+```
