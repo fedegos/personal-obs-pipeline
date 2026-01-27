@@ -1,10 +1,8 @@
 <%# app/views/audit_corrections/edit.turbo_stream.erb %>
 <%= turbo_stream.update "modal-container" do %>
   <div id="modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px;">
-    
     <div style="background: white; border-radius: 20px; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; overflow: hidden;">
       
-      <%# Botón Cerrar mejorado %>
       <button type="button" onclick="document.getElementById('modal-overlay').remove()" 
               style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; cursor: pointer; font-weight: bold;">✕</button>
 
@@ -15,7 +13,6 @@
         </div>
 
         <%= form_with model: @transaction, url: audit_correction_path(@transaction), method: :patch do |f| %>
-          
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
             <span style="font-size: 0.9rem; color: #475569; font-weight: 600;">📅 <%= @transaction.fecha.strftime("%d %b, %Y") %></span>
             <span style="font-size: 1.25rem; font-weight: 900; color: #0f172a;"><%= number_to_currency(@transaction.monto) %></span>
@@ -25,36 +22,17 @@
             <%= @transaction.detalles %>
           </div>
 
-          <div data-controller="combo" style="display: grid; gap: 20px;">
-            <%# Datalists para el controlador Combo %>
-            <div id="categories-data" data-map="<%= @categories_map.to_json %>" style="display: none;"></div>
-            <datalist id="categories-suggestions"><% @categories_list.each do |cat| %><option value="<%= cat %>"><% end %></datalist>
-            <datalist id="subcategories-suggestions"></datalist>
+          <%# LLAMADA AL PARTIAL EXTRAÍDO %>
+          <%= render "shared/transaction_form_fields", 
+                     f: f, 
+                     categories_map: @categories_map, 
+                     categories_list: @categories_list %>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div style="display: flex; flex-direction: column; gap: 6px;">
-                <%= f.label :categoria, "CATEGORÍA", style: "font-size: 0.7rem; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em;" %>
-                <%= f.text_field :categoria, list: "categories-suggestions", data: { combo_target: "input", action: "input->combo#checkNew" }, class: "input-moderno" %>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 6px;">
-                <%= f.label :sub_categoria, "SUBCATEGORÍA", style: "font-size: 0.7rem; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em;" %>
-                <%= f.text_field :sub_categoria, list: "subcategories-suggestions", data: { combo_target: "subInput" }, class: "input-moderno" %>
-              </div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <%= f.label :sentimiento, "IMPACTO / SENTIMIENTO", style: "font-size: 0.7rem; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em;" %>
-              <%= f.select :sentimiento, 
-                      Transaction::SENTIMIENTOS.map { |key, value| [value, key] }, 
-                      { prompt: "Selecciona impacto..." }, 
-                      { class: "input-moderno", style: "background-image: none;" } %>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-              <%= f.submit "✅ Guardar Cambios", style: "background: #0f172a; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;" %>
-              <button type="button" onclick="document.getElementById('modal-overlay').remove()" 
-                      style="background: #f1f5f9; color: #475569; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer;">Cancelar</button>
-            </div>
+          <div class="button-grid-modal">
+            <%= f.submit "✅ Guardar Cambios", class: "btn-submit-dark" %>
+            <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-cancel-soft">
+              Cancelar
+            </button>
           </div>
         <% end %>
       </div>

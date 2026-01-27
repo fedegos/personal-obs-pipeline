@@ -1,0 +1,49 @@
+/* app/assets/stylesheets/transactions.css */
+
+/* 1. El contenedor que centra todo */
+.transactions-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 50px;
+}
+
+/* 2. El header y sus textos */
+.transactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.transactions-title {
+  font-size: 1.5rem;
+  color: #1e293b;
+  margin: 0;
+}
+
+.transactions-subtitle {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+/* 3. El contenedor de las tarjetas (El Grid) */
+.transactions-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+.approval-form-box {
+  background-color: #f8fafc !important; /* Forzamos el color */
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
+  margin-top: 15px; /* Espacio con respecto a los badges de arriba */
+  
+  /* Esto es clave para que el fondo se vea y se extienda */
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  clear: both; 
+}

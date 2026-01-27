@@ -1,0 +1,37 @@
+<div data-controller="combo" class="form-combo-container">
+  <div id="categories-data" data-map="<%= categories_map.to_json %>" style="display: none;"></div>
+  
+  <datalist id="categories-suggestions">
+    <% categories_list.each do |cat| %><option value="<%= cat %>"><% end %>
+  </datalist>
+  <datalist id="subcategories-suggestions"></datalist>
+
+  <div class="form-grid-fields">
+    <div class="form-field-group">
+      <%= f.label :categoria, "Categoría", class: "form-label-caps" %>
+      <%= f.text_field :categoria, 
+          list: "categories-suggestions", 
+          data: { combo_target: "input", action: "input->combo#checkNew" }, 
+          placeholder: "Ej: Hogar",
+          autocomplete: "off",
+          class: "form-input-modern" %>
+    </div>
+    
+    <div class="form-field-group">
+      <%= f.label :sub_categoria, "Subcategoría", class: "form-label-caps" %>
+      <%= f.text_field :sub_categoria, 
+          list: "subcategories-suggestions", 
+          data: { combo_target: "subInput" }, 
+          placeholder: "Sub...",
+          class: "form-input-modern" %>
+    </div>
+  </div>
+
+  <div class="form-field-group">
+    <%= f.label :sentimiento, "Impacto / Sentimiento", class: "form-label-caps" %>
+    <%= f.select :sentimiento, 
+          Transaction::SENTIMIENTOS.map { |k, v| [v, k] }, 
+          { prompt: "Seleccionar..." }, 
+          { class: "form-input-modern form-select-modern" } %>
+  </div>
+</div>

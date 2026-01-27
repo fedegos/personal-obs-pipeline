@@ -1,0 +1,120 @@
+/* app/assets/stylesheets/components/transaction_forms.css */
+
+/* Contenedor principal del partial */
+.form-combo-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Grid para Categoría y Subcategoría */
+.form-grid-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+/* Grupos de etiqueta + input */
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Etiquetas (Labels) con el estilo original del Index */
+.form-label-caps {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Inputs y Selects */
+.form-input-modern {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  box-sizing: border-box; /* Evita el desborde */
+  font-family: inherit;
+  color: #1e293b;
+}
+
+.form-input-modern:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+/* Ajuste específico para el Select */
+.form-select-modern {
+  background-color: white;
+  background-image: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* Botón Principal (Aprobar/Guardar) */
+.btn-submit-primary {
+  width: 100%;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-submit-primary:hover {
+  background: #2563eb;
+}
+
+.btn-submit-primary:active {
+  transform: scale(0.98);
+}
+
+/* Botón Dark (Usado en el Modal) */
+.btn-submit-dark {
+  background: #0f172a;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-submit-dark:hover {
+  background: #1e293b;
+}
+
+/* Botón Cancelar/Cerrar */
+.btn-cancel-soft {
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-align: center;
+}
+
+.btn-cancel-soft:hover {
+  background: #e2e8f0;
+}
+
+/* Grids de Botones */
+.button-grid-modal {
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 12px; 
+  margin-top: 12px;
+}

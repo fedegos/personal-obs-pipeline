@@ -1,38 +1,7 @@
-<%# app/views/audit_corrections/_transaction.html.erb %>
-<div id="<%= dom_id(transaction) %>" class="transaction-card">
-  
-  <div class="transaction-card-header">
-    <span class="transaction-id-tag">
-      ID: <%= transaction.event_id.last(10) %>
-    </span>
-    <span class="transaction-amount">
-      <%= number_to_currency(transaction.monto) %>
-    </span>
-  </div>
-
-  <div class="transaction-card-body">
-    <div class="transaction-details">
-      <%= transaction.detalles %>
-    </div>
-    <div class="transaction-date">
-      <span>📅</span> <%= transaction.fecha.strftime("%d %b, %Y") %>
-    </div>
-  </div>
-
-  <%# Badges (Ya refactorizados en el paso anterior) %>
-  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
-    <span class="badge-category-audit"><%= transaction.categoria %></span>
-    <span class="badge-subcategory-audit"><%= transaction.sub_categoria %></span>
-    <span class="badge-feeling-audit">
-      <%= Transaction::SENTIMIENTOS[transaction.sentimiento] || transaction.sentimiento %>
-    </span>
-  </div>
-
-  <div class="transaction-card-footer">
-    <%= link_to edit_audit_correction_path(transaction, format: :turbo_stream), 
-        data: { turbo_prefetch: false }, 
-        class: "btn-correction-outline" do %>
-      <span>✏️</span> Corregir Registro
-    <% end %>
-  </div>
-</div>
+<%= render "shared/transaction_card", transaction: transaction do %>
+  <%= link_to edit_audit_correction_path(transaction, format: :turbo_stream), 
+      data: { turbo_prefetch: false }, 
+      class: "btn-correction-outline" do %>
+    <span>✏️</span> Corregir Registro
+  <% end %>
+<% end %>
