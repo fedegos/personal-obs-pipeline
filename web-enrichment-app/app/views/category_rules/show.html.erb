@@ -1,15 +1,20 @@
-<% content_for :title, "Showing category rule" %>
+<% content_for :title, "Regla: #{@category_rule.name}" %>
 
-<div class="md:w-2/3 w-full">
+<div class="page-container">
   <% if notice.present? %>
-    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
+    <p class="page-notice" id="notice"><%= notice %></p>
   <% end %>
 
-  <h1 class="font-bold text-4xl">Showing category rule</h1>
+  <header class="page-header">
+    <h1 class="page-title">⚙️ <%= @category_rule.name %></h1>
+    <p class="page-subtitle">Detalle de la regla de categorización.</p>
+  </header>
 
   <%= render @category_rule %>
 
-  <%= link_to "Edit this category rule", edit_category_rule_path(@category_rule), class: "w-full sm:w-auto text-center rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= link_to "Back to category rules", category_rules_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= button_to "Destroy this category rule", @category_rule, method: :delete, form_class: "sm:inline-block mt-2 sm:mt-0 sm:ml-2", class: "w-full rounded-md px-3.5 py-2.5 text-white bg-red-600 hover:bg-red-500 font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+  <div class="category-rules-form-actions">
+    <%= link_to "✏️ Editar", edit_category_rule_path(@category_rule), class: "btn-action-link" %>
+    <%= link_to "Volver al motor de reglas", category_rules_path, class: "btn-action-link" %>
+    <%= button_to "🗑️ Eliminar", @category_rule, method: :delete, class: "btn-action-delete", data: { turbo_confirm: "¿Eliminar esta regla?" } %>
+  </div>
 </div>

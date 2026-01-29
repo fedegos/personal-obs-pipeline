@@ -106,6 +106,12 @@ setup: up ## Preparar todo el sistema desde cero
 	docker compose exec web rails db:seed
 	@echo "✅ Sistema listo en http://localhost:3000"
 
+migrate: ## Ejecutar migraciones de Rails (dentro del contenedor web)
+	docker compose exec web rails db:migrate
+
+seed: ## Ejecutar seeds de Rails (dentro del contenedor web)
+	docker compose exec web rails db:seed
+
 backup-rules: ## Exportar las CategoryRules a un archivo YAML
 	docker compose exec web rails runner "File.write('db/category_rules_backup.yml', CategoryRule.all.to_yaml)"
 	@echo "💾 Reglas exportadas a db/category_rules_backup.yml"

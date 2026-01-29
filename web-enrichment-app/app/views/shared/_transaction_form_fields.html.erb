@@ -1,12 +1,18 @@
 <%# 
-  Determinar si los campos están vacíos o tienen valores por defecto
-  Esto ayuda a mostrar indicadores visuales de qué falta completar
+  suggested = hash en memoria (opción B) con category, sub_category, sentimiento del motor de reglas.
+  Preferimos la sugerencia cuando el valor guardado está vacío o es el default "Varios" (nunca elegido por el usuario).
 %>
-<% 
+<% suggested ||= {} %>
+<%
   transaction = f.object
-  categoria_empty = transaction.categoria.blank?
-  subcategoria_empty = transaction.sub_categoria.blank?
-  sentimiento_empty = transaction.sentimiento.blank? || !Transaction::SENTIMIENTOS.key?(transaction.sentimiento)
+  # "Varios" es el default del motor cuando no hay match; si la transacción solo tiene eso, mostramos la sugerencia actual
+  has_real_categoria = transaction.categoria.present? && transaction.categoria != 'Varios'
+  display_categoria = has_real_categoria ? transaction.categoria : suggested[:category]
+  display_subcategoria = transaction.sub_categoria.presence || suggested[:sub_category]
+  display_sentimiento = (transaction.sentimiento.present? && Transaction::SENTIMIENTOS.key?(transaction.sentimiento)) ? transaction.sentimiento : suggested[:sentimiento]
+  categoria_empty = display_categoria.blank?
+  subcategoria_empty = display_subcategoria.blank?
+  sentimiento_empty = display_sentimiento.blank? || !Transaction::SENTIMIENTOS.key?(display_sentimiento)
 %>
 
 <div data-controller="combo" class="form-combo-container">
@@ -25,9 +31,10 @@
           <span class="field-required-indicator" title="Campo requerido">*</span>
         <% end %>
       <% end %>
-      <%= f.text_field :categoria, 
-          list: "categories-suggestions", 
-          data: { combo_target: "input", action: "input->combo#checkNew" }, 
+      <%= f.text_field :categoria,
+          value: display_categoria,
+          list: "categories-suggestions",
+          data: { combo_target: "input", action: "input->combo#checkNew" },
           placeholder: categoria_empty ? "Ej: Hogar (requerido)" : "Ej: Hogar",
           autocomplete: "off",
           class: "form-input-modern #{'form-input-required' if categoria_empty}",
@@ -42,9 +49,10 @@
         Subcategoría
         <span class="field-optional-indicator" title="Campo opcional pero recomendado">(opcional)</span>
       <% end %>
-      <%= f.text_field :sub_categoria, 
-          list: "subcategories-suggestions", 
-          data: { combo_target: "subInput" }, 
+      <%= f.text_field :sub_categoria,
+          value: display_subcategoria,
+          list: "subcategories-suggestions",
+          data: { combo_target: "subInput" },
           placeholder: "Sub...",
           class: "form-input-modern" %>
       <% if subcategoria_empty %>
@@ -60,9 +68,9 @@
         <span class="field-required-indicator" title="Campo requerido">*</span>
       <% end %>
     <% end %>
-    <%= f.select :sentimiento, 
-          Transaction::SENTIMIENTOS.map { |k, v| [v, k] }, 
-          { prompt: sentimiento_empty ? "Seleccionar... (requerido)" : "Seleccionar..." }, 
+    <%= f.select :sentimiento,
+          Transaction::SENTIMIENTOS.map { |k, v| [v, k] },
+          { selected: display_sentimiento, prompt: sentimiento_empty ? "Seleccionar... (requerido)" : "Seleccionar..." },
           { class: "form-input-modern form-select-modern #{'form-input-required' if sentimiento_empty}",
             required: sentimiento_empty } %>
     <% if sentimiento_empty %>

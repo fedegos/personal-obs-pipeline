@@ -1,25 +1,48 @@
-<%= form_with(model: category_rule, style: "display: flex; flex-direction: column; gap: 15px; max-width: 400px;") do |f| %>
-  <div>
-    <%= f.label :name, "Nombre de la Regla", style: "display: block; font-weight: bold;" %>
-    <%= f.text_field :name, style: "width: 100%; padding: 8px;" %>
-  </div>
+<%= form_with model: category_rule, class: "category-rules-form" do |f| %>
+  <%= hidden_field_tag :sentimiento, local_assigns[:current_filter] if local_assigns[:current_filter].present? %>
+  <% if category_rule.errors.any? %>
+    <div class="category-rules-form-errors">
+      <ul>
+        <% category_rule.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <div class="form-combo-container">
+    <div class="form-field-group">
+      <%= f.label :name, "Nombre de la Regla", class: "form-label-caps" %>
+      <%= f.text_field :name, class: "form-input-modern", placeholder: "Ej: Supermercado" %>
+    </div>
 
-  <div>
-    <%= f.label :parent_id, "Categoría Superior (Opcional)", style: "display: block; font-weight: bold;" %>
-    <%= f.collection_select :parent_id, CategoryRule.roots, :id, :name, { include_blank: "Es una Categoría Raíz" }, { style: "width: 100%; padding: 8px;" } %>
-  </div>
+    <div class="form-field-group">
+      <%= f.label :parent_id, "Categoría Superior (Opcional)", class: "form-label-caps" %>
+      <%= f.collection_select :parent_id, CategoryRule.roots, :id, :name,
+            { include_blank: "Es una Categoría Raíz" },
+            { class: "form-input-modern form-select-modern" } %>
+    </div>
 
-  <div>
-    <%= f.label :pattern, "Patrón Regex", style: "display: block; font-weight: bold;" %>
-    <%= f.text_field :pattern, style: "width: 100%; padding: 8px;", placeholder: "PALABRA1|PALABRA2" %>
-  </div>
+    <div class="form-field-group">
+      <%= f.label :pattern, "Patrón Regex", class: "form-label-caps" %>
+      <%= f.text_field :pattern, class: "form-input-modern", placeholder: "PALABRA1|PALABRA2" %>
+    </div>
 
-  <div>
-    <%= f.label :priority, "Prioridad (Más alto = se evalúa antes)", style: "display: block; font-weight: bold;" %>
-    <%= f.number_field :priority, style: "width: 100%; padding: 8px;" %>
-  </div>
+    <div class="form-field-group">
+      <%= f.label :priority, "Prioridad (Más alto = se evalúa antes)", class: "form-label-caps" %>
+      <%= f.number_field :priority, class: "form-input-modern", min: 0, step: 1 %>
+    </div>
 
-  <div>
-    <%= f.submit "Guardar Regla", style: "background: #28a745; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;" %>
+    <div class="form-field-group">
+      <%= f.label :sentimiento, "Sentimiento (opcional)", class: "form-label-caps" %>
+      <%= f.select :sentimiento,
+            Transaction::SENTIMIENTOS.map { |k, v| [v, k] },
+            { include_blank: "Sin sentimiento por defecto" },
+            { class: "form-input-modern form-select-modern" } %>
+      <span class="field-help-text">Si se deja en blanco, las subreglas heredan el del padre o se usa "Deseo".</span>
+    </div>
+
+    <div class="form-field-group category-rules-form-submit">
+      <%= f.submit "Guardar Regla", class: "btn-submit-primary" %>
+    </div>
   </div>
 <% end %>

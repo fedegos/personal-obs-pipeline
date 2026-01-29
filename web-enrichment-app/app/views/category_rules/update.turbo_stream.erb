@@ -1,0 +1,11 @@
+<% if @still_matches_filter %>
+  <%= turbo_stream.replace dom_id(@category_rule) do %>
+    <%= render partial: "rule_card", locals: { rule: @category_rule } %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.remove dom_id(@category_rule) %>
+<% end %>
+<%= turbo_stream.update "modal-container", "" %>
+<%= turbo_stream.append "flash-container" do %>
+  <%= render partial: "shared/flash", locals: { message: "Regla actualizada correctamente ✅" } %>
+<% end %>

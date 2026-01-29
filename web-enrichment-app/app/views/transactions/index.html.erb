@@ -9,14 +9,15 @@
   <% if @pending.any? %>
     <div id="transactions-container" class="transactions-grid">
       <% @pending.each do |t| %>
-        <%= render "shared/transaction_card", transaction: t do %>
-          <%= form_with model: t, url: approve_transaction_path(t), method: :patch, 
+        <%= render "shared/transaction_card", transaction: t, suggested: @suggested[t.id] do %>
+          <%= form_with model: t, url: approve_transaction_path(t), method: :patch,
                         html: { class: "transaction-approval-form" } do |f| %>
             <div class="approval-form-box">
-              <%= render "shared/transaction_form_fields", 
-                        f: f, 
-                        categories_map: @categories_map, 
-                        categories_list: @categories_list %>
+              <%= render "shared/transaction_form_fields",
+                        f: f,
+                        categories_map: @categories_map,
+                        categories_list: @categories_list,
+                        suggested: @suggested[t.id] %>
 
               <div class="approval-form-submit">
                 <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary" %>

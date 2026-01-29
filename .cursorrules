@@ -1,0 +1,63 @@
+# Contexto del Sistema
+Arquitectura de microservicios desacoplada para procesamiento financiero.
+- **UI/Gestión:** Ruby on Rails (PostgreSQL).
+- **Storage de Archivos:** MinIO (S3 Compatible).
+- **Ingestión/Procesamiento:** Python Worker.
+- **Bus de Eventos:** Kafka.
+- **Pipeline de Datos:** Telegraf -> InfluxDB -> Grafana.
+- **Infraestructura:** Docker + Coolify + Hetzner.
+
+# Flujo de Datos Estricto
+1. **Rails:** Recibe Excel/CSV/Sheets -> Sube a MinIO -> Publica evento `file.uploaded` en Kafka.
+2. **Python Worker:** Escucha `file.uploaded` -> Descarga de MinIO -> Procesa -> Publica eventos de consumo en Kafka.
+3. **Rails (Enriquecimiento):** Escucha eventos de procesamiento -> Aplica motor de Regex -> Publica evento limpio a Kafka.
+4. **Telegraf:** Consume eventos limpios de Kafka -> Inserta en InfluxDB.
+5. **Grafana:** Visualiza desde InfluxDB.
+
+# Reglas de Oro de Arquitectura
+- **Desacoplamiento Total:** Los servicios solo se comunican vía Kafka o mediante el intercambio de URIs de MinIO.
+- **Gestión de Archivos:** No guardar archivos en el sistema de archivos local de los contenedores. Todo debe ir a MinIO.
+- **Seguridad:** Solo Rails y Grafana tienen exposición pública (puertos 80/443). MinIO, Kafka y el Worker son estrictamente internos.
+
+# Especificaciones Técnicas
+
+## MinIO & Storage
+- Usa el SDK de AWS S3 (boto3 en Python, aws-sdk-s3 en Ruby) para interactuar con MinIO.
+- Las URLs de los archivos deben ser temporales o internas a la red de Docker.
+
+## Python Worker (Ingestión)
+- Consumidor de Kafka: debe manejar "at-least-once delivery".
+- Limpieza de memoria: Dado que procesa Excels pesados, asegurar el cierre de buffers después de la lectura.
+
+## Ruby on Rails
+- Motor de Regex: Optimizar las expresiones para evitar backtracking catastrófico.
+- Background Jobs: Usar Sidekiq (o Solid Queue) para no bloquear la UI durante las subidas a MinIO.
+
+# Despliegue en Coolify/Hetzner
+- Los volúmenes deben estar claramente definidos para MinIO y Postgres para evitar pérdida de datos.
+- Las variables de conexión (MINIO_ENDPOINT, KAFKA_BROKERS) deben apuntar a los nombres de servicio internos de Docker.
+
+# Reglas de Ingeniería y Calidad de Código
+
+Eres un arquitecto de software experto. Tu misión es aplicar principios de diseño robustos en este proyecto Rails.
+
+## 1. Principios Fundamentales
+- **DRY & Modularidad**: Si un elemento visual o lógica se usa más de una vez, extráelo a un Partial o un Helper.
+- **Separation of Concerns**: 
+  - El HTML (`.html.erb`) solo define estructura.
+  - El CSS (`.css`) maneja exclusivamente la estética (prohibido style inline).
+  - Los controladores manejan el flujo, no la lógica compleja (usa Service Objects si es necesario).
+- **KISS & YAGNI**: No añadas gemas o abstracciones complejas para problemas que se resuelven con Rails estándar.
+- **Bajo Acoplamiento**: Los partials deben ser independientes. Pasa datos explícitamente vía `locals: {}`.
+
+## 2. Estándares de Estilo y CSS
+- **Encapsulamiento**: Usa clases específicas del componente (ej. `.transaction-card`) para evitar colisiones globales.
+- **Alta Cohesión**: Mantén los estilos relacionados con un componente en su archivo correspondiente (`cards.css`, `transactions.css`).
+
+## 3. Documentación y Mantenibilidad
+- **Código Auto-documentado**: Nombra variables y métodos de forma descriptiva (ej. `approve_transaction_path` en lugar de `update_t`).
+- **Comentarios con Intención**: No expliques "qué" hace el código, sino "por qué" se tomó esa decisión técnica.
+
+## 4. TDD & Calidad
+- Antes de sugerir un cambio complejo, considera si es testeable. 
+- Prioriza la claridad sobre la brevedad (Readable > Clever).

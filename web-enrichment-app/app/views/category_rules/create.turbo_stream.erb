@@ -1,0 +1,8 @@
+<%= turbo_stream.remove "category_rules_empty" %>
+<%= turbo_stream.append "category_rules_list" do %>
+  <%= render partial: "rule_card", locals: { rule: @category_rule } %>
+<% end %>
+<%= turbo_stream.update "modal-container", "" %>
+<%= turbo_stream.append "flash-container" do %>
+  <%= render partial: "shared/flash", locals: { message: "Regla creada correctamente ✅" } %>
+<% end %>

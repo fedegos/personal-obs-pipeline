@@ -1,0 +1,15 @@
+<%= turbo_stream.update "modal-container" do %>
+  <div id="modal-overlay" class="category-rules-modal-overlay" data-controller="category-rules-modal">
+    <div class="category-rules-modal-box">
+      <button type="button" class="category-rules-modal-close" data-action="click->category-rules-modal#close" aria-label="Cerrar">✕</button>
+      <div class="category-rules-modal-inner">
+        <h3 class="category-rules-modal-title">✏️ Editar Regla</h3>
+        <p class="category-rules-modal-subtitle"><%= @category_rule.name %></p>
+        <%= render "form", category_rule: @category_rule, current_filter: params[:sentimiento] %>
+        <div class="category-rules-modal-actions">
+          <button type="button" class="btn-cancel-soft" data-action="click->category-rules-modal#close">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

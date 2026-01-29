@@ -5,12 +5,23 @@ class TransactionsController < ApplicationController
 
  def index
     @pending = Transaction.where(aprobado: false).order(fecha: :desc)
-    
+
+    # Replicar motor de reglas en memoria (categoría, subcategoría, sentimiento) sin persistir
+    @suggested = @pending.each_with_object({}) do |t, h|
+      result = CategorizerService.guess(t.detalles)
+      sent = result[:sentimiento].present? && Transaction::SENTIMIENTOS.key?(result[:sentimiento]) ? result[:sentimiento] : SentimentService.analyze(t.detalles)
+      h[t.id] = {
+        category: result[:category],
+        sub_category: result[:sub_category],
+        sentimiento: sent
+      }
+    end
+
     # Creamos un hash: { "Supermercado" => ["Coto", "Dia"], "Hogar" => ["Luz", "Agua"] }
     @categories_map = CategoryRule.roots.includes(:children).each_with_object({}) do |root, hash|
       hash[root.name] = root.children.pluck(:name)
     end
-    
+
     @categories_list = @categories_map.keys
   end
 

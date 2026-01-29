@@ -1,67 +1,42 @@
-<%# app/views/category_rules/index.html.erb %>
-<div class="page-container">
-  
-  <header class="page-header">
-    <div class="page-header-content">
-      <h1 class="page-title">⚙️ Motor de Reglas</h1>
-      <p class="page-subtitle">Configura la lógica de categorización automática.</p>
-    </div>
-    <%= link_to new_category_rule_path, class: "btn-primary-action" do %>
-      <span>➕</span> <span>Nueva Regla</span>
-    <% end %>
-  </header>
-
-  <% if @category_rules.any? %>
-    <div class="grid-single-column">
-      <% @category_rules.order(parent_id: :asc, priority: :desc).each do |rule| %>
-        <div class="category-rule-card">
-          
-          <%# Fila Superior: Nombre y Jerarquía %>
-          <div class="category-rule-header">
-            <div class="category-rule-name-section">
-              <div class="category-rule-name-row">
-                <span class="category-rule-name"><%= rule.name %></span>
-                <% if rule.parent_id.nil? %>
-                  <span class="category-rule-badge-root">Raíz</span>
-                <% end %>
-              </div>
-              <% if rule.parent %>
-                <div class="category-rule-parent-info">
-                  <span>↳ pertenece a</span>
-                  <strong class="category-rule-parent-name"><%= rule.parent.name %></strong>
-                </div>
-              <% end %>
-            </div>
-            
-            <%# Badge de Prioridad %>
-            <div class="category-rule-priority-badge">
-              <div class="category-rule-priority-label">Prioridad</div>
-              <div class="category-rule-priority-value"><%= rule.priority %></div>
-            </div>
-          </div>
-
-          <%# Fila Media: El Patrón Regex %>
-          <div class="category-rule-pattern">
-            <code class="category-rule-pattern-code">
-              <%= rule.pattern %>
-            </code>
-          </div>
-
-          <%# Fila Inferior: Acciones %>
-          <div class="category-rule-footer">
-            <%= link_to "✏️ Editar", edit_category_rule_path(rule), class: "btn-action-link" %>
-            
-            <%= button_to rule, method: :delete, data: { confirm: "¿Eliminar esta regla?" }, 
-                class: "btn-action-delete" do %>
-              🗑️ Eliminar
-            <% end %>
-          </div>
-        </div>
+<%# Motor de Reglas: single page con sticky header, filtro por sentimiento y edición en modal %>
+<div class="category-rules-page">
+  <div class="page-header-sticky">
+    <header class="page-header">
+      <div class="page-header-content">
+        <h1 class="page-title">⚙️ Motor de Reglas</h1>
+        <p class="page-subtitle">Configura la lógica de categorización automática.</p>
+      </div>
+      <%= link_to new_category_rule_path(format: :turbo_stream), class: "btn-primary-action", data: { turbo_prefetch: false } do %>
+        <span>➕</span> <span>Nueva Regla</span>
       <% end %>
+    </header>
+
+    <%= form_with url: category_rules_path, method: :get, data: { controller: "category-rules-filter", turbo_frame: "_top" }, class: "category-rules-filter-form" do |f| %>
+      <label for="filter_sentimiento" class="category-rules-filter-label">Filtrar por sentimiento:</label>
+      <%= f.select :sentimiento,
+            options_for_select(
+              [["Todos", ""], ["— Sin definir", "_blank"]] + Transaction::SENTIMIENTOS.map { |k, v| [v, k] },
+              params[:sentimiento]
+            ),
+            {},
+            {
+              id: "filter_sentimiento",
+              class: "category-rules-filter-select",
+              data: { action: "change->category-rules-filter#submit" }
+            } %>
+    <% end %>
+  </div>
+
+  <div id="category_rules_list" class="grid-single-column">
+    <%= render partial: "rule_card", collection: @category_rules, as: :rule %>
+  </div>
+  <% if @category_rules.empty? %>
+    <div id="category_rules_empty" class="category-rules-empty-wrapper">
+      <%= render "shared/empty_state",
+            simple: true,
+            message: params[:sentimiento].present? ? "No hay reglas con ese sentimiento." : "No hay reglas configuradas aún. Comienza creando una categoría raíz." %>
     </div>
-  <% else %>
-    <%= render "shared/empty_state", 
-          simple: true,
-          message: "No hay reglas configuradas aún. Comienza creando una categoría raíz." %>
   <% end %>
 </div>
+
+<div id="modal-container"></div>

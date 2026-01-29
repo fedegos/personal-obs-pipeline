@@ -4,6 +4,7 @@ class CategoryRule < ApplicationRecord
 
   validates :name, :pattern, presence: true
   validates :priority, numericality: { only_integer: true }
+  validates :sentimiento, inclusion: { in: -> { Transaction::SENTIMIENTOS.keys }, message: "no es un sentimiento válido (Necesario, Deseo, Inversión, Ahorro, Hormiga)" }, allow_nil: true
 
   scope :roots, -> { where(parent_id: nil) }
 

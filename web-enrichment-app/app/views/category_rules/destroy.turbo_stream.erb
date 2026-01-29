@@ -1,0 +1,8 @@
+<%= turbo_stream.remove dom_id(@category_rule) %>
+<% if CategoryRule.count.zero? %>
+  <%= turbo_stream.append "category_rules_list" do %>
+    <div id="category_rules_empty" class="category-rules-empty-wrapper">
+      <%= render "shared/empty_state", simple: true, message: "No hay reglas configuradas aún. Comienza creando una categoría raíz." %>
+    </div>
+  <% end %>
+<% end %>

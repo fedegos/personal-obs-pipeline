@@ -13,13 +13,17 @@ class CategorizerService
                   .find { |r| text.match?(Regexp.new(r.pattern, Regexp::IGNORECASE)) }
 
     if match
+      category = match.parent_id ? match.parent.name : match.name
+      sub_category = match.parent_id ? match.name : nil
+      # Sentimiento: de la regla que matcheó o de la raíz (parent); si no hay, nil (fallback en SentimentService)
+      sentimiento = match.sentimiento.presence || match.parent&.sentimiento
       if match.parent_id
-        { category: match.parent.name, sub_category: match.name }
+        { category: match.parent.name, sub_category: match.name, sentimiento: sentimiento }
       else
-        { category: match.name, sub_category: nil }
+        { category: match.name, sub_category: nil, sentimiento: sentimiento }
       end
     else
-      { category: 'Varios', sub_category: nil }
+      { category: 'Varios', sub_category: nil, sentimiento: nil }
     end
   end
 

@@ -18,3 +18,9 @@ application.register("parameters", ParametersController)
 
 import SearchController from "controllers/search_controller"
 application.register("search", SearchController)
+
+import CategoryRulesFilterController from "controllers/category_rules_filter_controller"
+application.register("category-rules-filter", CategoryRulesFilterController)
+
+import CategoryRulesModalController from "controllers/category_rules_modal_controller"
+application.register("category-rules-modal", CategoryRulesModalController)

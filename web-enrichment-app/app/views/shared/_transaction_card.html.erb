@@ -1,16 +1,19 @@
 <%# 
-  Completa = categoría, subcategoría y sentimiento válido.
-  Con recomendación = tiene categoría útil (no solo "Varios") o subcategoría sugerida por reglas.
-  Discriminamos visualmente: sugerido (revisar) vs incompleto (completar desde cero).
+  suggested = hash en memoria (opción B) con category, sub_category, sentimiento del motor de reglas.
+  Si suggested está presente, usamos esos valores para has_recommendation y badges; si no, usamos transaction.
 %>
-<% 
-  is_complete = transaction.categoria.present? && 
-                transaction.sub_categoria.present? && 
+<% suggested ||= nil %>
+<%
+  is_complete = transaction.categoria.present? &&
+                transaction.sub_categoria.present? &&
                 transaction.sentimiento.present? &&
                 Transaction::SENTIMIENTOS.key?(transaction.sentimiento)
   is_pending = !transaction.aprobado?
-  has_recommendation = transaction.categoria.present? && 
-    (transaction.categoria != 'Varios' || transaction.sub_categoria.present?)
+  # Valores efectivos: sugerencia en memoria si existe, sino los guardados en la transacción
+  eff_cat = suggested&.dig(:category).presence || transaction.categoria
+  eff_sub = suggested&.dig(:sub_category).presence || transaction.sub_categoria
+  eff_sent = suggested&.dig(:sentimiento).presence || transaction.sentimiento
+  has_recommendation = eff_cat.present? && (eff_cat != 'Varios' || eff_sub.present?)
   card_state = if is_pending && has_recommendation
     'transaction-card-suggested'
   elsif (is_pending && !has_recommendation) || (!is_pending && !is_complete)
@@ -46,26 +49,26 @@
     <div class="transaction-date"><span>📅</span> <%= transaction.fecha.strftime("%d %b, %Y") %></div>
   </div>
 
-  <%# Contenedor de badges de categorización %>
+  <%# Contenedor de badges de categorización (valores efectivos: sugerencia o transaction) %>
   <div class="transaction-badges-container">
     <% if is_pending && has_recommendation %>
       <span class="badge-suggested">Revisar sugerencia</span>
     <% end %>
-    <% if transaction.categoria.present? %>
-      <span class="badge-category-audit"><%= transaction.categoria %></span>
+    <% if eff_cat.present? %>
+      <span class="badge-category-audit"><%= eff_cat %></span>
     <% elsif is_pending %>
       <span class="badge-incomplete">⚠️ Sin categoría</span>
     <% end %>
-    
-    <% if transaction.sub_categoria.present? %>
-      <span class="badge-subcategory-audit"><%= transaction.sub_categoria %></span>
+
+    <% if eff_sub.present? %>
+      <span class="badge-subcategory-audit"><%= eff_sub %></span>
     <% elsif is_pending %>
       <span class="badge-incomplete">⚠️ Sin subcategoría</span>
     <% end %>
-    
-    <% if transaction.sentimiento.present? && Transaction::SENTIMIENTOS.key?(transaction.sentimiento) %>
+
+    <% if eff_sent.present? && Transaction::SENTIMIENTOS.key?(eff_sent) %>
       <span class="badge-feeling-audit">
-        <%= Transaction::SENTIMIENTOS[transaction.sentimiento] %>
+        <%= Transaction::SENTIMIENTOS[eff_sent] %>
       </span>
     <% elsif is_pending %>
       <span class="badge-incomplete">⚠️ Sin sentimiento</span>

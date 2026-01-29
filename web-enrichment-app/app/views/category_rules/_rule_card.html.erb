@@ -1,0 +1,41 @@
+<%# Tarjeta de una regla; usado en index y en update.turbo_stream (reemplazo). Requiere dom_id(rule) en el wrapper. %>
+<div id="<%= dom_id(rule) %>" class="category-rule-card">
+  <div class="category-rule-header">
+    <div class="category-rule-name-section">
+      <div class="category-rule-name-row">
+        <span class="category-rule-name"><%= rule.name %></span>
+        <% if rule.parent_id.nil? %>
+          <span class="category-rule-badge-root">Raíz</span>
+        <% end %>
+      </div>
+      <% if rule.parent %>
+        <div class="category-rule-parent-info">
+          <span>↳ pertenece a</span>
+          <strong class="category-rule-parent-name"><%= rule.parent.name %></strong>
+        </div>
+      <% end %>
+    </div>
+    <div class="category-rule-priority-badge">
+      <div class="category-rule-priority-label">Prioridad</div>
+      <div class="category-rule-priority-value"><%= rule.priority %></div>
+    </div>
+  </div>
+
+  <div class="category-rule-pattern">
+    <code class="category-rule-pattern-code"><%= rule.pattern %></code>
+  </div>
+
+  <div class="category-rule-sentimiento">
+    <span class="category-rule-sentimiento-label">Sentimiento:</span>
+    <span class="category-rule-sentimiento-value <%= 'category-rule-sentimiento-empty' if rule.sentimiento.blank? %>">
+      <%= rule.sentimiento.present? ? (Transaction::SENTIMIENTOS[rule.sentimiento] || rule.sentimiento) : "— Sin definir" %>
+    </span>
+  </div>
+
+  <div class="category-rule-footer">
+    <%= link_to "✏️ Editar", edit_category_rule_path(rule, format: :turbo_stream, sentimiento: params[:sentimiento]), class: "btn-action-link", data: { turbo_prefetch: false } %>
+    <%= button_to rule, method: :delete, data: { turbo_confirm: "¿Eliminar esta regla?" }, class: "btn-action-delete" do %>
+      🗑️ Eliminar
+    <% end %>
+  </div>
+</div>

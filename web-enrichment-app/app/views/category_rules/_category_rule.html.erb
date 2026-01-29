@@ -1,18 +1,24 @@
-<div id="<%= dom_id category_rule %>" class="w-full sm:w-auto my-5 space-y-5">
-  <div>
-    <strong class="block font-medium mb-1">Name:</strong>
+<div id="<%= dom_id category_rule %>" class="category-rule-detail">
+  <div class="category-rule-detail-row">
+    <strong class="category-rule-detail-label">Nombre:</strong>
     <%= category_rule.name %>
   </div>
-  <div>
-    <strong class="block font-medium mb-1">Pattern:</strong>
-    <%= category_rule.pattern %>
+  <div class="category-rule-detail-row">
+    <strong class="category-rule-detail-label">Patrón:</strong>
+    <code class="category-rule-pattern-code"><%= category_rule.pattern %></code>
   </div>
-  <div>
-    <strong class="block font-medium mb-1">Priority:</strong>
+  <div class="category-rule-detail-row">
+    <strong class="category-rule-detail-label">Prioridad:</strong>
     <%= category_rule.priority %>
   </div>
-  <div>
-    <strong class="block font-medium mb-1">Parent:</strong>
-    <%= category_rule.parent_id %>
+  <div class="category-rule-detail-row">
+    <strong class="category-rule-detail-label">Categoría superior:</strong>
+    <%= category_rule.parent&.name || "— Raíz" %>
+  </div>
+  <div class="category-rule-detail-row">
+    <strong class="category-rule-detail-label">Sentimiento:</strong>
+    <span class="<%= 'category-rule-sentimiento-empty' if category_rule.sentimiento.blank? %>">
+      <%= category_rule.sentimiento.present? ? (Transaction::SENTIMIENTOS[category_rule.sentimiento] || category_rule.sentimiento) : "— Sin definir" %>
+    </span>
   </div>
 </div>

@@ -1,9 +1,14 @@
-<% content_for :title, "New category rule" %>
+<% content_for :title, "Nueva regla" %>
 
-<div class="md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">New category rule</h1>
+<div class="page-container">
+  <header class="page-header">
+    <h1 class="page-title">➕ Nueva Regla</h1>
+    <p class="page-subtitle">Agrega una regla de categorización (patrón, prioridad y sentimiento opcional).</p>
+  </header>
 
   <%= render "form", category_rule: @category_rule %>
 
-  <%= link_to "Back to category rules", category_rules_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+  <div class="category-rules-form-actions">
+    <%= link_to "Volver al motor de reglas", category_rules_path, class: "btn-action-link" %>
+  </div>
 </div>
