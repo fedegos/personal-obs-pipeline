@@ -1,22 +1,10 @@
 <% current_message = local_assigns[:message] || flash[:notice] || flash[:alert] %>
 
 <% if current_message.present? %>
-  <div class="toast-notification" 
-       data-controller="flash" 
-       style="pointer-events: auto; /* Permite interactuar con el mensaje */
-              background: #28a745; 
-              color: white; 
-              padding: 12px 24px; 
-              border-radius: 50px; /* Estilo 'píldora' moderno */
-              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-              min-width: 250px;
-              text-align: center;
-              transition: all 0.5s ease-out;
-              border: 1px solid rgba(255,255,255,0.2);">
-    
-    <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-      <span style="font-size: 1.2rem;">✅</span>
-      <span style="font-weight: 500; font-family: system-ui, sans-serif;">
+  <div class="toast-notification" data-controller="flash">
+    <div class="toast-content">
+      <span class="toast-icon">✅</span>
+      <span class="toast-message">
         <%= current_message %>
       </span>
     </div>

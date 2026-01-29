@@ -1,0 +1,108 @@
+/* app/assets/stylesheets/category_rules.css */
+
+/* Tarjeta de regla */
+.category-rule-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+/* Header de la regla */
+.category-rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.category-rule-name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.category-rule-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-rule-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.category-rule-badge-root {
+  font-size: 0.65rem;
+  background: #dcfce7;
+  color: #166534;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.category-rule-parent-info {
+  font-size: 0.8rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.category-rule-parent-name {
+  color: #475569;
+  font-weight: 600;
+}
+
+/* Badge de prioridad */
+.category-rule-priority-badge {
+  text-align: right;
+  background: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+}
+
+.category-rule-priority-label {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.category-rule-priority-value {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+/* Patrón regex */
+.category-rule-pattern {
+  background: #fdf2f2;
+  border: 1px solid #fee2e2;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.category-rule-pattern-code {
+  color: #dc2626;
+  font-size: 0.85rem;
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}
+
+/* Footer con acciones */
+.category-rule-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+  margin-top: 4px;
+}

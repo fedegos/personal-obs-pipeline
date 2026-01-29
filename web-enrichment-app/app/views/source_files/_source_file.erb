@@ -1,12 +1,19 @@
 <%# app/views/source_files/_source_file.html.erb %>
-<tr id="<%= dom_id(source_file) %>" style="border-bottom: 1px solid #f1f5f9;">
-  <td style="padding: 16px;"><%= source_file.created_at.strftime("%H:%M %d/%m/%y") %></td>
-  <td style="padding: 16px;"><strong><%= source_file.bank.upcase %></strong></td>
-  <td style="padding: 16px;">
-    <% color = { 'pending' => '#f59e0b', 'processed' => '#10b981', 'failed' => '#ef4444' }[source_file.status] %>
-    <span style="color: <%= color %>; font-weight: bold;">● <%= source_file.status.capitalize %></span>
+<% 
+  status_colors = { 
+    'pending' => 'status-pending', 
+    'processed' => 'status-processed', 
+    'failed' => 'status-failed' 
+  }
+  status_class = status_colors[source_file.status] || 'status-pending'
+%>
+<tr id="<%= dom_id(source_file) %>" class="source-file-row">
+  <td class="source-file-cell"><%= source_file.created_at.strftime("%H:%M %d/%m/%y") %></td>
+  <td class="source-file-cell"><strong><%= source_file.bank.upcase %></strong></td>
+  <td class="source-file-cell">
+    <span class="source-file-status <%= status_class %>">● <%= source_file.status.capitalize %></span>
   </td>
-  <td style="padding: 16px;">
+  <td class="source-file-cell">
     <small><%= source_file.status == 'failed' ? source_file.error_message : source_file.file_key + ":" + source_file.extra_params.to_json  %></small>
   </td>
 </tr>

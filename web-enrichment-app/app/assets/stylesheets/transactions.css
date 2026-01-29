@@ -34,6 +34,12 @@
   grid-template-columns: 1fr;
 }
 
+/* Formulario de aprobación dentro de la tarjeta */
+.transaction-approval-form {
+  flex-grow: 1;
+  width: 100%;
+}
+
 .approval-form-box {
   background-color: #f8fafc !important; /* Forzamos el color */
   padding: 16px;
@@ -46,4 +52,8 @@
   width: 100%;
   box-sizing: border-box;
   clear: both; 
+}
+
+.approval-form-submit {
+  margin-top: 15px;
 }

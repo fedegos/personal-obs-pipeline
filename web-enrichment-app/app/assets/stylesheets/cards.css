@@ -11,12 +11,39 @@
   min-height: 220px;
 }
 
+/* Con recomendación de categoría/subcategoría: revisar sugerencia (neutro/informativo) */
+.transaction-card-suggested {
+  border-left: 4px solid #3b82f6;
+  background: #eff6ff;
+}
+
+/* Sin recomendación: completar categorización (llamar la atención) */
+.transaction-card-incomplete {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
 /* El ID en mono y el monto */
 .transaction-card-header {
   display: flex; 
   justify-content: space-between; 
-  align-items: center; 
+  align-items: flex-start; 
   margin-bottom: 12px;
+  gap: 12px;
+}
+
+.transaction-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.transaction-card-info-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 
 .transaction-id-tag {

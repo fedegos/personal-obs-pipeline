@@ -1,5 +1,16 @@
+<%# 
+  Determinar si los campos están vacíos o tienen valores por defecto
+  Esto ayuda a mostrar indicadores visuales de qué falta completar
+%>
+<% 
+  transaction = f.object
+  categoria_empty = transaction.categoria.blank?
+  subcategoria_empty = transaction.sub_categoria.blank?
+  sentimiento_empty = transaction.sentimiento.blank? || !Transaction::SENTIMIENTOS.key?(transaction.sentimiento)
+%>
+
 <div data-controller="combo" class="form-combo-container">
-  <div id="categories-data" data-map="<%= categories_map.to_json %>" style="display: none;"></div>
+  <div id="categories-data" data-map="<%= categories_map.to_json %>" class="hidden"></div>
   
   <datalist id="categories-suggestions">
     <% categories_list.each do |cat| %><option value="<%= cat %>"><% end %>
@@ -7,31 +18,55 @@
   <datalist id="subcategories-suggestions"></datalist>
 
   <div class="form-grid-fields">
-    <div class="form-field-group">
-      <%= f.label :categoria, "Categoría", class: "form-label-caps" %>
+    <div class="form-field-group <%= 'form-field-required' if categoria_empty %>">
+      <%= f.label :categoria, "Categoría", class: "form-label-caps" do %>
+        Categoría
+        <% if categoria_empty %>
+          <span class="field-required-indicator" title="Campo requerido">*</span>
+        <% end %>
+      <% end %>
       <%= f.text_field :categoria, 
           list: "categories-suggestions", 
           data: { combo_target: "input", action: "input->combo#checkNew" }, 
-          placeholder: "Ej: Hogar",
+          placeholder: categoria_empty ? "Ej: Hogar (requerido)" : "Ej: Hogar",
           autocomplete: "off",
-          class: "form-input-modern" %>
+          class: "form-input-modern #{'form-input-required' if categoria_empty}",
+          required: categoria_empty %>
+      <% if categoria_empty %>
+        <span class="field-help-text">Clasifica el tipo de gasto</span>
+      <% end %>
     </div>
     
-    <div class="form-field-group">
-      <%= f.label :sub_categoria, "Subcategoría", class: "form-label-caps" %>
+    <div class="form-field-group <%= 'form-field-optional' if !categoria_empty && subcategoria_empty %>">
+      <%= f.label :sub_categoria, "Subcategoría", class: "form-label-caps" do %>
+        Subcategoría
+        <span class="field-optional-indicator" title="Campo opcional pero recomendado">(opcional)</span>
+      <% end %>
       <%= f.text_field :sub_categoria, 
           list: "subcategories-suggestions", 
           data: { combo_target: "subInput" }, 
           placeholder: "Sub...",
           class: "form-input-modern" %>
+      <% if subcategoria_empty %>
+        <span class="field-help-text">Detalla más específicamente el gasto</span>
+      <% end %>
     </div>
   </div>
 
-  <div class="form-field-group">
-    <%= f.label :sentimiento, "Impacto / Sentimiento", class: "form-label-caps" %>
+  <div class="form-field-group <%= 'form-field-required' if sentimiento_empty %>">
+    <%= f.label :sentimiento, "Impacto / Sentimiento", class: "form-label-caps" do %>
+      Impacto / Sentimiento
+      <% if sentimiento_empty %>
+        <span class="field-required-indicator" title="Campo requerido">*</span>
+      <% end %>
+    <% end %>
     <%= f.select :sentimiento, 
           Transaction::SENTIMIENTOS.map { |k, v| [v, k] }, 
-          { prompt: "Seleccionar..." }, 
-          { class: "form-input-modern form-select-modern" } %>
+          { prompt: sentimiento_empty ? "Seleccionar... (requerido)" : "Seleccionar..." }, 
+          { class: "form-input-modern form-select-modern #{'form-input-required' if sentimiento_empty}",
+            required: sentimiento_empty } %>
+    <% if sentimiento_empty %>
+      <span class="field-help-text">Clasifica el impacto financiero del gasto</span>
+    <% end %>
   </div>
 </div>

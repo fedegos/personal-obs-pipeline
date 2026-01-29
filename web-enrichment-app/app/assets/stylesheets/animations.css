@@ -1,0 +1,50 @@
+/* app/assets/stylesheets/animations.css */
+
+/* Animación para cuando Turbo reemplaza un elemento */
+@keyframes highlight {
+  0% { background-color: #fef3c7; }
+  100% { background-color: transparent; }
+}
+
+/* Animación de entrada para tarjetas */
+@keyframes cardEntrance {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+/* Transiciones para filas de transacciones */
+.transaction-frame {
+  display: table-row-group; /* Mantiene la integridad de la tabla HTML */
+  transition: all 0.4s ease-in-out;
+}
+
+.transaction-row:hover {
+  background-color: #fcfcfc;
+}
+
+/* Animación cuando el elemento está siendo procesado */
+.transaction-frame[busy] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Animaciones para filas de source files */
+.source-file-row[id^="source_file_"] {
+  transition: all 0.5s ease;
+}
+
+/* Solo se aplica cuando la fila es reemplazada por Turbo */
+.source-file-row {
+  animation: highlight 2s ease-out;
+}
+
+/* Animación para tarjetas en contenedores de resultados */
+.animated-card {
+  animation: cardEntrance 0.5s ease-out;
+}

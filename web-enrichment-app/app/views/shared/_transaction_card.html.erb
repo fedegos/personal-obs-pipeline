@@ -1,6 +1,43 @@
-<div id="<%= dom_id(transaction) %>" class="transaction-card">
+<%# 
+  Completa = categoría, subcategoría y sentimiento válido.
+  Con recomendación = tiene categoría útil (no solo "Varios") o subcategoría sugerida por reglas.
+  Discriminamos visualmente: sugerido (revisar) vs incompleto (completar desde cero).
+%>
+<% 
+  is_complete = transaction.categoria.present? && 
+                transaction.sub_categoria.present? && 
+                transaction.sentimiento.present? &&
+                Transaction::SENTIMIENTOS.key?(transaction.sentimiento)
+  is_pending = !transaction.aprobado?
+  has_recommendation = transaction.categoria.present? && 
+    (transaction.categoria != 'Varios' || transaction.sub_categoria.present?)
+  card_state = if is_pending && has_recommendation
+    'transaction-card-suggested'
+  elsif (is_pending && !has_recommendation) || (!is_pending && !is_complete)
+    'transaction-card-incomplete'
+  else
+    ''
+  end
+%>
+
+<div id="<%= dom_id(transaction) %>" class="transaction-card <%= card_state %>">
   <div class="transaction-card-header">
-    <span class="transaction-id-tag">ID: <%= transaction.event_id.last(10) %></span>
+    <div class="transaction-header-left">
+      <span class="transaction-id-tag">ID: <%= transaction.event_id.last(10) %></span>
+      <%# Badges de información de tarjeta %>
+      <div class="transaction-card-info-badges">
+        <% if transaction.red.present? %>
+          <span class="badge-network <%= transaction.red.downcase %>">
+            <%= transaction.red %>
+          </span>
+        <% end %>
+        <% if transaction.numero_tarjeta.present? %>
+          <span class="badge-card-number">
+            💳 <%= transaction.numero_tarjeta %>
+          </span>
+        <% end %>
+      </div>
+    </div>
     <span class="transaction-amount"><%= number_to_currency(transaction.monto) %></span>
   </div>
 
@@ -9,13 +46,30 @@
     <div class="transaction-date"><span>📅</span> <%= transaction.fecha.strftime("%d %b, %Y") %></div>
   </div>
 
-  <%# Contenedor con las clases de tu badges.css %>
-  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
-    <span class="badge-category-audit"><%= transaction.categoria %></span>
-    <span class="badge-subcategory-audit"><%= transaction.sub_categoria %></span>
-    <span class="badge-feeling-audit">
-      <%= Transaction::SENTIMIENTOS[transaction.sentimiento] || transaction.sentimiento %>
-    </span>
+  <%# Contenedor de badges de categorización %>
+  <div class="transaction-badges-container">
+    <% if is_pending && has_recommendation %>
+      <span class="badge-suggested">Revisar sugerencia</span>
+    <% end %>
+    <% if transaction.categoria.present? %>
+      <span class="badge-category-audit"><%= transaction.categoria %></span>
+    <% elsif is_pending %>
+      <span class="badge-incomplete">⚠️ Sin categoría</span>
+    <% end %>
+    
+    <% if transaction.sub_categoria.present? %>
+      <span class="badge-subcategory-audit"><%= transaction.sub_categoria %></span>
+    <% elsif is_pending %>
+      <span class="badge-incomplete">⚠️ Sin subcategoría</span>
+    <% end %>
+    
+    <% if transaction.sentimiento.present? && Transaction::SENTIMIENTOS.key?(transaction.sentimiento) %>
+      <span class="badge-feeling-audit">
+        <%= Transaction::SENTIMIENTOS[transaction.sentimiento] %>
+      </span>
+    <% elsif is_pending %>
+      <span class="badge-incomplete">⚠️ Sin sentimiento</span>
+    <% end %>
   </div>
 
   <div class="transaction-card-footer">

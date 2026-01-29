@@ -1,0 +1,18 @@
+<%# app/views/shared/_empty_state.html.erb %>
+<%# Partial reutilizable para estados vacíos %>
+<% 
+  icon = local_assigns[:icon] || ""
+  title = local_assigns[:title] || "Sin resultados"
+  message = local_assigns[:message] || "No hay elementos para mostrar."
+  simple = local_assigns[:simple] || false
+%>
+
+<div class="<%= simple ? 'empty-state-simple' : 'empty-state' %>">
+  <% unless simple %>
+    <% if icon.present? %>
+      <div class="empty-state-icon"><%= icon %></div>
+    <% end %>
+    <h2 class="empty-state-title"><%= title %></h2>
+  <% end %>
+  <p class="empty-state-message"><%= message %></p>
+</div>

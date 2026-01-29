@@ -1,0 +1,37 @@
+<%# app/views/shared/_page_header.html.erb %>
+<%# Partial reutilizable para headers de página %>
+<% 
+  title = local_assigns[:title] || ""
+  subtitle = local_assigns[:subtitle] || ""
+  action = local_assigns[:action] # Opcional: bloque o link para acción
+  sticky = local_assigns[:sticky] || false
+%>
+
+<% if sticky %>
+  <div class="page-header-sticky">
+    <header class="page-header">
+      <div class="page-header-content">
+        <h1 class="page-title"><%= title %></h1>
+        <% if subtitle.present? %>
+          <p class="page-subtitle"><%= subtitle %></p>
+        <% end %>
+      </div>
+      <% if action.present? %>
+        <%= action %>
+      <% end %>
+    </header>
+    <%= yield if block_given? %>
+  </div>
+<% else %>
+  <header class="page-header">
+    <div class="page-header-content">
+      <h1 class="page-title"><%= title %></h1>
+      <% if subtitle.present? %>
+        <p class="page-subtitle"><%= subtitle %></p>
+      <% end %>
+    </div>
+    <% if action.present? %>
+      <%= action %>
+    <% end %>
+  </header>
+<% end %>

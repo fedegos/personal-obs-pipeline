@@ -1,0 +1,62 @@
+/* app/assets/stylesheets/forms.css */
+
+/* Inputs y selects con estilo plano (usados en varias partes) */
+.input-flat, .select-flat {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.input-flat:focus, .select-flat:focus {
+  border-color: #28a745;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
+}
+
+/* Inputs modernos para búsqueda y formularios generales */
+.input-moderno {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background: #fcfcfc;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input-moderno:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+select.input-moderno {
+  cursor: pointer;
+  appearance: none;
+}
+
+/* Inputs para búsqueda UX */
+.input-search-ux {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.input-search-ux:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}

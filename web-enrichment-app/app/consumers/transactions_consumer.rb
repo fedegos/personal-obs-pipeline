@@ -20,6 +20,7 @@ class TransactionsConsumer < ApplicationConsumer
         moneda:       data['moneda'],
         detalles:     data['detalles'],
         red:          data['red'],
+        numero_tarjeta: data['numero_tarjeta'],
         # El servicio de categorización puede usar Regex o incluso una IA local
         categoria:    results[:category],
         sub_categoria:  results[:sub_category],

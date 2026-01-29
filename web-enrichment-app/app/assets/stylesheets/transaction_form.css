@@ -118,3 +118,43 @@
   gap: 12px; 
   margin-top: 12px;
 }
+
+/* Indicadores de campos requeridos/opcionales */
+.form-field-required .form-label-caps {
+  color: #dc2626;
+}
+
+.form-field-required .form-input-required {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.form-field-required .form-input-required:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 1px #dc2626;
+}
+
+.field-required-indicator {
+  color: #dc2626;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.field-optional-indicator {
+  color: #64748b;
+  font-weight: 400;
+  font-size: 0.65rem;
+  margin-left: 4px;
+  text-transform: none;
+}
+
+.field-help-text {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+.form-field-optional .form-label-caps {
+  color: #64748b;
+}

@@ -3,30 +3,32 @@
 <div data-controller="parameters" 
     data-parameters-schemas-value="<%= BANK_SCHEMAS.to_json %>"
     data-parameters-no-file-banks-value="<%= NO_FILE_BANKS.to_json %>"
-    style="font-family: 'Inter', system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px;"
+    class="source-files-page"
 >
   <%# Suscripción al canal de Redis %>
   <%= turbo_stream_from "source_files_channel" %>
 
-  <header style="margin-bottom: 32px;">
-    <h1 style="margin: 0; color: #1e293b; font-size: 1.875rem; font-weight: 700;">📤 Ingesta de Datos</h1>
-    <p style="color: #64748b; margin-top: 8px;">Sube archivos para procesamiento automático vía Pipeline 2026.</p>
+  <header class="page-header source-files-header">
+    <div class="page-header-content">
+      <h1 class="page-title source-files-title">📤 Ingesta de Datos</h1>
+      <p class="page-subtitle">Sube archivos para procesamiento automático vía Pipeline 2026.</p>
+    </div>
   </header>
 
   <!-- SECCIÓN DE CARGA -->
-  <section style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 32px;">
+  <section class="source-files-upload-section">
     <%= form_with url: source_files_path, method: :post, local: true, multipart: true do |f| %>
       
       <!-- GRID PRINCIPAL: Banco y Archivo -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+      <div class="source-files-form-grid">
         
         <!-- Selector de Banco -->
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <%= f.label :bank, "Banco Emisor", style: "font-weight: 600; color: #475569;" %>
+        <div class="source-files-field-group">
+          <%= f.label :bank, "Banco Emisor", class: "source-files-label" %>
           <%= f.select :bank, BANK_SCHEMAS.keys.map { |k| [k.upcase, k] }, 
             { prompt: 'Seleccionar Banco...' }, 
             { 
-              style: "padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-size: 1rem;", 
+              class: "source-files-select", 
               data: { 
                 parameters_target: "bankSelect", 
                 action: "change->parameters#showSchema" 
@@ -35,35 +37,35 @@
         </div>
 
         <!-- Selector de Archivo -->
-        <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="source-files-field-group">
           <%= f.label :file, "Archivo (Excel/CSV)", 
-              style: "font-weight: 600; color: #475569;", 
+              class: "source-files-label", 
               data: { parameters_target: "fileLabel" } %>
           <%= f.file_field :file, 
               data: { parameters_target: "fileInput" },
-              style: "padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; cursor: pointer;" %>
+              class: "source-files-file-input" %>
         </div>
       </div>
 
       <!-- SECCIÓN DINÁMICA: Aparece solo si el banco tiene parámetros adicionales -->
-      <div data-parameters-target="schemaContainer" style="display: none; background: #f1f5f9; padding: 24px; border-radius: 8px; margin-bottom: 24px; border: 1px dashed #cbd5e1;">
-          <h4 style="margin-top: 0; margin-bottom: 16px; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Configuración Adicional</h4>
+      <div data-parameters-target="schemaContainer" class="source-files-schema-container">
+          <h4 class="source-files-schema-title">Configuración Adicional</h4>
           
-          <div id="dynamic-fields" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+          <div id="dynamic-fields" class="source-files-dynamic-fields">
             <!-- El JS inyectará aquí los campos del Template -->
           </div>
       </div>
 
       <!-- BOTÓN DE ACCIÓN -->
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; display: flex; justify-content: flex-end;">
-        <%= f.submit "🚀 Iniciar Pipeline", style: "background: #3b82f6; color: white; border: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: background 0.2s;" %>
+      <div class="source-files-form-footer">
+        <%= f.submit "🚀 Iniciar Pipeline", class: "btn-pipeline-submit" %>
       </div>
 
       <!-- TEMPLATE (Invisible para el usuario, usado por Stimulus) -->
       <template data-parameters-target="fieldTemplate">
-          <div class="field-group" style="display: flex; flex-direction: column; gap: 6px;">
-            <label style="font-size: 0.85rem; font-weight: 600; color: #334155;"></label>
-            <input style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;">
+          <div class="source-files-field-template">
+            <label></label>
+            <input>
           </div>
       </template>
 
@@ -71,23 +73,22 @@
   </section>
 
   <!-- TABLA DE HISTORIAL -->
-  <section style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
-    <div style="padding: 16px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="font-size: 1rem; color: #334155; margin: 0; font-weight: 700;">📜 Historial de Procesamiento</h2>
+  <section class="source-files-history-section">
+    <div class="source-files-history-header">
+      <h2 class="source-files-history-title">📜 Historial de Procesamiento</h2>
     </div>
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+    <div class="source-files-table-wrapper">
+      <table class="source-files-table">
         <thead>
-          <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-            <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Fecha</th>
-            <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Banco</th>
-            <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Estado</th>
-            <th style="padding: 14px 24px; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Detalles</th>
+          <tr>
+            <th>Fecha</th>
+            <th>Banco</th>
+            <th>Estado</th>
+            <th>Detalles</th>
           </tr>
         </thead>
         <tbody id="source_files_table">
           <% @source_files.each do |sf| %>
-            <%# 2. Identificar la fila con dom_id(sf) %>
             <%= render partial: "source_files/source_file", locals: { source_file: sf } %>
           <% end %>
         </tbody>

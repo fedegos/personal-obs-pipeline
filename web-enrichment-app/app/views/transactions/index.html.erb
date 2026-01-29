@@ -7,40 +7,29 @@
   </header>
 
   <% if @pending.any? %>
-    <div id="transactions-container" style="display: grid; gap: 16px; grid-template-columns: 1fr;">
+    <div id="transactions-container" class="transactions-grid">
       <% @pending.each do |t| %>
-        
-        <%# LLAMADA AL PARTIAL DE LA TARJETA %>
-      <%# Dentro del loop en index.html.erb %>
-      <%= render "shared/transaction_card", transaction: t do %>
-        
-        <%# El style: "flex-grow: 1; width: 100%;" es la clave aquí %>
-        <%= form_with model: t, url: approve_transaction_path(t), method: :patch, 
-                      html: { style: "flex-grow: 1; width: 100%;" } do |f| %>
-          
-          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #edf2f7; width: 100%; box-sizing: border-box;">
-            
-            <%= render "shared/transaction_form_fields", 
-                      f: f, 
-                      categories_map: @categories_map, 
-                      categories_list: @categories_list %>
+        <%= render "shared/transaction_card", transaction: t do %>
+          <%= form_with model: t, url: approve_transaction_path(t), method: :patch, 
+                        html: { class: "transaction-approval-form" } do |f| %>
+            <div class="approval-form-box">
+              <%= render "shared/transaction_form_fields", 
+                        f: f, 
+                        categories_map: @categories_map, 
+                        categories_list: @categories_list %>
 
-            <div style="margin-top: 15px;">
-              <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary" %>
+              <div class="approval-form-submit">
+                <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary" %>
+              </div>
             </div>
-          </div>
+          <% end %>
         <% end %>
-
-      <% end %>
-
       <% end %>
     </div>
   <% else %>
-    <%# ... (Estado vacío sin cambios) ... %>
-    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px; border: 2px dashed #cbd5e0;">
-      <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
-      <h2 style="color: #1e293b; margin: 0;">¡Todo procesado!</h2>
-      <p style="color: #64748b; margin-top: 8px;">No hay gastos pendientes de aprobación.</p>
-    </div>
+    <%= render "shared/empty_state", 
+          icon: "🎉",
+          title: "¡Todo procesado!",
+          message: "No hay gastos pendientes de aprobación." %>
   <% end %>
 </div>

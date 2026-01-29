@@ -35,3 +35,71 @@
   border: 1px solid #fde68a;
   display: inline-block;
 }
+
+/* Badges de información de tarjeta */
+.badge-network {
+  background: #f0f9ff;
+  color: #0c4a6e;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid #bae6fd;
+  display: inline-block;
+}
+
+.badge-network.amex {
+  background: #006fcf;
+  color: white;
+  border-color: #0052a3;
+}
+
+.badge-network.visa {
+  background: #1434cb;
+  color: white;
+  border-color: #0f2a9e;
+}
+
+.badge-network.mc,
+.badge-network.mastercard {
+  background: #eb001b;
+  color: white;
+  border-color: #c20016;
+}
+
+.badge-card-number {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: 500;
+  font-family: ui-monospace, monospace;
+  border: 1px solid #e2e8f0;
+  display: inline-block;
+}
+
+/* Badge para indicar información incompleta */
+.badge-incomplete {
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: 600;
+  border: 1px solid #fecaca;
+  display: inline-block;
+}
+
+/* Badge para "Revisar sugerencia" (tiene categoría/subcategoría sugerida por reglas) */
+.badge-suggested {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: 600;
+  border: 1px solid #93c5fd;
+  display: inline-block;
+}

@@ -1,0 +1,27 @@
+/* app/assets/stylesheets/audit_corrections.css */
+
+/* Contenedor principal del módulo de auditoría */
+.audit-corrections-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Contenedor de resultados */
+.audit-results-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 24px;
+  padding-bottom: 50px;
+}
+
+.audit-results-container > div {
+  animation: cardEntrance 0.5s ease-out;
+}
+
+/* Contenedor de paginación infinita */
+.audit-pagination-container {
+  margin-top: 20px;
+  text-align: center;
+  padding-bottom: 100px;
+}

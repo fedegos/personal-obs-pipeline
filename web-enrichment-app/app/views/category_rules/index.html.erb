@@ -1,58 +1,58 @@
 <%# app/views/category_rules/index.html.erb %>
-<div style="max-width: 800px; margin: 0 auto; padding-bottom: 40px;">
+<div class="page-container">
   
-  <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
-    <div>
-      <h1 style="font-size: 1.5rem; color: #1e293b; margin: 0;">⚙️ Motor de Reglas</h1>
-      <p style="color: #64748b; font-size: 0.9rem; margin-top: 4px;">Configura la lógica de categorización automática.</p>
+  <header class="page-header">
+    <div class="page-header-content">
+      <h1 class="page-title">⚙️ Motor de Reglas</h1>
+      <p class="page-subtitle">Configura la lógica de categorización automática.</p>
     </div>
-    <%= link_to new_category_rule_path, style: "background: #3b82f6; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);" do %>
-      <span>➕</span> <span style="display: inline;">Nueva Regla</span>
+    <%= link_to new_category_rule_path, class: "btn-primary-action" do %>
+      <span>➕</span> <span>Nueva Regla</span>
     <% end %>
   </header>
 
   <% if @category_rules.any? %>
-    <div style="display: grid; gap: 12px; grid-template-columns: 1fr;">
+    <div class="grid-single-column">
       <% @category_rules.order(parent_id: :asc, priority: :desc).each do |rule| %>
-        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative;">
+        <div class="category-rule-card">
           
           <%# Fila Superior: Nombre y Jerarquía %>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: 700; color: #0f172a; font-size: 1.05rem;"><%= rule.name %></span>
+          <div class="category-rule-header">
+            <div class="category-rule-name-section">
+              <div class="category-rule-name-row">
+                <span class="category-rule-name"><%= rule.name %></span>
                 <% if rule.parent_id.nil? %>
-                  <span style="font-size: 0.65rem; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 20px; font-weight: bold; text-transform: uppercase;">Raíz</span>
+                  <span class="category-rule-badge-root">Raíz</span>
                 <% end %>
               </div>
               <% if rule.parent %>
-                <div style="font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                <div class="category-rule-parent-info">
                   <span>↳ pertenece a</span>
-                  <strong style="color: #475569;"><%= rule.parent.name %></strong>
+                  <strong class="category-rule-parent-name"><%= rule.parent.name %></strong>
                 </div>
               <% end %>
             </div>
             
             <%# Badge de Prioridad %>
-            <div style="text-align: right; background: #f8fafc; padding: 4px 10px; border-radius: 6px; border: 1px solid #f1f5f9;">
-              <div style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: bold;">Prioridad</div>
-              <div style="font-weight: 800; font-size: 0.9rem; color: #475569;"><%= rule.priority %></div>
+            <div class="category-rule-priority-badge">
+              <div class="category-rule-priority-label">Prioridad</div>
+              <div class="category-rule-priority-value"><%= rule.priority %></div>
             </div>
           </div>
 
           <%# Fila Media: El Patrón Regex %>
-          <div style="background: #fdf2f2; border: 1px solid #fee2e2; padding: 8px 12px; border-radius: 6px;">
-            <code style="color: #dc2626; font-size: 0.85rem; font-family: ui-monospace, monospace; word-break: break-all;">
+          <div class="category-rule-pattern">
+            <code class="category-rule-pattern-code">
               <%= rule.pattern %>
             </code>
           </div>
 
           <%# Fila Inferior: Acciones %>
-          <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #f1f5f9; pt: 12px; margin-top: 4px; padding-top: 12px;">
-            <%= link_to "✏️ Editar", edit_category_rule_path(rule), style: "text-decoration: none; font-size: 0.85rem; color: #3b82f6; font-weight: 600;" %>
+          <div class="category-rule-footer">
+            <%= link_to "✏️ Editar", edit_category_rule_path(rule), class: "btn-action-link" %>
             
             <%= button_to rule, method: :delete, data: { confirm: "¿Eliminar esta regla?" }, 
-                style: "background: none; border: none; padding: 0; cursor: pointer; font-size: 0.85rem; color: #ef4444; font-weight: 600;" do %>
+                class: "btn-action-delete" do %>
               🗑️ Eliminar
             <% end %>
           </div>
@@ -60,8 +60,8 @@
       <% end %>
     </div>
   <% else %>
-    <div style="text-align: center; padding: 40px; background: #f8fafc; border: 2px dashed #cbd5e0; border-radius: 12px;">
-      <p style="color: #64748b;">No hay reglas configuradas aún. Comienza creando una categoría raíz.</p>
-    </div>
+    <%= render "shared/empty_state", 
+          simple: true,
+          message: "No hay reglas configuradas aún. Comienza creando una categoría raíz." %>
   <% end %>
 </div>

@@ -115,3 +115,19 @@ audit-gems: ## Audita las gemas de rails.
 
 install-gems: ## Instala las gemas en Gemfile
 	docker compose exec web bundle install
+
+backfill-card-numbers: ## Reprocesa transacciones_raw para completar numero_tarjeta en registros existentes
+	@echo "🔄 Iniciando backfill de numero_tarjeta..."
+	@echo "⚠️  Este proceso leerá desde Kafka y actualizará solo el campo numero_tarjeta"
+	@echo "⏸️  Presiona Ctrl+C para detener cuando hayas actualizado suficientes registros"
+	docker compose exec web rails runner "DataBackfillService.backfill_numero_tarjeta"
+
+rebind-karafka-consumer: ## Rebobina el consumer group de Karafka al inicio (para reprocesar mensajes)
+	@echo "⏪ Rebobinando consumer group 'enrichment_manager_v3' al inicio..."
+	docker compose exec redpanda rpk group seek enrichment_manager_v3 --to start
+	@echo "✅ Consumer group rebobinado. Reinicia el worker con: make restart-karafka-worker"
+	@echo "⚠️  IMPORTANTE: Modifica temporalmente TransactionsConsumer para permitir actualización de aprobadas"
+
+check-card-numbers: ## Verifica cuántas transacciones tienen numero_tarjeta
+	@echo "📊 Verificando estado de numero_tarjeta..."
+	docker compose exec web rails runner "total = Transaction.count; con = Transaction.where.not(numero_tarjeta: [nil, '']).count; sin = Transaction.where(numero_tarjeta: [nil, '']).count; puts \"Total: #{total}\"; puts \"✅ Con numero_tarjeta: #{con} (#{(con.to_f / total * 100).round(1)}%)\"; puts \"⚠️  Sin numero_tarjeta: #{sin} (#{(sin.to_f / total * 100).round(1)}%)\""
