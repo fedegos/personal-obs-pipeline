@@ -46,6 +46,10 @@ RUN apt-get update -qq && \
 COPY --from=base /usr/local/bundle /usr/local/bundle
 COPY --from=base /app /app
 
+# Entrypoint: migraciones antes de arrancar (cada deploy aplica pendientes)
+RUN chmod +x /app/bin/docker-entrypoint
+ENTRYPOINT ["/app/bin/docker-entrypoint"]
+
 # Configuración de entorno para producción
 ENV RAILS_ENV=production \
     RAILS_LOG_TO_STDOUT=true \

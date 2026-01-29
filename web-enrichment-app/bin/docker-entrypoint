@@ -1,8 +1,7 @@
 #!/bin/bash -e
 
-# If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
-fi
+# Ejecutar migraciones pendientes antes de arrancar (idempotente; rápido si no hay nada pendiente).
+# Así cada deploy en Coolify/u otro deja la DB al día sin pasos manuales.
+bundle exec rails db:prepare
 
-exec "${@}"
+exec "$@"
