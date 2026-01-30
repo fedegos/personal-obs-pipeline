@@ -28,7 +28,7 @@ jobs:
         run: bundle exec bundler-audit
 
       - name: Importmap audit
-        run: bundle exec importmap audit
+        run: ruby bin/importmap audit
 
   rails-rubocop:
     runs-on: ubuntu-latest
