@@ -85,7 +85,7 @@ jobs:
       - name: Rails tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/web_enrichment_app_test
         run: bundle exec rails db:test:prepare test
 
   rails-system-test:
@@ -118,7 +118,7 @@ jobs:
       - name: System tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/web_enrichment_app_test
         run: bundle exec rails db:test:prepare test:system
 
       - name: Upload screenshots on failure
