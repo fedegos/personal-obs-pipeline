@@ -49,7 +49,6 @@ Si agregaste gemas nuevas o estás en una instalación limpia:
    docker compose exec web rails db:prepare
    ```
 
-   **Build no borra la DB:** `docker compose build web` y `make build-web` solo reconstruyen la imagen de Rails; no tocan PostgreSQL. La base de desarrollo se pierde solo si ejecutas `docker compose down -v` o `make down-volumes` (eliminan el volumen `postgres_data`). Si la DB desapareció, vuelve a crear esquema y seeds con: `docker compose exec web rails db:prepare` y opcionalmente `rails db:seed`.
 
 ---
 
@@ -163,6 +162,22 @@ Targets auxiliares:
 3. **Persistencia:** Los datos residen en volúmenes nombrados de Docker (`postgres_data`, `influxdb_data`). No borrar a menos que se desee un hard-reset.
 4. **Sincronización:** Recuerda: **Escribe código en local, ejecuta en Docker.** Cualquier archivo generado con `rails generate` aparecerá en tu carpeta local gracias a los volúmenes montados.
 
+### Hotfix: `solid_cache_entries` / Solid Queue no existen (401 en login)
+Si en producción aparece **`PG::UndefinedTable: relation "solid_cache_entries" does not exist`** al hacer login (porque Rack::Attack usa Solid Cache para throttling):
+
+- **Opción A (recomendada):** Desplegar este hotfix y ejecutar migraciones en producción:
+  ```bash
+  RAILS_ENV=production bundle exec rails db:migrate
+  ```
+  Las migraciones `20260130120000_create_solid_cache_entries` y `20260130120001_create_solid_queue_tables` crean las tablas en la base principal.
+
+- **Opción B (sin redesplegar):** En el servidor de producción, con la app ya desplegada:
+  ```bash
+  cd /ruta/a/web-enrichment-app
+  RAILS_ENV=production bundle exec rails db:schema:load:cache
+  RAILS_ENV=production bundle exec rails db:schema:load:queue
+  ```
+  Eso carga los esquemas de cache y queue en la misma base (si usas una sola `DATABASE_URL`).
+
 ---
 *Tip: Usa `Ctrl + Shift + V` en VS Code para previsualizar este documento.*
-```` [1], [2], [3]
