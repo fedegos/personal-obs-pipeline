@@ -1,12 +1,13 @@
-import pandas as pd
-import numpy as np
-import gspread
+import os
 import traceback
 
-from . import register_extractor
+import gspread
+import numpy as np
+import pandas as pd
+
 from utils.data_standardizer import apply_standard_format
 
-import os
+from . import register_extractor
 
 # --- Utilidades de Limpieza ---
 
@@ -28,20 +29,20 @@ def fetch_gsheet_data(spreadsheet_id: str, sheet_name: str):
     # gc = gspread.service_account(filename='credentials.json')
     gc = gspread.service_account(filename=os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'credentials.json'))
     sh = gc.open(spreadsheet_id)
-    
+
     # En 2026, usamos el nombre de pestaña enviado desde la UI de Rails
     try:
         worksheet = sh.worksheet(sheet_name)
     except gspread.exceptions.WorksheetNotFound:
         raise ValueError(f"La pestaña '{sheet_name}' no existe en el documento.")
-    
+
     all_values = worksheet.get_all_values()
     if not all_values:
         return pd.DataFrame(), worksheet.title
-        
+
     headers = all_values[0] # Usamos la primera fila como headers (ajusta si es necesario)
     data = all_values[3:]   # Salteamos filas según tu lógica actual
-    
+
     return pd.DataFrame(data, columns=headers), worksheet.title
 
 # --- Transformación Principal ---
@@ -61,7 +62,7 @@ def extract_amex(file_content=None, **kwargs) -> pd.DataFrame:
 
     if not spreadsheet_id:
         raise ValueError("Falta el parámetro obligatorio 'spreadsheet_id' para AMEX.")
-    
+
     try:
         # 2. Obtención mediante ID de documento
         df, sheet_title = fetch_gsheet_data(spreadsheet_id, target_sheet)
@@ -73,28 +74,28 @@ def extract_amex(file_content=None, **kwargs) -> pd.DataFrame:
                 # Podrías usar fiscal_year aquí si la fecha del sheet no tiene año completo
                 fecha_transaccion=lambda x: pd.to_datetime(x['Fecha'], format='%d-%m-%Y', errors='coerce'),
                 numero_tarjeta=f"XXXXXXXXXX {sheet_title}",
-                
+
                 # Lógica de cuotas
                 en_cuotas=lambda x: x['Descripción'].str.contains(r'CUOTA \d{2}/\d{2}$', regex=True),
                 descripcion_cuota=lambda x: np.where(
-                    x['en_cuotas'], 
-                    x['Descripción'].str.extract(r'(?<=CUOTA )(\d{2}/\d{2})', expand=False), 
+                    x['en_cuotas'],
+                    x['Descripción'].str.extract(r'(?<=CUOTA )(\d{2}/\d{2})', expand=False),
                     "-"
                 ),
-                
+
                 # Limpieza numérica
                 cargos_p=lambda x: limpiar_moneda(x['Cargos en Pesos']),
                 cargos_d=lambda x: limpiar_moneda(x['Cargos en Dólares'])
             )
             .assign(
                 moneda=lambda x: np.select(
-                    [x['cargos_p'] > 0, x['cargos_d'] > 0], 
-                    ['pesos', 'dólares'], 
+                    [x['cargos_p'] > 0, x['cargos_d'] > 0],
+                    ['pesos', 'dólares'],
                     default='-'
                 ),
                 monto=lambda x: np.select(
-                    [x['cargos_p'] > 0, x['cargos_d'] > 0], 
-                    [x['cargos_p'], x['cargos_d']], 
+                    [x['cargos_p'] > 0, x['cargos_d'] > 0],
+                    [x['cargos_p'], x['cargos_d']],
                     default=0.0
                 )
             )
@@ -102,9 +103,9 @@ def extract_amex(file_content=None, **kwargs) -> pd.DataFrame:
         )
 
         # ... (resto de la limpieza de columnas y filtrado igual) ...
-        
+
         columnas_finales = [
-            'fecha_transaccion', 'detalles', 'monto', 'moneda', 
+            'fecha_transaccion', 'detalles', 'monto', 'moneda',
             'red', 'numero_tarjeta', 'en_cuotas', 'descripcion_cuota'
         ]
         df = df[columnas_finales].copy()

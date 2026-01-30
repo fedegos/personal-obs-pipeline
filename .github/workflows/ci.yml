@@ -1,0 +1,187 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # --- Rails: security & lint ---
+  rails-lint:
+    runs-on: ubuntu-latest
+    paths:
+      - "web-enrichment-app/**"
+      - ".github/workflows/ci.yml"
+    defaults:
+      run:
+        working-directory: web-enrichment-app
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          working-directory: web-enrichment-app
+
+      - name: Brakeman
+        run: bin/brakeman --no-pager
+
+      - name: Bundler audit
+        run: bin/bundler-audit
+
+      - name: Importmap audit
+        run: bin/importmap audit
+
+  rails-rubocop:
+    runs-on: ubuntu-latest
+    paths:
+      - "web-enrichment-app/**"
+      - ".github/workflows/ci.yml"
+    env:
+      RUBOCOP_CACHE_ROOT: web-enrichment-app/tmp/rubocop
+    defaults:
+      run:
+        working-directory: web-enrichment-app
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          working-directory: web-enrichment-app
+
+      - name: RuboCop cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RUBOCOP_CACHE_ROOT }}
+          key: rubocop-${{ runner.os }}-${{ hashFiles('web-enrichment-app/.ruby-version', 'web-enrichment-app/**/.rubocop.yml', 'web-enrichment-app/**/.rubocop_todo.yml', 'web-enrichment-app/Gemfile.lock') }}
+
+      - name: RuboCop
+        run: bin/rubocop -f github
+
+  rails-test:
+    runs-on: ubuntu-latest
+    paths:
+      - "web-enrichment-app/**"
+      - ".github/workflows/ci.yml"
+    defaults:
+      run:
+        working-directory: web-enrichment-app
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          working-directory: web-enrichment-app
+
+      - name: Rails tests
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+        run: bin/rails db:test:prepare test
+
+  rails-system-test:
+    runs-on: ubuntu-latest
+    paths:
+      - "web-enrichment-app/**"
+      - ".github/workflows/ci.yml"
+    defaults:
+      run:
+        working-directory: web-enrichment-app
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          working-directory: web-enrichment-app
+
+      - name: System tests
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+        run: bin/rails db:test:prepare test:system
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: web-enrichment-app/tmp/screenshots
+          if-no-files-found: ignore
+
+  # --- Python: lint & test ---
+  python-lint:
+    runs-on: ubuntu-latest
+    paths:
+      - "ingestion-engine/**"
+      - ".github/workflows/ci.yml"
+    defaults:
+      run:
+        working-directory: ingestion-engine
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt ruff
+
+      - name: Ruff check
+        run: ruff check .
+
+  python-test:
+    runs-on: ubuntu-latest
+    paths:
+      - "ingestion-engine/**"
+      - ".github/workflows/ci.yml"
+    defaults:
+      run:
+        working-directory: ingestion-engine
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Pytest
+        run: python -m pytest tests/ -v --tb=short

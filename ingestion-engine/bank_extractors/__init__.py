@@ -3,7 +3,7 @@ _registry = {}
 
 def register_extractor(bank_name):
     """
-    Decorador con argumentos. 
+    Decorador con argumentos.
     Primero recibe el nombre del banco, y luego la función.
     """
     def decorator(extractor_func):
@@ -25,6 +25,6 @@ def list_extractors():
     """Lista todos los extractores disponibles"""
     return list(_registry.keys())
 
-from . import visa_extractor
-from . import amex_extractor
-from . import bbva_extractor
+from . import amex_extractor as amex_extractor  # noqa: E402
+from . import bbva_extractor as bbva_extractor  # noqa: E402
+from . import visa_extractor as visa_extractor  # noqa: E402

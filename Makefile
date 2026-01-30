@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka reset-history help
+.PHONY: clean-db clean-influx clean-kafka reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test
 
 .DEFAULT_GOAL := help
 
@@ -88,15 +88,45 @@ inspect-influx: ## Ver qué está llegando exactamente a InfluxDB en tiempo real
 		'from(bucket: "$(INFLUX_BUCKET)") |> range(start: -5m) |> limit(n:10)' \
 		--org "$(INFLUX_ORG)" --token "$(INFLUX_TOKEN)"
 
-test: ## Correr tests de Rails
-	docker compose exec web bundle exec rspec
+test: ## Correr tests de Rails (Minitest)
+	docker compose exec web bin/rails db:test:prepare test
+
+test-python: ## Correr tests de Python (pytest)
+	cd ingestion-engine && python3 -m pytest tests/ -v --tb=short
+
+test-all: test test-python ## Correr todas las pruebas (Rails + Python)
+
+# --- CI local: mismos checks que GitHub Actions (.github/workflows/ci.yml) ---
+ci-rails-lint: ## CI: Brakeman + bundler-audit + importmap audit
+	docker compose exec web bin/brakeman --no-pager
+	docker compose exec web bin/bundler-audit
+	docker compose exec web bin/importmap audit
+
+ci-rails-rubocop: ## CI: RuboCop (solo verificación, sin -A)
+	docker compose exec web bin/rubocop -f github
+
+ci-rails-test: ## CI: Minitest
+	docker compose exec web bin/rails db:test:prepare test
+
+ci-rails-system-test: ## CI: System tests
+	docker compose exec web bin/rails db:test:prepare test:system
+
+ci-python-lint: ## CI: Ruff check (dentro del contenedor ingestion_worker)
+	docker compose exec ingestion_worker python3 -m ruff check .
+
+ci-pyhon-lint: ci-python-lint ## Alias (typo) → ci-python-lint
+
+ci-python-test: ## CI: pytest (dentro del contenedor ingestion_worker)
+	docker compose exec ingestion_worker python3 -m pytest tests/ -v --tb=short
+
+ci: ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test ## Correr todos los controles del CI (igual que GitHub Actions)
 
 security-check: ## Verificar vulnerabilidades en gemas (Seguridad 2026)
 	docker compose exec web bundle exec bundle-audit update
 	docker compose exec web bundle exec bundle-audit check
 	docker compose exec web bundle exec brakeman
 
-lint: ## Linting de Ruby (Estilo de código)
+lint: ## Linting de Ruby (Estilo de código, con auto-fix)
 	docker compose exec web bundle exec rubocop -A
 
 

@@ -1,7 +1,7 @@
 # app/controllers/transactions_controller.rb
 class TransactionsController < ApplicationController
   # Saltamos la verificación de autenticidad para facilitar pruebas locales con Turbo
-  skip_before_action :verify_authenticity_token, only: [:approve]
+  skip_before_action :verify_authenticity_token, only: [ :approve ]
 
  def index
     @pending = Transaction.where(aprobado: false).order(fecha: :desc)
@@ -27,13 +27,13 @@ class TransactionsController < ApplicationController
 
   def approve
     @transaction = Transaction.find(params[:id])
-    
+
     # Intentamos actualizar con los datos del formulario (categoría y sentimiento)
     if @transaction.update(transaction_params.merge(aprobado: true))
-      
+
       # 1. Publicar el evento enriquecido en Kafka Clean (hacia Telegraf -> InfluxDB)
       @transaction.publish_clean_event
-      
+
       # 2. Responder al navegador
       respond_to do |format|
         format.turbo_stream # Busca approve.turbo_stream.erb
@@ -51,7 +51,6 @@ class TransactionsController < ApplicationController
 
   def transaction_params
     # Permitimos los campos de enriquecimiento manual
-    params.require(:transaction).permit(:categoria, :sub_categoria,:sentimiento)
+    params.require(:transaction).permit(:categoria, :sub_categoria, :sentimiento)
   end
-
 end

@@ -1,6 +1,11 @@
 # 🚀 Runbook: Personal Observability Pipeline (Audit-X)
 *Actualizado: 10 de enero, 2026*
 
+## 🔀 Flujo Git y CI
+El trabajo se hace en ramas; la integración a `main` es solo vía Pull Request, con el CI en verde (lint y tests de Rails y Python). El workflow está en la raíz del repo: `.github/workflows/ci.yml`. Coolify despliega desde `main`.
+
+---
+
 ## 🛠 1. Gestión de Infraestructura (Docker)
 El stack completo corre en contenedores. No es necesario instalar Ruby o Kafka localmente.
 

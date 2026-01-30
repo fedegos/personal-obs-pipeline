@@ -1,6 +1,7 @@
 import os
-from dotenv import load_dotenv
+
 import boto3
+from dotenv import load_dotenv
 
 load_dotenv() # Esto carga las variables del archivo .env al entorno
 

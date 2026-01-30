@@ -6,7 +6,7 @@ class AuditCorrectionsController < ApplicationController
     if params[:query].present?
       q = "%#{params[:query]}%"
       @transactions = @transactions.where(
-        "event_id ILIKE ? OR detalles ILIKE ? OR categoria ILIKE ? OR sub_categoria ILIKE ? OR sentimiento ILIKE ?", 
+        "event_id ILIKE ? OR detalles ILIKE ? OR categoria ILIKE ? OR sub_categoria ILIKE ? OR sentimiento ILIKE ?",
         q, q, q, q, q
       )
     end
@@ -30,7 +30,7 @@ class AuditCorrectionsController < ApplicationController
     @transaction = Transaction.find(params[:id])
     # Cargamos la data para que el combo_controller funcione dentro del modal
     prepare_categories_data
-    
+
     respond_to do |format|
       format.turbo_stream # Renderiza edit.turbo_stream.erb (el modal)
     end
@@ -46,7 +46,7 @@ class AuditCorrectionsController < ApplicationController
 
   def update
     @transaction = Transaction.find(params[:id])
-    
+
     if @transaction.update(transaction_params)
       # 🚀 PUBLICACIÓN EN KAFKA
       # El método publish_clean_event ya debería manejar el payload correcto
@@ -78,5 +78,4 @@ class AuditCorrectionsController < ApplicationController
     # ⚠️ IMPORTANTE: Agregamos :sub_categoria
     params.require(:transaction).permit(:monto, :categoria, :sub_categoria, :sentimiento, :detalles, :fecha)
   end
-
 end

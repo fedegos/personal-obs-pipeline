@@ -1,25 +1,38 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# event_id debe ser único (índice único en la tabla).
 
 one:
-  event_id: MyString
+  event_id: fixture_event_one
   fecha: 2026-01-11 01:10:27
   monto: 9.99
-  moneda: MyString
-  detalles: MyString
-  categoria: MyString
-  sub_categoria: MyString
-  sentimiento: MyString
-  red: MyString
+  moneda: pesos
+  detalles: Detalle uno
+  categoria: Categoria
+  sub_categoria: Sub
+  sentimiento: Deseo
+  red: Visa
   aprobado: false
 
 two:
-  event_id: MyString
-  fecha: 2026-01-11 01:10:27
-  monto: 9.99
-  moneda: MyString
-  detalles: MyString
-  categoria: MyString
-  sub_categoria: MyString
-  sentimiento: MyString
-  red: MyString
+  event_id: fixture_event_two
+  fecha: 2026-01-11 01:10:28
+  monto: 19.99
+  moneda: pesos
+  detalles: Detalle dos
+  categoria: Categoria
+  sub_categoria: Sub
+  sentimiento: Necesario
+  red: MC
   aprobado: false
+
+approved:
+  event_id: fixture_event_approved
+  fecha: 2026-01-12 10:00:00
+  monto: 50.00
+  moneda: pesos
+  detalles: Compra aprobada
+  categoria: Hogar
+  sub_categoria: Luz
+  sentimiento: Necesario
+  red: Visa
+  aprobado: true

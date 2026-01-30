@@ -57,6 +57,10 @@ development:
 test:
   <<: *default
   database: web_enrichment_app_test
+  <% if ENV["DATABASE_URL"].present? %>
+  # En Docker (o cuando hay DATABASE_URL) usar la misma URL con la DB de test para conectar por TCP
+  url: <%= ENV["DATABASE_URL"].sub(/\/[^\/]+\z/, "/web_enrichment_app_test") %>
+  <% end %>
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is

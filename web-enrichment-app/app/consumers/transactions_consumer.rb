@@ -4,23 +4,23 @@ class TransactionsConsumer < ApplicationConsumer
     # Procesamos en bloque para mayor eficiencia en Kafka
     messages.each do |message|
       data = message.payload
-      
+
       # Buscamos por event_id (el hash generado en Python)
-      transaction = Transaction.find_or_initialize_by(event_id: data['event_id'])
-      
+      transaction = Transaction.find_or_initialize_by(event_id: data["event_id"])
+
       # Lógica de seguridad: Si ya está aprobada, ignoramos el mensaje de Kafka
       # Esto evita que una re-ingesta de un CSV viejo arruine tus datos curados
       next if transaction.aprobado?
 
-      results = CategorizerService.guess(data['detalles'])
+      results = CategorizerService.guess(data["detalles"])
 
       transaction.assign_attributes(
-        fecha:        data['fecha_transaccion'],
-        monto:        data['monto'],
-        moneda:       data['moneda'],
-        detalles:     data['detalles'],
-        red:          data['red'],
-        numero_tarjeta: data['numero_tarjeta'],
+        fecha:        data["fecha_transaccion"],
+        monto:        data["monto"],
+        moneda:       data["moneda"],
+        detalles:     data["detalles"],
+        red:          data["red"],
+        numero_tarjeta: data["numero_tarjeta"],
         # El servicio de categorización puede usar Regex o incluso una IA local
         categoria:    results[:category],
         sub_categoria:  results[:sub_category],

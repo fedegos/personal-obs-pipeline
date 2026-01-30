@@ -1,11 +1,12 @@
-import pandas as pd
 import json
 import os
+
+import pandas as pd
 from confluent_kafka import Consumer, Producer
-from utils.data_standardizer import generate_event_id
+
 from bank_extractors import get_extractor, list_extractors
+from utils.data_standardizer import generate_event_id
 from utils.s3_client import get_s3_client
-from io import BytesIO
 
 # Configuración del Productor (para enviar transacciones a Kafka)
 producer_conf = {'bootstrap.servers': os.getenv('KAFKA_SERVERS', 'redpanda:29092')}
@@ -31,10 +32,10 @@ def process_ingestion(data):
     metadata = data['metadata']
     ingestion = data['ingestion']
     params = data['params'] # Los **kwargs dinámicos desde Rails
-    
+
     bank_name = metadata['bank']
     source_id = metadata['source_file_id']
-    
+
     try:
         extractor_func = get_extractor(bank_name)
         df = pd.DataFrame()
@@ -45,7 +46,7 @@ def process_ingestion(data):
             print(f"📥 Descargando {ingestion['location']} desde S3...")
             response = s3.get_object(Bucket=ingestion['bucket'], Key=ingestion['location'])
             file_content = response['Body'].read()
-            
+
             # Pasamos file_content y los kwargs dinámicos al extractor
             df = extractor_func(file_content, **params)
 
@@ -58,15 +59,15 @@ def process_ingestion(data):
         # PROCESAMIENTO COMÚN
         if not df.empty:
             df['event_id'] = df.apply(generate_event_id, axis=1)
-            
+
             for _, row in df.iterrows():
                 # Enviamos a transacciones_raw
                 producer.produce(
-                    'transacciones_raw', 
-                    key=str(row['event_id']).encode(), 
+                    'transacciones_raw',
+                    key=str(row['event_id']).encode(),
                     value=json.dumps(row.to_dict(), default=json_serial).encode('utf-8')
                 )
-            
+
             producer.flush()
             send_feedback(source_id, "success")
             print(f"✅ '{bank_name}' completada: {len(df)} registros enviados.")
@@ -85,17 +86,18 @@ def run_worker():
         'group.id': 'ingestion-engine-group-2026',
         'auto.offset.reset': 'earliest'
     }
-    
+
     consumer = Consumer(consumer_conf)
     consumer.subscribe(['file_uploaded'])
 
     print(f"🤖 Ingestion Engine activo. Extractores: {list_extractors()}")
-    
+
     try:
         while True:
             msg = consumer.poll(1.0)
             print(f"msg : {msg}")
-            if msg is None: continue
+            if msg is None:
+                continue
             if msg.error():
                 print(f"Kafka error: {msg.error()}")
                 continue

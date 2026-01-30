@@ -21,19 +21,19 @@ class CategoryRulesController < ApplicationController
     end
   end
 
-  # GET /category_rules/new (modal)
+  # GET /category_rules/new (modal via turbo_stream, página completa via html)
   def new
     @category_rule = CategoryRule.new
     respond_to do |format|
-      format.html { redirect_to category_rules_path }
+      format.html
       format.turbo_stream
     end
   end
 
-  # GET /category_rules/1/edit (modal)
+  # GET /category_rules/1/edit (modal via turbo_stream, página completa via html)
   def edit
     respond_to do |format|
-      format.html { redirect_to category_rules_path }
+      format.html
       format.turbo_stream
     end
   end
@@ -44,7 +44,7 @@ class CategoryRulesController < ApplicationController
 
     if @category_rule.save
       respond_to do |format|
-        format.html { redirect_to category_rules_path(sentimiento: params[:sentimiento]), notice: "Regla creada." }
+        format.html { redirect_to @category_rule, notice: "Regla creada." }
         format.turbo_stream
       end
     else
@@ -60,7 +60,7 @@ class CategoryRulesController < ApplicationController
     if @category_rule.update(category_rule_params)
       @still_matches_filter = rule_matches_sentimiento_filter?(@category_rule, params[:sentimiento])
       respond_to do |format|
-        format.html { redirect_to category_rules_path(sentimiento: params[:sentimiento]), notice: "Regla actualizada.", status: :see_other }
+        format.html { redirect_to @category_rule, notice: "Regla actualizada.", status: :see_other }
         format.turbo_stream
       end
     else
@@ -91,7 +91,7 @@ class CategoryRulesController < ApplicationController
     when nil, ""
       scope
     when "_blank"
-      scope.where(sentimiento: [nil, ""])
+      scope.where(sentimiento: [ nil, "" ])
     else
       scope.where(sentimiento: params[:sentimiento]) if Transaction::SENTIMIENTOS.key?(params[:sentimiento])
     end || scope

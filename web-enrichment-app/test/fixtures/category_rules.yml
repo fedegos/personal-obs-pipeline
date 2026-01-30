@@ -1,13 +1,14 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+# one: raíz (sin parent), two: hijo de one
 one:
-  name: MyString
-  pattern: MyString
+  name: Supermercado
+  pattern: COTO|Coto
   priority: 1
-  parent_id: 1
+  parent_id:
 
 two:
-  name: MyString
-  pattern: MyString
-  priority: 1
-  parent_id: 1
+  name: Coto
+  pattern: COTO|Coto
+  priority: 2
+  parent: one
