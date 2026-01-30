@@ -1,14 +1,10 @@
 # config/initializers/s3_client.rb
 
-# En 2026, durante 'assets:precompile', Rails no necesita un cliente S3 real.
-# Usamos un bloque condicional para evitar el KeyError.
-
-if ENV["SECRET_KEY_BASE_DUMMY"]
-  # Durante el Build de Docker, definimos constantes vacías o dummy
+# Build de Docker, test (CI) o sin credenciales: no crear cliente S3 real
+if ENV["SECRET_KEY_BASE_DUMMY"] || Rails.env.test? || ENV["AWS_ACCESS_KEY_ID"].blank?
   S3_CLIENT = nil
-  S3_BUCKET_NAME = "bank-ingestion"
+  S3_BUCKET_NAME = ENV.fetch("AWS_BUCKET_NAME", "bank-ingestion")
 else
-  # En ejecución real (Dev o Prod), usamos los valores del entorno
   S3_CLIENT = Aws::S3::Client.new(
     endpoint: ENV.fetch("AWS_ENDPOINT", "http://s3-server:9000"),
     force_path_style: true,
@@ -17,6 +13,5 @@ else
     secret_access_key: ENV.fetch("AWS_SECRET_ACCESS_KEY"),
     s3_us_east_1_regional_endpoint: "regional"
   )
-
   S3_BUCKET_NAME = ENV.fetch("AWS_BUCKET_NAME", "bank-ingestion")
 end
