@@ -50,4 +50,27 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to category_rules_url
   end
+
+  test "should get export as JSON attachment" do
+    get export_category_rules_url
+    assert_response :success
+    assert_equal "application/json", response.media_type
+    assert response.headers["Content-Disposition"].to_s.include?("attachment")
+    data = JSON.parse(response.body)
+    assert data.is_a?(Array)
+  end
+
+  test "should import valid JSON and redirect with notice" do
+    json = [ { "name" => "ImpCat", "pattern" => "IMP", "priority" => 1, "sentimiento" => nil, "parent_name" => nil } ].to_json
+    post import_category_rules_url, params: { json: json }
+    assert_redirected_to category_rules_url
+    assert_equal "Reglas importadas correctamente.", flash[:notice]
+    assert CategoryRule.exists?(name: "ImpCat", pattern: "IMP", parent_id: nil)
+  end
+
+  test "import without file or json redirects with alert" do
+    post import_category_rules_url
+    assert_redirected_to category_rules_url
+    assert_match /adjuntar|contenido/, flash[:alert].to_s
+  end
 end

@@ -1,4 +1,5 @@
 """Unit tests for bank extractors using in-memory fixtures (no S3)."""
+
 import io
 
 import pandas as pd
@@ -16,12 +17,14 @@ VISA_CSV = (
 
 # --- BBVA fixture: minimal Excel (header at row 2, columns Fecha y hora, Monto, Movimientos, Cuota) ---
 def _make_bbva_excel_bytes():
-    df = pd.DataFrame({
-        "Fecha y hora": ["15/01/25", "16/01/25"],
-        "Monto": ["$1.500,50", "$2.000,00"],
-        "Movimientos": ["SUPER", "FARMACIA"],
-        "Cuota": ["-", "-"],
-    })
+    df = pd.DataFrame(
+        {
+            "Fecha y hora": ["15/01/25", "16/01/25"],
+            "Monto": ["$1.500,50", "$2.000,00"],
+            "Movimientos": ["SUPER", "FARMACIA"],
+            "Cuota": ["-", "-"],
+        }
+    )
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as w:
         df.to_excel(w, index=False, startrow=2)

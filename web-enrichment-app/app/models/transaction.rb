@@ -1,5 +1,6 @@
 class Transaction < ApplicationRecord
   include Publishable
+  include DomainEventPublishable
 
   # Definimos los sentimientos con sus emojis para la UI
   SENTIMIENTOS = {

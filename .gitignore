@@ -11,3 +11,4 @@ venv/
 .venv/
 ingestion-engine/credentials.json
 temp_creds.yml
+backups/

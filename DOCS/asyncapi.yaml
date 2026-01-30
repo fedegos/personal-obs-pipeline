@@ -1,0 +1,245 @@
+# AsyncAPI 2.6 - Eventos del pipeline Audit-X (Kafka/Redpanda)
+# Documenta todos los tópicos y payloads para ingesta, enriquecimiento y dominio.
+# Ver: https://www.asyncapi.com/docs/reference/specification/v2.6.0
+#
+# Validación:
+#   - CLI: make validate-asyncapi (usa npx @asyncapi/cli, no requiere package.json).
+#   - Web: https://studio.asyncapi.com/ (pegar o cargar este archivo).
+
+asyncapi: 2.6.0
+id: audit-x-pipeline/events
+defaultContentType: application/json
+tags:
+  - name: pipeline
+    description: Eventos del pipeline de observabilidad financiera
+
+info:
+  title: Audit-X Pipeline Events
+  version: 1.0.0
+  description: |
+    Eventos publicados y consumidos en el pipeline de observabilidad financiera.
+    Broker: Redpanda (Kafka-compatible). Producers: ingestion-engine (Python), web-enrichment-app (Rails).
+    Consumers: Rails (Karafka), Telegraf (transacciones_clean → InfluxDB).
+  contact:
+    name: Audit-X
+  license:
+    name: MIT
+
+servers:
+  redpanda:
+    url: redpanda:29092
+    protocol: kafka
+    description: Broker Kafka/Redpanda (interno Docker)
+
+channels:
+  transacciones_raw:
+    description: Transacciones extraídas de archivos bancarios (Python → Rails). Rails las persiste y sugiere categoría.
+    subscribe:
+      operationId: consumeTransaccionesRaw
+      summary: Consumidor Rails (TransactionsConsumer)
+      message:
+        $ref: "#/components/messages/TransaccionRaw"
+    publish:
+      operationId: produceTransaccionesRaw
+      summary: Producer Python (ingestion-engine)
+      message:
+        $ref: "#/components/messages/TransaccionRaw"
+
+  transacciones_clean:
+    description: Transacciones aprobadas y enriquecidas. Telegraf las lee y escribe en InfluxDB.
+    publish:
+      operationId: produceTransaccionesClean
+      summary: Producer Rails (Transaction#publish_clean_event)
+      message:
+        $ref: "#/components/messages/TransaccionClean"
+    subscribe:
+      operationId: consumeTransaccionesClean
+      summary: Consumidor Telegraf (→ InfluxDB)
+
+  file_uploaded:
+    description: Notificación de archivo subido/listo para ingesta. Python (ingestion-engine) consume y procesa.
+    publish:
+      operationId: produceFileUploaded
+      summary: Producer Rails (ExcelUploaderService)
+      message:
+        $ref: "#/components/messages/FileUploaded"
+    subscribe:
+      operationId: consumeFileUploaded
+      summary: Consumidor Python (main.py worker)
+
+  file_results:
+    description: Resultado del procesamiento (éxito/error). Rails (FileResultsConsumer) actualiza SourceFile.
+    publish:
+      operationId: produceFileResults
+      summary: Producer Python (send_feedback)
+      message:
+        $ref: "#/components/messages/FileResult"
+    subscribe:
+      operationId: consumeFileResults
+      summary: Consumidor Rails (FileResultsConsumer)
+
+  domain_events:
+    description: Eventos de dominio (create/update/destroy) para auditoría e historia reconstruible. CategoryRule, Transaction, SourceFile, User.
+    publish:
+      operationId: produceDomainEvents
+      summary: Producer Rails (DomainEventPublishable)
+      message:
+        $ref: "#/components/messages/DomainEvent"
+    subscribe:
+      operationId: consumeDomainEvents
+      summary: Opcional (audit log, reconstrucción)
+
+components:
+  messages:
+    TransaccionRaw:
+      name: TransaccionRaw
+      messageId: transaccion-raw
+      title: Transacción en bruto
+      summary: Payload enviado por ingestion-engine al extraer archivos (CSV/Excel/PDF).
+      contentType: application/json
+      payload:
+        type: object
+        required: [ "event_id", "fecha_transaccion", "monto", "detalles" ]
+        properties:
+          event_id:
+            type: string
+            description: Hash SHA-256 determinista (fecha_transaccion + monto + detalles + numero_operacion).
+          fecha_transaccion:
+            type: string
+            format: date-time
+            description: Fecha de la transacción (ISO8601).
+          monto:
+            type: number
+            description: Importe (positivo o negativo).
+          moneda:
+            type: string
+            description: Código de moneda (ej. ARS, USD).
+          detalles:
+            type: string
+            description: Comercio o descripción.
+          red:
+            type: string
+            description: Red de la tarjeta (Visa, Amex, etc.).
+          numero_tarjeta:
+            type: string
+            description: Últimos dígitos u identificador de tarjeta (opcional).
+          numero_operacion:
+            type: string
+            description: Número de operación (para event_id).
+
+    TransaccionClean:
+      name: TransaccionClean
+      messageId: transaccion-clean
+      title: Transacción aprobada (clean)
+      summary: Publicado por Rails al aprobar una transacción. Telegraf lo envía a InfluxDB.
+      contentType: application/json
+      payload:
+        type: object
+        required: [ "event_id", "fecha", "monto", "detalles", "categoria", "sentimiento" ]
+        properties:
+          event_id:
+            type: string
+          fecha:
+            type: string
+            format: date-time
+          monto:
+            type: number
+          moneda:
+            type: string
+          detalles:
+            type: string
+          categoria:
+            type: string
+          sub_categoria:
+            type: string
+          sentimiento:
+            type: string
+            description: Necesario, Deseo, Inversión, Ahorro, Hormiga.
+          red:
+            type: string
+
+    FileUploaded:
+      name: FileUploaded
+      messageId: file-uploaded
+      title: Archivo subido/listo para ingesta
+      summary: Publicado por Rails (ExcelUploaderService) tras subir archivo. Python lo consume para procesar.
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          metadata:
+            type: object
+            properties:
+              source_file_id:
+                type: integer
+              bank:
+                type: string
+                description: Nombre del banco/extractor (ej. bbva_csv, amex).
+              timestamp:
+                type: string
+                format: date-time
+          ingestion:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [ "external_api", "s3_storage" ]
+              location:
+                type: [ "string", "null" ]
+              bucket:
+                type: [ "string", "null" ]
+          params:
+            type: object
+            description: Parámetros extra (spreadsheet_id, year, etc.).
+
+    FileResult:
+      name: FileResult
+      messageId: file-result
+      title: Resultado de procesamiento de archivo
+      summary: Publicado por Python (send_feedback) tras procesar. Rails actualiza SourceFile (status, error_message).
+      contentType: application/json
+      payload:
+        type: object
+        required: [ "source_file_id", "status" ]
+        properties:
+          source_file_id:
+            type: integer
+          status:
+            type: string
+            enum: [ "completed", "failed" ]
+          error:
+            type: [ "string", "null" ]
+            description: Mensaje de error si status es failed.
+
+    DomainEvent:
+      name: DomainEvent
+      messageId: domain-event
+      title: Evento de dominio (auditoría)
+      summary: Publicado por Rails (DomainEventPublishable) en create/update/destroy de CategoryRule, Transaction, SourceFile, User.
+      contentType: application/json
+      payload:
+        type: object
+        required: [ "event_type", "entity_type", "entity_id", "action", "payload", "timestamp" ]
+        properties:
+          event_type:
+            type: string
+            description: Ej. category_rule.created, transaction.updated, user.destroyed.
+          entity_type:
+            type: string
+            description: Nombre del modelo (CategoryRule, Transaction, SourceFile, User).
+          entity_id:
+            type: string
+            description: ID o event_id del registro.
+          action:
+            type: string
+            enum: [ "created", "updated", "destroyed" ]
+          payload:
+            type: object
+            description: Snapshot de atributos del modelo (en User se excluyen encrypted_password y reset_password_token).
+          timestamp:
+            type: string
+            format: date-time
+            description: ISO8601.
+          metadata:
+            type: object
+            description: Opcional (request_id, user_id, etc.).

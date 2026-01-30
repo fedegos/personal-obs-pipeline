@@ -37,6 +37,8 @@ rm /tmp/$BACKUP_NAME
 echo "✅ Backup completado: $BACKUP_NAME"
 ```
 
+Para restaurar desde un backup en producción: mismo flujo que en desarrollo (`pg_restore` o `psql < backup.sql` contra la DB de producción), con ventana de mantenimiento. Ver [DOCS/OPERATIONS.md](OPERATIONS.md) (sección Backup y restauración).
+
 ---
 
 ## 2. Migración Definitiva (Solid Cable)

@@ -1,4 +1,6 @@
 class CategoryRule < ApplicationRecord
+  include DomainEventPublishable
+
   belongs_to :parent, class_name: "CategoryRule", optional: true
   has_many :children, class_name: "CategoryRule", foreign_key: "parent_id", dependent: :destroy
 

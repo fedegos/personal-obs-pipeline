@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test
+.PHONY: clean-db clean-influx clean-kafka reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-test-rails ci-rails-system-test ci-python-lint ci-python-test logs-web build-web backup-db backup-db-test restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python
 
 .DEFAULT_GOAL := help
 
@@ -58,8 +58,17 @@ reset-history: clean-db clean-influx clean-kafka ## COMBO: Blanqueo total de act
 up: ## Levantar todo en segundo plano
 	docker compose up -d
 
+build-web: ## Reconstruir imagen del servicio web (hacer tras cambiar Gemfile/Gemfile.lock)
+	docker compose build web
+
+build-ingestion: ## Reconstruir imagen del worker Python (hacer tras cambiar requirements.txt)
+	docker compose build ingestion_worker
+
 logs: ## Ver logs de todos los servicios con timestamps
 	docker compose logs -f -t
+
+logs-web: ## Ver logs solo del servicio web (Rails). Usa el nombre del servicio, no del contenedor (rails_app).
+	docker compose logs -f web
 
 down: ## Bajar todo sin limpiar volúmenes
 	docker compose down
@@ -88,8 +97,8 @@ inspect-influx: ## Ver qué está llegando exactamente a InfluxDB en tiempo real
 		'from(bucket: "$(INFLUX_BUCKET)") |> range(start: -5m) |> limit(n:10)' \
 		--org "$(INFLUX_ORG)" --token "$(INFLUX_TOKEN)"
 
-test: ## Correr tests de Rails (Minitest)
-	docker compose exec web bin/rails db:test:prepare test
+test: ## Correr tests de Rails (Minitest). Usa RAILS_ENV=test para no tocar la DB de desarrollo.
+	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test
 
 test-python: ## Correr tests de Python (pytest)
 	cd ingestion-engine && python3 -m pytest tests/ -v --tb=short
@@ -105,11 +114,13 @@ ci-rails-lint: ## CI: Brakeman + bundler-audit + importmap audit
 ci-rails-rubocop: ## CI: RuboCop (solo verificación, sin -A)
 	docker compose exec web bin/rubocop -f github
 
-ci-rails-test: ## CI: Minitest
-	docker compose exec web bin/rails db:test:prepare test
+ci-rails-test: ## CI: Minitest (RAILS_ENV=test → DB rails_app_test, no desarrollo)
+	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test
 
-ci-rails-system-test: ## CI: System tests
-	docker compose exec web bin/rails db:test:prepare test:system
+ci-test-rails: ci-rails-test ## Alias: mismo que ci-rails-test
+
+ci-rails-system-test: ## CI: System tests (RAILS_ENV=test → DB rails_app_test)
+	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test:system
 
 ci-python-lint: ## CI: Ruff check (dentro del contenedor ingestion_worker)
 	docker compose exec ingestion_worker python3 -m ruff check .
@@ -126,9 +137,18 @@ security-check: ## Verificar vulnerabilidades en gemas (Seguridad 2026)
 	docker compose exec web bundle exec bundle-audit check
 	docker compose exec web bundle exec brakeman
 
-lint: ## Linting de Ruby (Estilo de código, con auto-fix)
-	docker compose exec web bundle exec rubocop -A
+lint: ## Linting de Ruby (Estilo de código, con auto-fix) — alias de fix-rails
+	$(MAKE) fix-rails
 
+# --- Auto-corregir errores de lint (modifican archivos) ---
+fix-rails: ## Corregir estilo Ruby: RuboCop -A (safe + unsafe) en web-enrichment-app
+	docker compose exec web bin/rubocop -A
+
+fix-python: ## Corregir estilo Python: Ruff check --fix + format en ingestion-engine
+	docker compose exec ingestion_worker python3 -m ruff check --fix .
+	docker compose exec ingestion_worker python3 -m ruff format .
+
+fix: fix-rails fix-python ## Corregir lint en Rails y Python (ejecuta fix-rails y fix-python)
 
 setup: up ## Preparar todo el sistema desde cero
 	docker compose exec web bundle install
@@ -145,6 +165,34 @@ seed: ## Ejecutar seeds de Rails (dentro del contenedor web)
 backup-rules: ## Exportar las CategoryRules a un archivo YAML
 	docker compose exec web rails runner "File.write('db/category_rules_backup.yml', CategoryRule.all.to_yaml)"
 	@echo "💾 Reglas exportadas a db/category_rules_backup.yml"
+
+backup-db: ## Volcado de la base de desarrollo (pg_dump) a backups/backup_dev_YYYYMMDD_HHMMSS.sql
+	@mkdir -p backups
+	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec -T db sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD pg_dump -U $$POSTGRES_USER rails_app_development' > backups/backup_dev_$$TIMESTAMP.sql; \
+	echo "💾 Backup de desarrollo guardado en backups/backup_dev_$$TIMESTAMP.sql"
+
+backup-db-test: ## Volcado de la base de test a backups/backup_test_YYYYMMDD_HHMMSS.sql
+	@mkdir -p backups
+	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec -T db sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD pg_dump -U $$POSTGRES_USER rails_app_test' > backups/backup_test_$$TIMESTAMP.sql; \
+	echo "💾 Backup de test guardado en backups/backup_test_$$TIMESTAMP.sql"
+
+restore-db: ## Restaurar base de desarrollo desde backup (make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql). SOBRESCRIBE la DB actual.
+	@test -n "$(FILE)" || (echo "❌ Usar: make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql"; exit 1)
+	@test -f "$(FILE)" || (echo "❌ Archivo no encontrado: $(FILE)"; exit 1)
+	@echo "⚠️  Se sobrescribirá la base de desarrollo con $(FILE)."
+	@docker compose exec -T db sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USER -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '\''rails_app_development'\'' AND pid <> pg_backend_pid();" -c "DROP DATABASE IF EXISTS rails_app_development;" -c "CREATE DATABASE rails_app_development;"'
+	@cat "$(FILE)" | docker compose exec -T -i db sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USER -d rails_app_development'
+	@echo "✅ Base de desarrollo restaurada desde $(FILE)"
+
+restore-db-test: ## Restaurar base de test desde backup (make restore-db-test FILE=backups/backup_test_YYYYMMDD_HHMMSS.sql). SOBRESCRIBE la DB de test.
+	@test -n "$(FILE)" || (echo "❌ Usar: make restore-db-test FILE=backups/backup_test_YYYYMMDD_HHMMSS.sql"; exit 1)
+	@test -f "$(FILE)" || (echo "❌ Archivo no encontrado: $(FILE)"; exit 1)
+	@echo "⚠️  Se sobrescribirá la base de test con $(FILE)."
+	@docker compose exec -T db sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USER -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '\''rails_app_test'\'' AND pid <> pg_backend_pid();" -c "DROP DATABASE IF EXISTS rails_app_test;" -c "CREATE DATABASE rails_app_test;"'
+	@cat "$(FILE)" | docker compose exec -T -i db sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USER -d rails_app_test'
+	@echo "✅ Base de test restaurada desde $(FILE)"
 
 audit-gems: ## Audita las gemas de rails. 
 	docker compose exec web bundle exec bundle-audit check
@@ -167,3 +215,22 @@ rebind-karafka-consumer: ## Rebobina el consumer group de Karafka al inicio (par
 check-card-numbers: ## Verifica cuántas transacciones tienen numero_tarjeta
 	@echo "📊 Verificando estado de numero_tarjeta..."
 	docker compose exec web rails runner "total = Transaction.count; con = Transaction.where.not(numero_tarjeta: [nil, '']).count; sin = Transaction.where(numero_tarjeta: [nil, '']).count; puts \"Total: #{total}\"; puts \"✅ Con numero_tarjeta: #{con} (#{(con.to_f / total * 100).round(1)}%)\"; puts \"⚠️  Sin numero_tarjeta: #{sin} (#{(sin.to_f / total * 100).round(1)}%)\""
+
+validate-asyncapi: ## Validar DOCS/asyncapi.yaml con la CLI de AsyncAPI (npx, sin package.json)
+	npx --yes @asyncapi/cli validate DOCS/asyncapi.yaml
+
+# --- Recuperación y regeneración de transacciones (desde eventos) ---
+recover-transactions-from-clean: ## Recuperar transactions desde el tópico transacciones_clean (recovery desde eventos)
+	@echo "🔄 Recuperación desde transacciones_clean..."
+	docker compose exec web rails data:recover_from_clean
+
+clean-transactions-only: ## Borrar solo la tabla transactions (sin SourceFile). Útil antes de regenerate-transactions-from-raw.
+	@echo "🧹 Borrando transacciones..."
+	docker compose exec web rails data:clean_transactions
+
+regenerate-transactions-from-raw: ## Regenerar transactions releyendo transacciones_raw (rewind consumer + Karafka)
+	@echo "⏪ Regenerando desde transacciones_raw: 1) borrar transactions 2) rebobinar consumer 3) reiniciar worker"
+	$(MAKE) clean-transactions-only
+	$(MAKE) rebind-karafka-consumer
+	$(MAKE) restart-karafka-worker
+	@echo "✅ Worker reiniciado. Las transacciones se repoblarán al consumir transacciones_raw."
