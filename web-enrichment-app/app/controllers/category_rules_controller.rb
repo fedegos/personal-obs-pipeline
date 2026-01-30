@@ -80,6 +80,31 @@ class CategoryRulesController < ApplicationController
     end
   end
 
+  # GET /category_rules/export
+  def export
+    json = CategoryRulesExportImportService.export
+    send_data json,
+              type: "application/json",
+              disposition: "attachment",
+              filename: "category_rules_#{Time.current.strftime('%Y%m%d_%H%M')}.json"
+  end
+
+  # POST /category_rules/import
+  def import
+    json_string = params[:file]&.read.presence || params[:json].presence
+    unless json_string
+      redirect_to category_rules_path, alert: "Debe adjuntar un archivo JSON o pegar el contenido."
+      return
+    end
+
+    CategoryRulesExportImportService.import(json_string)
+    redirect_to category_rules_path, notice: "Reglas importadas correctamente."
+  rescue JSON::ParserError
+    redirect_to category_rules_path, alert: "El archivo no es un JSON válido."
+  rescue ArgumentError => e
+    redirect_to category_rules_path, alert: "Error al importar: #{e.message}"
+  end
+
   private
 
   def set_category_rule

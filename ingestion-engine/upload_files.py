@@ -7,10 +7,15 @@ def upload_test_file():
     # s3.create_bucket(Bucket='bank-ingestion')
 
     # Subir un archivo local para simular el origen
-    s3.upload_file('../data/input/Movimientos_bbva.csv', 'bank-ingestion', 'raw/Movimientos_bbva.csv')
-    s3.upload_file('../data/input/Movimientos_bapro.csv', 'bank-ingestion', 'raw/Movimientos_bapro.csv')
-    s3.upload_file('../data/input/Últimos movimientos.xlsx', 'bank-ingestion', 'raw/Últimos movimientos.xlsx')
-
+    s3.upload_file(
+        "../data/input/Movimientos_bbva.csv", "bank-ingestion", "raw/Movimientos_bbva.csv"
+    )
+    s3.upload_file(
+        "../data/input/Movimientos_bapro.csv", "bank-ingestion", "raw/Movimientos_bapro.csv"
+    )
+    s3.upload_file(
+        "../data/input/Últimos movimientos.xlsx", "bank-ingestion", "raw/Últimos movimientos.xlsx"
+    )
 
 
 if __name__ == "__main__":

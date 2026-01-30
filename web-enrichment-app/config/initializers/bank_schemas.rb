@@ -9,7 +9,8 @@ BANK_SCHEMAS = {
   "bbva" => [
     { key: "card_number", label: "Número de Tarjeta", type: "number", required: true },
     { key: "card_network", label: "Red", type: "string", required: true }
-  ]
+  ],
+  "bbva_pdf_visa" => []
 }.with_indifferent_access.freeze
 
 NO_FILE_BANKS = [ "amex" ].freeze

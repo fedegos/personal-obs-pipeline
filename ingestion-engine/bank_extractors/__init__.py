@@ -1,18 +1,22 @@
 # Diccionario global que almacenará las funciones de extracción registradas
 _registry = {}
 
+
 def register_extractor(bank_name):
     """
     Decorador con argumentos.
     Primero recibe el nombre del banco, y luego la función.
     """
+
     def decorator(extractor_func):
-        print (f"Extractor: {bank_name}")
+        print(f"Extractor: {bank_name}")
         if bank_name in _registry:
             raise ValueError(f"Extractor '{bank_name}' ya está registrado.")
         _registry[bank_name] = extractor_func
         return extractor_func
+
     return decorator
+
 
 def get_extractor(bank_name):
     """Lista todos los extractores disponibles"""
@@ -21,10 +25,13 @@ def get_extractor(bank_name):
         raise ValueError(f"Extractor para '{bank_name}' no encontrado.")
     return extractor
 
+
 def list_extractors():
     """Lista todos los extractores disponibles"""
     return list(_registry.keys())
 
+
 from . import amex_extractor as amex_extractor  # noqa: E402
 from . import bbva_extractor as bbva_extractor  # noqa: E402
+from . import bbva_pdf_extractor as bbva_pdf_extractor  # noqa: E402
 from . import visa_extractor as visa_extractor  # noqa: E402

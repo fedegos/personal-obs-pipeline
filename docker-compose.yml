@@ -29,6 +29,21 @@ services:
       timeout: 5s
       retries: 10
 
+  redpanda_setup:
+    image: redpandadata/redpanda:latest
+    restart: "no"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until rpk cluster info --brokers redpanda:29092; do sleep 2; done
+        rpk topic create transacciones_raw file_results file_uploaded transacciones_clean domain_events --brokers redpanda:29092
+        echo "✅ Tópicos creados correctamente."
+    networks:
+      - pipeline_net
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -84,6 +99,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: postgres_db
+    command: [ "postgres", "-c", "log_statement=mod" ]
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -91,6 +107,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - pipeline_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s

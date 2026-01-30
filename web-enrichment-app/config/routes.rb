@@ -1,6 +1,11 @@
 Rails.application.routes.draw do
   devise_for :users
-  resources :category_rules
+  resources :category_rules do
+    collection do
+      get :export
+      post :import
+    end
+  end
   resources :audit_corrections, only: [ :index, :edit, :update, :show ]
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

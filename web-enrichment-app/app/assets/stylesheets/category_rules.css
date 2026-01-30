@@ -35,6 +35,68 @@
   margin-top: 24px;
 }
 
+/* Import (details + form) */
+.import-details {
+  position: relative;
+}
+
+.import-details summary.btn-secondary-action {
+  list-style: none;
+  user-select: none;
+}
+
+.import-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.import-form-wrapper {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  min-width: 320px;
+  z-index: 30;
+}
+
+.import-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.import-form-file {
+  font-size: 0.875rem;
+}
+
+.import-form-or {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.import-form-textarea {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.btn-import-submit {
+  margin-top: 4px;
+}
+
 /* Modal */
 .category-rules-modal-overlay {
   position: fixed;

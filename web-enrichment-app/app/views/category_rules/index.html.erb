@@ -6,9 +6,26 @@
         <h1 class="page-title">⚙️ Motor de Reglas</h1>
         <p class="page-subtitle">Configura la lógica de categorización automática.</p>
       </div>
-      <%= link_to new_category_rule_path(format: :turbo_stream), class: "btn-primary-action", data: { turbo_prefetch: false } do %>
-        <span>➕</span> <span>Nueva Regla</span>
-      <% end %>
+      <div class="page-header-actions">
+        <%= link_to export_category_rules_path, class: "btn-secondary-action", data: { turbo: false } do %>
+          <span>📤</span> <span>Exportar</span>
+        <% end %>
+        <details class="import-details">
+          <summary class="btn-secondary-action"><span>📥</span> <span>Importar</span></summary>
+          <div class="import-form-wrapper">
+            <%= form_with url: import_category_rules_path, method: :post, local: true, multipart: true, class: "import-form" do |f| %>
+              <label class="import-form-label">Archivo JSON</label>
+              <%= f.file_field :file, accept: "application/json", class: "import-form-file" %>
+              <span class="import-form-or">o pegar JSON:</span>
+              <%= f.text_area :json, rows: 4, placeholder: '[{ "name": "...", "pattern": "...", ... }]', class: "import-form-textarea" %>
+              <%= f.submit "Importar reglas", class: "btn-primary-action btn-import-submit" %>
+            <% end %>
+          </div>
+        </details>
+        <%= link_to new_category_rule_path(format: :turbo_stream), class: "btn-primary-action", data: { turbo_prefetch: false } do %>
+          <span>➕</span> <span>Nueva Regla</span>
+        <% end %>
+      </div>
     </header>
 
     <%= form_with url: category_rules_path, method: :get, data: { controller: "category-rules-filter", turbo_frame: "_top" }, class: "category-rules-filter-form" do |f| %>

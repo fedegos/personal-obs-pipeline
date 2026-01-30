@@ -101,6 +101,8 @@ grep -E --color=always "running|healthy|Status|$"
 
 ### 2. Flujo de Mensajes en Kafka
 
+__Especificación de eventos (AsyncAPI):__ Los tópicos, payloads y productores/consumidores están documentados en [DOCS/asyncapi.yaml](DOCS/asyncapi.yaml) (transacciones_raw, transacciones_clean, file_uploaded, file_results, domain_events). Validar el spec: `make validate-asyncapi` o [AsyncAPI Studio](https://studio.asyncapi.com/).
+
 Este comando verifica si hay "Lag" en Telegraf. Si el **LAG** es 0, significa que todos los gastos procesados en Rails ya llegaron a la base de datos.
 
 ```sh {"name":"check-kafka-lag"}
@@ -171,7 +173,6 @@ Este comando crea un archivo llamado `vistas_audit_x.txt` con todo el contenido 
 Una vez ejecutado, podés adjuntar ese archivo al chat.
 
 ```bash {"label":"generate-view-dump"}
-### 📂 Generar Dump Unificado de Vistas (Corregido)
 Este comando asegura que la carpeta de destino exista y guarda todo el contenido en la ruta especificada.
 
 ```bash {"label": "generate-view-dump"}
@@ -192,4 +193,7 @@ echo "✅ Proceso completado."
 echo "📍 Archivo generado en: $OUTPUT_FILE"
 echo "📏 Tamaño del archivo: $(du -h "$OUTPUT_FILE" | cut -f1)"
 ```
+
+```text
+
 ```
