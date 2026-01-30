@@ -3,19 +3,19 @@ class ExcelUploaderService
   def self.call(file, bank_name, extra_params = {})
     # 1. Determinar el tipo de ingesta
     is_cloud_storage = NO_FILE_BANKS.include?(bank_name)
-    
+
     # 2. Generar Key de trazabilidad
     file_key = if file
                  "raw/#{bank_name}/#{Time.now.to_i}_#{file.original_filename}"
-               else
+    else
                  "api/#{bank_name}/#{Time.now.to_i}"
-               end
+    end
 
     # 3. Registro en DB
     source_file = SourceFile.create!(
       bank: bank_name,
       file_key: file_key,
-      status: 'pending',
+      status: "pending",
       extra_params: extra_params
     )
 
@@ -30,7 +30,7 @@ class ExcelUploaderService
 
     # 5. Notificar a Kafka con Payload Universal
     Karafka.producer.produce_async(
-      topic: 'file_uploaded',
+      topic: "file_uploaded",
       payload: {
         metadata: {
           source_file_id: source_file.id,
@@ -38,7 +38,7 @@ class ExcelUploaderService
           timestamp: Time.current
         },
         ingestion: {
-          type: is_cloud_storage ? 'external_api' : 's3_storage',
+          type: is_cloud_storage ? "external_api" : "s3_storage",
           location: file ? file_key : nil, # Path en S3 o null
           bucket: file ? S3_BUCKET_NAME : nil
         },

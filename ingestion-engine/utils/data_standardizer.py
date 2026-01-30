@@ -1,5 +1,7 @@
 import hashlib
+
 import pandas as pd
+
 
 def generate_event_id(row):
     """Genera un hash determinista para identificar eventos únicos."""

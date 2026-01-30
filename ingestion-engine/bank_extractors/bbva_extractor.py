@@ -1,10 +1,11 @@
-import pandas as pd
-import numpy as np
 import io
 
+import pandas as pd
+
+from utils.data_standardizer import apply_standard_format
 
 from . import register_extractor
-from utils.data_standardizer import apply_standard_format
+
 
 def limpiar_moneda(columna: pd.Series, **kwargs) -> pd.Series:
     """Convierte strings de moneda (ej: '$6.446,30') a float64."""
@@ -37,20 +38,20 @@ def extract_bbva(file_content: bytes, **kwargs) -> pd.DataFrame:
         df = (
             df_raw.assign(
                 red=card_network,
-                
+
                 fecha_transaccion=lambda x: pd.to_datetime(
-                    x['Fecha y hora'], 
-                    format='%d/%m/%y', 
+                    x['Fecha y hora'],
+                    format='%d/%m/%y',
                     errors='coerce'),
-                
+
                 numero_tarjeta=card_number,
 
                 # Detectar cuotas al final del texto (ej: "ESTABLECIMIENTO 02/06")
-                en_cuotas=lambda x: x['Cuota'] != "-",              
-                
+                en_cuotas=lambda x: x['Cuota'] != "-",
+
                 # Normalización de Moneda (ej: de '$' o 'ARS' a 'pesos')
                 moneda="pesos",
-                
+
                 # Asegurar que el monto sea numérico
                 monto=lambda x: limpiar_moneda(x['Monto'])
             )
@@ -64,12 +65,12 @@ def extract_bbva(file_content: bytes, **kwargs) -> pd.DataFrame:
 
         # 3. Limpieza de columnas y filas
         columnas_finales = [
-            'fecha_transaccion', 'detalles', 'monto', 'moneda', 
+            'fecha_transaccion', 'detalles', 'monto', 'moneda',
             'red', 'numero_tarjeta', 'en_cuotas', 'descripcion_cuota'
         ]
-        
+
         df = df[columnas_finales].copy()
-        
+
         # Filtrar montos inválidos o cero
         df = df[df['monto'] > 0].dropna(subset=['monto'])
 
@@ -79,5 +80,5 @@ def extract_bbva(file_content: bytes, **kwargs) -> pd.DataFrame:
         return apply_standard_format(df)
 
     except Exception as e:
-        print(f"❌ Error procesando archivo Visa.")
+        print("❌ Error procesando archivo Visa.")
         raise e

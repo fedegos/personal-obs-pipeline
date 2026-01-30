@@ -1,7 +1,10 @@
 require "test_helper"
 
 class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
+  include Devise::Test::IntegrationHelpers
+
   setup do
+    sign_in users(:one)
     @category_rule = category_rules(:one)
   end
 
@@ -39,8 +42,10 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy category_rule" do
+    # Borrar una hoja (two) para que el count baje solo 1; si borramos one, dependent: :destroy elimina también two
+    leaf = category_rules(:two)
     assert_difference("CategoryRule.count", -1) do
-      delete category_rule_url(@category_rule)
+      delete category_rule_url(leaf)
     end
 
     assert_redirected_to category_rules_url

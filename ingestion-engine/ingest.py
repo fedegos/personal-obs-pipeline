@@ -1,7 +1,9 @@
-import pandas as pd
 import hashlib
 import json
+
+import pandas as pd
 from kafka import KafkaProducer
+
 
 def generate_event_id(row):
     # Concatenamos datos para un ID determinista

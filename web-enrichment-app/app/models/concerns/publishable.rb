@@ -18,7 +18,7 @@ module Publishable
 
     begin
       Karafka.producer.produce_async(
-        topic: 'transacciones_clean',
+        topic: "transacciones_clean",
         payload: payload.to_json,
         key: event_id
       )

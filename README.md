@@ -1,6 +1,10 @@
 # 💰 Audit-X: Centro de Operaciones 2026
 
-Utiliza este archivo como tu panel de control. Si tienes la extensión **Runme** instalada en VS Code, verás botones de "Run" en cada bloque.
+Utiliza este archivo como tu panel de control.
+
+## Flujo de desarrollo y CI
+
+El trabajo se hace en ramas (p. ej. `feature/nombre` o `develop`). Los cambios se integran a `main` solo vía **Pull Request**, con el **CI en verde** (lint y tests de Rails y Python en la raíz del repo, `.github/workflows/ci.yml`). Coolify despliega desde `main`; si algo falla en producción, se puede revertir el merge y volver a desplegar. Si tienes la extensión **Runme** instalada en VS Code, verás botones de "Run" en cada bloque.
 
 ## 🚀 Gestión de Infraestructura
 

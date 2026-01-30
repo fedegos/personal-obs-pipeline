@@ -33,6 +33,10 @@ Arquitectura de microservicios desacoplada para procesamiento financiero.
 - Motor de Regex: Optimizar las expresiones para evitar backtracking catastrófico.
 - Background Jobs: Usar Sidekiq (o Solid Queue) para no bloquear la UI durante las subidas a MinIO.
 
+# Entorno de desarrollo local (WSL)
+- **Rails/Ruby no está instalado en WSL.** Los comandos de Rails (rake, rails, rubocop, brakeman, tests, etc.) se ejecutan **dentro del contenedor Docker** con `docker compose exec web ...` (o `make` que ya usa ese patrón). No asumir Ruby/Rails instalado en el host.
+- **Instalar/actualizar gemas:** `docker compose exec web bundle install` (o `bundle update <gema>`). No usar `bundle` en el host.
+
 # Despliegue en Coolify/Hetzner
 - Los volúmenes deben estar claramente definidos para MinIO y Postgres para evitar pérdida de datos.
 - Las variables de conexión (MINIO_ENDPOINT, KAFKA_BROKERS) deben apuntar a los nombres de servicio internos de Docker.
