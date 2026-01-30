@@ -9,9 +9,6 @@ jobs:
   # --- Rails: security & lint ---
   rails-lint:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: web-enrichment-app
@@ -35,9 +32,6 @@ jobs:
 
   rails-rubocop:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     env:
       RUBOCOP_CACHE_ROOT: web-enrichment-app/tmp/rubocop
     defaults:
@@ -63,9 +57,6 @@ jobs:
 
   rails-test:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: web-enrichment-app
@@ -99,9 +90,6 @@ jobs:
 
   rails-system-test:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: web-enrichment-app
@@ -144,9 +132,6 @@ jobs:
   # --- Python: lint & test ---
   python-lint:
     runs-on: ubuntu-latest
-    paths:
-      - "ingestion-engine/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: ingestion-engine
@@ -166,9 +151,6 @@ jobs:
 
   python-test:
     runs-on: ubuntu-latest
-    paths:
-      - "ingestion-engine/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: ingestion-engine
