@@ -9,9 +9,6 @@ jobs:
   # --- Rails: security & lint ---
   rails-lint:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: web-enrichment-app
@@ -25,19 +22,16 @@ jobs:
           working-directory: web-enrichment-app
 
       - name: Brakeman
-        run: bin/brakeman --no-pager
+        run: bundle exec brakeman --no-pager
 
       - name: Bundler audit
-        run: bin/bundler-audit
+        run: bundle exec bundler-audit
 
       - name: Importmap audit
-        run: bin/importmap audit
+        run: ruby bin/importmap audit
 
   rails-rubocop:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     env:
       RUBOCOP_CACHE_ROOT: web-enrichment-app/tmp/rubocop
     defaults:
@@ -59,13 +53,10 @@ jobs:
           key: rubocop-${{ runner.os }}-${{ hashFiles('web-enrichment-app/.ruby-version', 'web-enrichment-app/**/.rubocop.yml', 'web-enrichment-app/**/.rubocop_todo.yml', 'web-enrichment-app/Gemfile.lock') }}
 
       - name: RuboCop
-        run: bin/rubocop -f github
+        run: bundle exec rubocop -f github
 
   rails-test:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: web-enrichment-app
@@ -94,14 +85,11 @@ jobs:
       - name: Rails tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
-        run: bin/rails db:test:prepare test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/web_enrichment_app_test
+        run: bundle exec rails db:test:prepare test
 
   rails-system-test:
     runs-on: ubuntu-latest
-    paths:
-      - "web-enrichment-app/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: web-enrichment-app
@@ -130,8 +118,8 @@ jobs:
       - name: System tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
-        run: bin/rails db:test:prepare test:system
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/web_enrichment_app_test
+        run: bundle exec rails db:test:prepare test:system
 
       - name: Upload screenshots on failure
         if: failure()
@@ -144,9 +132,6 @@ jobs:
   # --- Python: lint & test ---
   python-lint:
     runs-on: ubuntu-latest
-    paths:
-      - "ingestion-engine/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: ingestion-engine
@@ -166,9 +151,6 @@ jobs:
 
   python-test:
     runs-on: ubuntu-latest
-    paths:
-      - "ingestion-engine/**"
-      - ".github/workflows/ci.yml"
     defaults:
       run:
         working-directory: ingestion-engine
