@@ -10,5 +10,6 @@ data/
 venv/
 .venv/
 ingestion-engine/credentials.json
+ingestion-engine/samples/
 temp_creds.yml
 backups/

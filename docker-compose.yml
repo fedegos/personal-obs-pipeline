@@ -141,6 +141,7 @@ services:
       - .env
     environment:
       RAILS_ENV: development
+      BUNDLE_PATH: /usr/local/bundle
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/rails_app_development
       KAFKA_SERVERS: redpanda:29092
       INFLUX_URL: http://influxdb:8086
@@ -155,6 +156,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     networks:
       - pipeline_net
 
@@ -168,6 +175,7 @@ services:
       - ./web-enrichment-app:/app
     environment:
       RAILS_ENV: development
+      BUNDLE_PATH: /usr/local/bundle
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/rails_app_development
       KAFKA_SERVERS: redpanda:29092
       RAILS_LOG_TO_STDOUT: "true"
@@ -179,6 +187,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'karafka server' > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - pipeline_net
 

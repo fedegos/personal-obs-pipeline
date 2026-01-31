@@ -123,6 +123,12 @@ components:
           numero_tarjeta:
             type: string
             description: Últimos dígitos u identificador de tarjeta (opcional).
+          en_cuotas:
+            type: boolean
+            description: Si el consumo está cuotificado (ej. C.02/03 en BBVA).
+          descripcion_cuota:
+            type: string
+            description: Cuota actual/total (ej. "2/3", "21/24"). "-" si no aplica.
           numero_operacion:
             type: string
             description: Número de operación (para event_id).
@@ -157,6 +163,15 @@ components:
             description: Necesario, Deseo, Inversión, Ahorro, Hormiga.
           red:
             type: string
+          numero_tarjeta:
+            type: string
+            description: Últimos dígitos u identificador de tarjeta.
+          en_cuotas:
+            type: boolean
+            description: Si el consumo está cuotificado.
+          descripcion_cuota:
+            type: string
+            description: Cuota actual/total (ej. "2/3"). "-" si no aplica.
 
     FileUploaded:
       name: FileUploaded

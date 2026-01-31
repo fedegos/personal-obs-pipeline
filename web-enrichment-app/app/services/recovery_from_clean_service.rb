@@ -87,6 +87,9 @@ class RecoveryFromCleanService
         sub_categoria: payload["sub_categoria"],
         sentimiento: payload["sentimiento"],
         red: payload["red"],
+        numero_tarjeta: payload["numero_tarjeta"],
+        en_cuotas: payload["en_cuotas"].present? ? payload["en_cuotas"] : false,
+        descripcion_cuota: payload["descripcion_cuota"],
         aprobado: true
       )
     end

@@ -39,6 +39,16 @@
             💳 <%= transaction.numero_tarjeta %>
           </span>
         <% end %>
+        <% if transaction.en_cuotas? && transaction.descripcion_cuota.present? %>
+          <span class="badge-cuotas">
+            📋 Cuota <%= transaction.descripcion_cuota %>
+          </span>
+        <% end %>
+        <% if transaction.moneda.present? %>
+          <span class="badge-moneda">
+            💱 <%= transaction.moneda %>
+          </span>
+        <% end %>
       </div>
     </div>
     <span class="transaction-amount"><%= number_to_currency(transaction.monto) %></span>

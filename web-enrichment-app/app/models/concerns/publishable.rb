@@ -5,15 +5,18 @@ module Publishable
   def publish_clean_event
     # El payload usa los atributos del objeto actual (self)
     payload = {
-      event_id:      event_id,
-      fecha:         fecha.iso8601,
-      monto:         monto.to_f,
-      moneda:        moneda,
-      detalles:      detalles,
-      categoria:     categoria,
-      sub_categoria: sub_categoria,
-      sentimiento:   sentimiento,
-      red:           red
+      event_id:         event_id,
+      fecha:            fecha.iso8601,
+      monto:            monto.to_f,
+      moneda:           moneda,
+      detalles:         detalles,
+      categoria:        categoria,
+      sub_categoria:    sub_categoria,
+      sentimiento:      sentimiento,
+      red:              red,
+      numero_tarjeta:   numero_tarjeta,
+      en_cuotas:        en_cuotas?,
+      descripcion_cuota: descripcion_cuota
     }
 
     begin

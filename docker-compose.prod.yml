@@ -13,6 +13,11 @@ services:
     # Eliminamos puertos públicos (9092, 8081, 9644)
     volumes:
       - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9644/v1/status/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # kafka-ui ELIMINADO: No se exponen herramientas de gestión en prod
 
@@ -22,7 +27,8 @@ services:
     image: redpandadata/redpanda:v25.3.5
     restart: "no"
     depends_on:
-      - redpanda
+      redpanda:
+        condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -64,10 +70,20 @@ services:
       POSTGRES_DB: audit_x_prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   web:
     build: 
@@ -81,8 +97,18 @@ services:
       KAFKA_SERVERS: redpanda:29092
       REDIS_URL: redis://redis:6379/1
     depends_on:
-      - db
-      - redpanda
+      db:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
               
   karafka_server:
     build: 
@@ -98,9 +124,18 @@ services:
       KAFKA_SERVERS: redpanda:29092
       REDIS_URL: redis://redis:6379/1
     depends_on:
-      - db
-      - redpanda
-      - redis
+      db:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'karafka server' > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   s3-server:
     image: minio/minio:latest
