@@ -21,6 +21,8 @@ class TransactionsConsumer < ApplicationConsumer
         detalles:     data["detalles"],
         red:          data["red"],
         numero_tarjeta: data["numero_tarjeta"],
+        en_cuotas:    data["en_cuotas"].presence || false,
+        descripcion_cuota: data["descripcion_cuota"].presence,
         # El servicio de categorización puede usar Regex o incluso una IA local
         categoria:    results[:category],
         sub_categoria:  results[:sub_category],

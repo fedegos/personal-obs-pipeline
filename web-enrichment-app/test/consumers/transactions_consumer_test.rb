@@ -4,13 +4,15 @@ require "ostruct"
 class TransactionsConsumerTest < ActiveSupport::TestCase
   test "consume creates or updates transaction from message payload" do
     payload = {
-      "event_id"          => "test_event_#{SecureRandom.hex(4)}",
+      "event_id"           => "test_event_#{SecureRandom.hex(4)}",
       "fecha_transaccion"  => 1.day.ago.to_date,
       "monto"              => 99.99,
       "moneda"             => "pesos",
       "detalles"           => "Compra test",
       "red"                => "Visa",
-      "numero_tarjeta"     => nil
+      "numero_tarjeta"     => "XXXX 3689",
+      "en_cuotas"          => true,
+      "descripcion_cuota"  => "2/3"
     }
 
     fake_message = OpenStruct.new(payload: payload)
@@ -35,6 +37,9 @@ class TransactionsConsumerTest < ActiveSupport::TestCase
       assert_equal "Hogar", t.categoria
       assert_equal "Luz", t.sub_categoria
       assert_equal "Necesario", t.sentimiento
+      assert_equal "XXXX 3689", t.numero_tarjeta
+      assert_equal true, t.en_cuotas?
+      assert_equal "2/3", t.descripcion_cuota
       assert_equal false, t.aprobado
     ensure
       CategorizerService.define_singleton_method(:guess) { |*args| original_guess.call(*args) }

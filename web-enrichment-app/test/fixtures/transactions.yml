@@ -36,3 +36,19 @@ approved:
   sentimiento: Necesario
   red: Visa
   aprobado: true
+  en_cuotas: false
+  descripcion_cuota:
+
+one_cuotas:
+  event_id: fixture_event_one_cuotas
+  fecha: 2026-01-11 14:00:00
+  monto: 150.00
+  moneda: pesos
+  detalles: AMPHORA C.02/06
+  categoria: Alimentos
+  sub_categoria: Supermercado
+  sentimiento: Necesario
+  red: Visa
+  aprobado: false
+  en_cuotas: true
+  descripcion_cuota: "2/6"

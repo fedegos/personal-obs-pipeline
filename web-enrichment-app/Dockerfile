@@ -14,6 +14,10 @@ WORKDIR /app
 # Instalar Bundler
 RUN gem install bundler
 
+# Instalar gemas fuera de /app para que el volumen montado no las sobrescriba
+ENV BUNDLE_PATH=/usr/local/bundle
+ENV BUNDLE_APP_CONFIG=/usr/local/bundle
+
 # Copiar Gemfile para aprovechar el caché de Docker
 COPY Gemfile Gemfile.lock ./
 RUN bundle install

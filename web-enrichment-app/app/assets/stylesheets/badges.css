@@ -80,6 +80,28 @@
   display: inline-block;
 }
 
+.badge-cuotas {
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: 500;
+  border: 1px solid #bbf7d0;
+  display: inline-block;
+}
+
+.badge-moneda {
+  background: #fefce8;
+  color: #854d0e;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: 500;
+  border: 1px solid #fef08a;
+  display: inline-block;
+}
+
 /* Badge para indicar información incompleta */
 .badge-incomplete {
   background: #fef2f2;
