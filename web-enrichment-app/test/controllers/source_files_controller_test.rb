@@ -2,6 +2,7 @@ require "test_helper"
 
 class SourceFilesControllerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  fixtures :users
 
   setup do
     sign_in users(:one)

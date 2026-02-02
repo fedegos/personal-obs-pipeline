@@ -1,6 +1,8 @@
 require "test_helper"
 
 class UserTest < ActiveSupport::TestCase
+  fixtures :users
+
   test "fixture is valid" do
     assert users(:one).valid?
   end

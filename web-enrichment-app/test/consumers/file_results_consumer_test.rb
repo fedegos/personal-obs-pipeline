@@ -2,6 +2,8 @@ require "test_helper"
 require "ostruct"
 
 class FileResultsConsumerTest < ActiveSupport::TestCase
+  fixtures :source_files
+
   setup do
     @source_file = source_files(:one)
     @source_file.update!(status: "pending", processed_at: nil, error_message: nil)

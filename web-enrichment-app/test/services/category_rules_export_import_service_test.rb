@@ -1,6 +1,8 @@
 require "test_helper"
 
 class CategoryRulesExportImportServiceTest < ActiveSupport::TestCase
+  fixtures :category_rules
+
   setup do
     CategorizerService.clear_cache
   end

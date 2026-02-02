@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-test-rails ci-rails-system-test ci-python-lint ci-python-test logs-web build-web backup-db backup-db-test restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python
+.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-test-rails ci-rails-system-test ci-python-lint ci-python-test logs-web build-web backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-ingestion test-profile
 
 .DEFAULT_GOAL := help
 
@@ -32,7 +32,11 @@ reprocess-all: clean-influx rewind-kafka ## Limpieza total y REPROCESAMIENTO (Bl
 
 clean-db: ## PostgreSQL: Borra transacciones e historial de carga, mantiene reglas (CategoryRules)
 	@echo "🧹 Borrando registros operativos en Postgres (Transactions & SourceFiles)..."
-	docker compose exec web rails runner "Transaction.delete_all; SourceFile.delete_all rescue nil"
+	docker compose exec web bin/rails runner "Transaction.delete_all; SourceFile.delete_all rescue nil"
+
+clean-category-rules: ## PostgreSQL: Borra todas las reglas de categorización (CategoryRules)
+	@echo "🧹 Borrando reglas de categorización..."
+	docker compose exec web bin/rails runner "CategoryRule.delete_all"
 
 clean-influx: ## InfluxDB: Borra puntos de datos usando las variables del .env
 	@echo "🧹 Borrando métricas en InfluxDB (Bucket: $(INFLUX_BUCKET))..."
@@ -84,8 +88,11 @@ down-volumes: ## Bajar todo y limpiar volúmenes (atención: borra datos persist
 restart-karafka-worker: ## Reiniciar solo el worker de Rails (útil cuando cambias lógica de Karafka)
 	docker compose restart karafka_server
 
+restart-ingestion: ## Reiniciar solo el worker Python (ingestion_worker; útil tras cambiar código o requirements)
+	docker compose restart ingestion_worker
+
 shell-web: ## Entrar a la consola de Rails (2026 mode)
-	docker compose exec web rails console
+	docker compose exec web bin/rails console
 
 inspect-kafka: ## Inspeccionar el broker de Kafka (ver tópicos y lag de consumidores)
 	docker compose exec redpanda rpk cluster status
@@ -99,6 +106,9 @@ inspect-influx: ## Ver qué está llegando exactamente a InfluxDB en tiempo real
 
 test: ## Correr tests de Rails (Minitest). Usa RAILS_ENV=test para no tocar la DB de desarrollo.
 	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test
+
+test-profile: ## Rails: tests con profiling (muestra los N tests más lentos). Ver DOCS/TEST-PROFILING.md
+	docker compose exec -e RAILS_ENV=test -e TESTOPTS="--profile 25" web bin/rails db:test:prepare test
 
 test-python: ## Correr tests de Python (pytest)
 	cd ingestion-engine && python3 -m pytest tests/ -v --tb=short
@@ -152,18 +162,18 @@ fix: fix-rails fix-python ## Corregir lint en Rails y Python (ejecuta fix-rails 
 
 setup: up ## Preparar todo el sistema desde cero
 	docker compose exec web bundle install
-	docker compose exec web rails db:prepare
-	docker compose exec web rails db:seed
+	docker compose exec web bin/rails db:prepare
+	docker compose exec web bin/rails db:seed
 	@echo "✅ Sistema listo en http://localhost:3000"
 
 migrate: ## Ejecutar migraciones de Rails (dentro del contenedor web)
-	docker compose exec web rails db:migrate
+	docker compose exec web bin/rails db:migrate
 
 seed: ## Ejecutar seeds de Rails (dentro del contenedor web)
-	docker compose exec web rails db:seed
+	docker compose exec web bin/rails db:seed
 
 backup-rules: ## Exportar las CategoryRules a un archivo YAML
-	docker compose exec web rails runner "File.write('db/category_rules_backup.yml', CategoryRule.all.to_yaml)"
+	docker compose exec web bin/rails runner "File.write('db/category_rules_backup.yml', CategoryRule.all.to_yaml)"
 	@echo "💾 Reglas exportadas a db/category_rules_backup.yml"
 
 backup-db: ## Volcado de la base de desarrollo (pg_dump) a backups/backup_dev_YYYYMMDD_HHMMSS.sql
@@ -177,6 +187,34 @@ backup-db-test: ## Volcado de la base de test a backups/backup_test_YYYYMMDD_HHM
 	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
 	docker compose exec -T db sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD pg_dump -U $$POSTGRES_USER rails_app_test' > backups/backup_test_$$TIMESTAMP.sql; \
 	echo "💾 Backup de test guardado en backups/backup_test_$$TIMESTAMP.sql"
+
+backup-influx: ## InfluxDB: backup a demanda (backups/influx_backup_YYYYMMDD_HHMMSS). Requiere INFLUX_ORG e INFLUX_TOKEN en .env
+	@mkdir -p backups
+	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec influxdb influx backup /tmp/influx_backup -o "$(INFLUX_ORG)" -t "$(INFLUX_TOKEN)" --skip-verify && \
+	docker cp influxdb:/tmp/influx_backup backups/influx_backup_$$TIMESTAMP && \
+	echo "💾 Backup InfluxDB guardado en backups/influx_backup_$$TIMESTAMP" && \
+	(docker compose exec influxdb rm -rf /tmp/influx_backup 2>/dev/null || true)
+
+backup-grafana: ## Grafana: volcado del volumen (dashboards, datasources) a backups/grafana_YYYYMMDD_HHMMSS.tar.gz (usa el contenedor Grafana, sin Alpine)
+	@mkdir -p backups
+	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec -T grafana tar czf - -C /var/lib/grafana . > backups/grafana_$$TIMESTAMP.tar.gz && \
+	echo "💾 Backup Grafana guardado en backups/grafana_$$TIMESTAMP.tar.gz"
+
+backup-minio: ## MinIO (S3): volcado del volumen (archivos subidos) a backups/minio_YYYYMMDD_HHMMSS.tar.gz (usa imagen web, sin Alpine)
+	@mkdir -p backups
+	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
+	docker compose run --rm --no-deps -v minio_data:/data:ro -v "$$(pwd)/backups:/backup" web tar czf /backup/minio_$$TIMESTAMP.tar.gz -C /data . && \
+	echo "💾 Backup MinIO guardado en backups/minio_$$TIMESTAMP.tar.gz"
+
+backup-redpanda: ## Redpanda (Kafka): volcado del volumen a backups/redpanda_YYYYMMDD_HHMMSS.tar.gz. Solo DR (usa imagen web, sin Alpine)
+	@mkdir -p backups
+	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
+	docker compose run --rm --no-deps -v redpanda_data:/data:ro -v "$$(pwd)/backups:/backup" web tar czf /backup/redpanda_$$TIMESTAMP.tar.gz -C /data . && \
+	echo "💾 Backup Redpanda guardado en backups/redpanda_$$TIMESTAMP.tar.gz"
+
+backup: backup-db backup-influx backup-grafana backup-minio ## Backup a demanda: Postgres + InfluxDB + Grafana + MinIO (ver DOCS/OPERATIONS.md)
 
 restore-db: ## Restaurar base de desarrollo desde backup (make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql). SOBRESCRIBE la DB actual.
 	@test -n "$(FILE)" || (echo "❌ Usar: make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql"; exit 1)
@@ -204,7 +242,7 @@ backfill-card-numbers: ## Reprocesa transacciones_raw para completar numero_tarj
 	@echo "🔄 Iniciando backfill de numero_tarjeta..."
 	@echo "⚠️  Este proceso leerá desde Kafka y actualizará solo el campo numero_tarjeta"
 	@echo "⏸️  Presiona Ctrl+C para detener cuando hayas actualizado suficientes registros"
-	docker compose exec web rails runner "DataBackfillService.backfill_numero_tarjeta"
+	docker compose exec web bin/rails runner "DataBackfillService.backfill_numero_tarjeta"
 
 rebind-karafka-consumer: ## Rebobina el consumer group de Karafka al inicio (para reprocesar mensajes)
 	@echo "⏪ Rebobinando consumer group 'enrichment_manager_v3' al inicio..."
@@ -214,7 +252,7 @@ rebind-karafka-consumer: ## Rebobina el consumer group de Karafka al inicio (par
 
 check-card-numbers: ## Verifica cuántas transacciones tienen numero_tarjeta
 	@echo "📊 Verificando estado de numero_tarjeta..."
-	docker compose exec web rails runner "total = Transaction.count; con = Transaction.where.not(numero_tarjeta: [nil, '']).count; sin = Transaction.where(numero_tarjeta: [nil, '']).count; puts \"Total: #{total}\"; puts \"✅ Con numero_tarjeta: #{con} (#{(con.to_f / total * 100).round(1)}%)\"; puts \"⚠️  Sin numero_tarjeta: #{sin} (#{(sin.to_f / total * 100).round(1)}%)\""
+	docker compose exec web bin/rails runner "total = Transaction.count; con = Transaction.where.not(numero_tarjeta: [nil, '']).count; sin = Transaction.where(numero_tarjeta: [nil, '']).count; puts \"Total: #{total}\"; puts \"✅ Con numero_tarjeta: #{con} (#{(con.to_f / total * 100).round(1)}%)\"; puts \"⚠️  Sin numero_tarjeta: #{sin} (#{(sin.to_f / total * 100).round(1)}%)\""
 
 validate-asyncapi: ## Validar DOCS/asyncapi.yaml con la CLI de AsyncAPI (npx, sin package.json)
 	npx --yes @asyncapi/cli validate DOCS/asyncapi.yaml
@@ -222,11 +260,11 @@ validate-asyncapi: ## Validar DOCS/asyncapi.yaml con la CLI de AsyncAPI (npx, si
 # --- Recuperación y regeneración de transacciones (desde eventos) ---
 recover-transactions-from-clean: ## Recuperar transactions desde el tópico transacciones_clean (recovery desde eventos)
 	@echo "🔄 Recuperación desde transacciones_clean..."
-	docker compose exec web rails data:recover_from_clean
+	docker compose exec web bin/rails data:recover_from_clean
 
 clean-transactions-only: ## Borrar solo la tabla transactions (sin SourceFile). Útil antes de regenerate-transactions-from-raw.
 	@echo "🧹 Borrando transacciones..."
-	docker compose exec web rails data:clean_transactions
+	docker compose exec web bin/rails data:clean_transactions
 
 regenerate-transactions-from-raw: ## Regenerar transactions releyendo transacciones_raw (rewind consumer + Karafka)
 	@echo "⏪ Regenerando desde transacciones_raw: 1) borrar transactions 2) rebobinar consumer 3) reiniciar worker"

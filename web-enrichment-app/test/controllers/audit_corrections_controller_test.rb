@@ -2,6 +2,7 @@ require "test_helper"
 
 class AuditCorrectionsControllerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  fixtures :users, :transactions
 
   setup do
     sign_in users(:one)

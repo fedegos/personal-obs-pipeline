@@ -4,6 +4,7 @@ require "test_helper"
 
 class TransactionCardViewTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  fixtures :users, :transactions
 
   test "transactions index shows moneda badge when transaction has moneda" do
     sign_in users(:one)

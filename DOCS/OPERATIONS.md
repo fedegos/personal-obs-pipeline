@@ -107,21 +107,38 @@ Además de los extractores por banco (Visa, Amex, BBVA CSV), existe el extractor
 
 ---
 
-## 💾 Backup y restauración de bases de datos
+## 💾 Backup y restauración
 
-### Backup a demanda (desarrollo y test)
-- **Base de desarrollo:** `make backup-db` — guarda un volcado en `backups/backup_dev_YYYYMMDD_HHMMSS.sql`. La carpeta `backups/` está en `.gitignore`.
-- **Base de test:** `make backup-db-test` — guarda en `backups/backup_test_YYYYMMDD_HHMMSS.sql`.
+### Backup a demanda (todos los servicios)
 
-### Restaurar (revertir cambios)
-- **Desarrollo:** `make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql` — **sobrescribe** la base de desarrollo con el dump indicado. Cierra conexiones activas (p. ej. reinicia `web`) si falla por conexiones.
+| Target | Qué guarda | Salida |
+|--------|------------|--------|
+| `make backup-db` | PostgreSQL (desarrollo) | `backups/backup_dev_YYYYMMDD_HHMMSS.sql` |
+| `make backup-db-test` | PostgreSQL (test) | `backups/backup_test_YYYYMMDD_HHMMSS.sql` |
+| `make backup-influx` | InfluxDB (métricas, bucket) | `backups/influx_backup_YYYYMMDD_HHMMSS/` |
+| `make backup-grafana` | Grafana (dashboards, datasources, usuarios) | `backups/grafana_YYYYMMDD_HHMMSS.tar.gz` |
+| `make backup-minio` | MinIO (archivos subidos: Excel, PDF) | `backups/minio_YYYYMMDD_HHMMSS.tar.gz` |
+| `make backup-redpanda` | Redpanda/Kafka (logs de tópicos) | `backups/redpanda_YYYYMMDD_HHMMSS.tar.gz` |
+| **`make backup`** | Postgres + InfluxDB + Grafana + MinIO | Varios archivos en `backups/` |
+
+La carpeta `backups/` está en `.gitignore`. Para InfluxDB se requieren `INFLUX_ORG` e `INFLUX_TOKEN` en `.env`.
+
+### ¿Hace falta backup de MinIO y Kafka?
+
+- **MinIO (S3):** **Sí, recomendado.** Contiene los archivos originales subidos (Excel, PDF). Si se pierden, no podrás re-procesar desde origen sin volver a subir. `make backup-minio` hace un volcado del volumen en un `.tar.gz`.
+- **Kafka (Redpanda):** **Opcional.** Los mensajes en los tópicos se pueden re-alimentar desde Postgres (`recover-transactions-from-clean`) o re-subiendo archivos a MinIO y re-ingiriendo. El backup del volumen (`make backup-redpanda`) solo tiene sentido para **recuperación ante desastres** (restaurar el volumen completo); no es necesario para el día a día. Si prefieres no hacerlo, omítelo y usa `make backup` (que no incluye Redpanda) o ejecuta solo los targets que necesites.
+
+### Restaurar Postgres (revertir cambios)
+- **Desarrollo:** `make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql` — **sobrescribe** la base de desarrollo. Cierra conexiones activas (p. ej. reinicia `web`) si falla por conexiones.
 - **Test:** `make restore-db-test FILE=backups/backup_test_YYYYMMDD_HHMMSS.sql` — igual para la base de test.
 
+Restaurar InfluxDB/Grafana/MinIO/Redpanda desde un backup requiere procedimientos manuales (ej. `influx restore`, reemplazar contenido del volumen de Grafana/MinIO). Consulta la documentación de cada servicio si lo necesitas.
+
 ### Backup automático en producción
-En producción debe existir un **backup automático** (cron o job en Coolify/servidor) que ejecute `pg_dump` contra la base de producción (`audit_x_prod`) y guarde los archivos con retención (ej. 7 días diarios). No forma parte del repo de la aplicación; es tarea de infraestructura. Ver ejemplos en [DOCS/INFRA_MEMORANDUM.md](DOCS/INFRA_MEMORANDUM.md) (script `backup.sh`) y [DOCS/DEVOPS-ROADMAP.md](DOCS/DEVOPS-ROADMAP.md) (sección Backup Automatizado). Para restaurar en producción: mismo concepto que `restore-db` pero contra la DB de producción y con precaución extra (ventana de mantenimiento, notificación).
+En producción debe existir un **backup automático** (cron o job en Coolify/servidor) que ejecute `pg_dump` contra la base de producción y, si aplica, los mismos targets de InfluxDB/Grafana/MinIO. Ver [DOCS/INFRA_MEMORANDUM.md](DOCS/INFRA_MEMORANDUM.md) y [DOCS/DEVOPS-ROADMAP.md](DOCS/DEVOPS-ROADMAP.md).
 
 ### Rollback en Postgres
-**No existe "rollback" de datos ya confirmados.** Una vez hecho `COMMIT`, no hay comando para deshacer esa transacción. La recuperación se hace **restaurando desde un backup** (pg_dump/pg_restore o PITR si está configurado). Por eso el backup a demanda y automático es la pieza clave para poder revertir.
+**No existe "rollback" de datos ya confirmados.** Una vez hecho `COMMIT`, la recuperación se hace **restaurando desde un backup**. Por eso el backup a demanda y automático es la pieza clave.
 
 ---
 
