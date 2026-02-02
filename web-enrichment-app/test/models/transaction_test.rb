@@ -1,6 +1,8 @@
 require "test_helper"
 
 class TransactionTest < ActiveSupport::TestCase
+  fixtures :transactions
+
   test "fixture is valid" do
     assert transactions(:one).valid?
   end

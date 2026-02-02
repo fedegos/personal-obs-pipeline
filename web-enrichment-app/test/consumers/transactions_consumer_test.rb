@@ -2,6 +2,8 @@ require "test_helper"
 require "ostruct"
 
 class TransactionsConsumerTest < ActiveSupport::TestCase
+  fixtures :transactions
+
   test "consume creates or updates transaction from message payload" do
     payload = {
       "event_id"           => "test_event_#{SecureRandom.hex(4)}",

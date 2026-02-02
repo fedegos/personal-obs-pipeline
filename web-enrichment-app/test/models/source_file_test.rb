@@ -1,6 +1,8 @@
 require "test_helper"
 
 class SourceFileTest < ActiveSupport::TestCase
+  fixtures :source_files
+
   test "fixture is valid" do
     assert source_files(:one).valid?
   end

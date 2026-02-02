@@ -122,6 +122,9 @@ docker compose exec web bin/importmap audit
 # Tests (Minitest)
 docker compose exec web bin/rails db:test:prepare test
 
+# Profiling de tests lentos (muestra los 25 más lentos)
+make test-profile   # ver DOCS/TEST-PROFILING.md
+
 # System tests (opcional)
 docker compose exec web bin/rails db:test:prepare test:system
 ```

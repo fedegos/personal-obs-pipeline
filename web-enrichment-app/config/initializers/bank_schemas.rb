@@ -12,6 +12,9 @@ BANK_SCHEMAS = {
   ],
   "bbva_pdf_visa" => [
     { key: "card_number", label: "Número de Tarjeta (ej. XXXX XXXX XXXX 3689)", type: "text", required: true }
+  ],
+  "bapro_pdf_visa" => [
+    { key: "card_number", label: "Número de Tarjeta (ej. XXXX XXXX XXXX 3689)", type: "text", required: true }
   ]
 }.with_indifferent_access.freeze
 

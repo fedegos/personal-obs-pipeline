@@ -2,6 +2,7 @@ require "test_helper"
 
 class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  fixtures :users, :category_rules
 
   setup do
     sign_in users(:one)

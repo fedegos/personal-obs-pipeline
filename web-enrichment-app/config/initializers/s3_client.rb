@@ -14,4 +14,12 @@ else
     s3_us_east_1_regional_endpoint: "regional"
   )
   S3_BUCKET_NAME = ENV.fetch("AWS_BUCKET_NAME", "bank-ingestion")
+
+  # Crear el bucket si no existe (MinIO no lo crea automáticamente)
+  begin
+    S3_CLIENT.head_bucket(bucket: S3_BUCKET_NAME)
+  rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchBucket
+    S3_CLIENT.create_bucket(bucket: S3_BUCKET_NAME)
+    Rails.logger.info "Bucket '#{S3_BUCKET_NAME}' creado en MinIO."
+  end
 end

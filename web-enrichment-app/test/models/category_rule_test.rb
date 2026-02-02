@@ -1,6 +1,8 @@
 require "test_helper"
 
 class CategoryRuleTest < ActiveSupport::TestCase
+  fixtures :category_rules
+
   test "fixture one is valid" do
     assert category_rules(:one).valid?
   end

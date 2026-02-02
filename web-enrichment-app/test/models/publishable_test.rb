@@ -3,6 +3,8 @@
 require "test_helper"
 
 class PublishableTest < ActiveSupport::TestCase
+  fixtures :transactions
+
   # Transaction incluye Publishable. Verificamos que el payload incluye numero_tarjeta,
   # en_cuotas, descripcion_cuota. Usamos un fake producer para capturar sin Kafka.
   test "publish_clean_event sends numero_tarjeta, en_cuotas, descripcion_cuota in payload" do

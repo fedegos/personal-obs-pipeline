@@ -59,12 +59,19 @@ _MES_ES_A_EN = {
 _CUOTA_RE = re.compile(r"C\.(\d{1,2})/(\d{1,2})\b", re.IGNORECASE)
 
 # Regex: DD-MMM-YY ... 6digits monto_pesos [monto_dolares]
-# Ej: 04-Oct-25 GREEN GARDEN 004577 27.000,00
-# Ej: 25-Dic-25 STEAMGAMES.COM 4259522985 USD 2,99 497321 2,99
+# Ej: 04-Oct-25 GREEN GARDEN 004577 27.000,00  (pesos)
 _TRANSACTION_RE = re.compile(
     r"^(\d{2}-[A-Za-z]{3}-\d{2})\s+(.+?)\s+(\d{6})\s+([\d.,]+)(?:\s+([\d.,]+))?\s*$",
     re.MULTILINE,
 )
+# Columna PESOS vacía: cupón seguido de 2+ espacios y luego el monto → ese monto es DÓLARES
+# Ej: ... 497321    2,99  (celda pesos vacía en el PDF → más espacios en el texto extraído)
+_TRANSACTION_USD_EMPTY_PESOS_RE = re.compile(
+    r"^(\d{2}-[A-Za-z]{3}-\d{2})\s+(.+?)\s+(\d{6})\s{2,}([\d.,]+)\s*$",
+    re.MULTILINE,
+)
+# Fallback: " USD 2,99" en la descripción → monto en dólares (por si el PDF no deja 2+ espacios)
+_USD_IN_LINE_RE = re.compile(r"\bUSD\s+([\d.,]+)", re.IGNORECASE)
 
 
 def _normalize_monto(value):
@@ -110,14 +117,40 @@ def _parse_transactions_from_text(text: str) -> list[dict]:
         line = line.strip()
         if not line or _should_skip_line(line):
             continue
+        # Primero: detectar "columna PESOS vacía" por regex (cupón + 2+ espacios + monto = dólares)
+        m_empty_pesos = _TRANSACTION_USD_EMPTY_PESOS_RE.match(line)
+        if m_empty_pesos:
+            fecha_str, detalles, cupon, monto_dolares = m_empty_pesos.groups()
+            monto_final = _normalize_monto(monto_dolares)
+            if monto_final <= 0:
+                continue
+            en_cuotas, descripcion_cuota = _extract_cuota_info(detalles.strip())
+            rows.append(
+                {
+                    "fecha_transaccion": _normalize_fecha_bbva(fecha_str),
+                    "monto": monto_final,
+                    "detalles": detalles.strip(),
+                    "moneda": "dolares",
+                    "numero_operacion": cupon,
+                    "en_cuotas": en_cuotas,
+                    "descripcion_cuota": descripcion_cuota,
+                }
+            )
+            continue
         m = _TRANSACTION_RE.match(line)
         if not m:
             continue
         fecha_str, detalles, cupon, monto_pesos, monto_dolares = m.groups()
         monto_val = _normalize_monto(monto_pesos)
         monto_usd = _normalize_monto(monto_dolares) if monto_dolares else 0.0
-        # Priorizar monto en pesos; si es 0 y hay USD, usar dólares
-        if monto_val > 0:
+        # Fallback: " USD 2,99" en la descripción → columna dólares (por si el PDF no deja 2+ espacios)
+        usd_in_line = _USD_IN_LINE_RE.search(line)
+        if usd_in_line:
+            monto_usd = _normalize_monto(usd_in_line.group(1))
+        if usd_in_line and monto_usd > 0:
+            moneda = "dolares"
+            monto_final = monto_usd
+        elif monto_val > 0:
             moneda = "pesos"
             monto_final = monto_val
         elif monto_usd > 0:
