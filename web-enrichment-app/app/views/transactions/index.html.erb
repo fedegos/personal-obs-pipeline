@@ -1,4 +1,4 @@
-<div class="transactions-page-container" data-controller="shortcuts-help skeleton-loading" data-action="turbo:before-fetch-request@window->skeleton-loading#show">
+<div class="transactions-page-container" data-controller="shortcuts-help skeleton-loading" data-action="turbo:before-visit@window->skeleton-loading#show">
   <header class="transactions-header">
     <div>
       <h1 class="transactions-title">Gastos Pendientes</h1>
@@ -63,6 +63,11 @@
         <%= render "shared/transaction_card", transaction: t, suggested: @suggested[t.id] do %>
           <div data-controller="auto-save approve transaction-validation approve-similar"
                data-auto-save-url-value="<%= transaction_path(t) %>"
+               data-approve-similar-categoria-value="<%= @suggested[t.id]&.dig(:category) %>"
+               data-approve-similar-sub-categoria-value="<%= @suggested[t.id]&.dig(:sub_category) %>"
+               data-approve-similar-sentimiento-value="<%= @suggested[t.id]&.dig(:sentimiento) %>"
+               data-approve-similar-preview-url-value="<%= approve_similar_preview_transactions_path %>"
+               data-approve-similar-url-value="<%= approve_similar_transactions_path %>"
                class="transaction-approval-wrapper">
             <%= form_with model: t, url: approve_transaction_path(t), method: :patch,
                           html: { class: "transaction-approval-form", data: { turbo: false, auto_save_target: "form", approve_target: "form" } } do |f| %>
@@ -103,4 +108,5 @@
   <% end %>
 
   <%= render "transactions/shortcuts_help_modal" %>
+  <div id="modal-container"></div>
 </div>

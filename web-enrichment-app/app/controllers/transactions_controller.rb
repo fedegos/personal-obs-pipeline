@@ -82,20 +82,38 @@ class TransactionsController < ApplicationController
     end
   end
 
+  def approve_similar_preview
+    cat = params[:categoria].presence
+    sub = params[:sub_categoria].presence
+    sent = params[:sentimiento].presence
+
+    if cat.blank? || sent.blank?
+      render html: "", layout: false
+      return
+    end
+
+    @matches = matching_transactions_for_batch(cat, sub, sent)
+    @transactions = @matches.to_a
+    @categoria = cat
+    @sub_categoria = sub.to_s
+    @sentimiento = sent
+    @sentimiento_display = Transaction::SENTIMIENTOS[sent] || sent
+
+    render "approve_similar_preview", layout: false
+  end
+
   def approve_similar
     cat = params[:categoria].presence
     sub = params[:sub_categoria].presence
     sent = params[:sentimiento].presence
     return redirect_to transactions_path, alert: "Faltan parámetros" if cat.blank? || sent.blank?
 
-    base = Transaction.where(aprobado: false)
     approved_ids = []
-    base.find_each do |t|
+    matching_transactions_for_batch(cat, sub, sent).find_each do |t|
       r = CategorizerService.guess(t.detalles)
-      next unless r[:category] == cat && r[:sentimiento] == sent
-      next if sub.present? && r[:sub_category] != sub
+      sub_val = r[:sub_category]
 
-      if t.update(categoria: cat, sub_categoria: r[:sub_category], sentimiento: sent, aprobado: true, manually_edited: false)
+      if t.update(categoria: cat, sub_categoria: sub_val, sentimiento: sent, aprobado: true, manually_edited: false)
         t.publish_clean_event
         approved_ids << t.id
       end
@@ -126,6 +144,19 @@ class TransactionsController < ApplicationController
   end
 
   private
+
+  def matching_transactions_for_batch(cat, sub, sent)
+    base = Transaction.where(aprobado: false)
+    ids = []
+    base.find_each do |t|
+      r = CategorizerService.guess(t.detalles)
+      next unless r[:category] == cat && r[:sentimiento] == sent
+      next if sub.present? && r[:sub_category] != sub
+
+      ids << t.id
+    end
+    Transaction.where(id: ids)
+  end
 
   def transaction_params
     params.require(:transaction).permit(:categoria, :sub_categoria, :sentimiento)

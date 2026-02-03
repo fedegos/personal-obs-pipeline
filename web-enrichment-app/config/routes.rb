@@ -26,6 +26,7 @@ Rails.application.routes.draw do
   # root "posts#index"
   resources :transactions, only: [ :index, :update ] do
     collection do
+      get :approve_similar_preview
       patch :approve_similar
     end
     member do
