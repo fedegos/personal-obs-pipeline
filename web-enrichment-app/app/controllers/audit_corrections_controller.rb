@@ -80,10 +80,11 @@ class AuditCorrectionsController < ApplicationController
     return redirect_to audit_corrections_path, alert: "No encontrado" unless idx
 
     neighbor_idx = idx + offset
+    query_params = { query: params[:query], fecha: params[:fecha], format: :turbo_stream }.reject { |_k, v| v.blank? }
     if neighbor_idx < 0 || neighbor_idx >= ids.size
       redirect_to audit_corrections_path
     else
-      redirect_to edit_audit_correction_path(ids[neighbor_idx], query: params[:query], fecha: params[:fecha])
+      redirect_to edit_audit_correction_path(ids[neighbor_idx], **query_params)
     end
   end
 
