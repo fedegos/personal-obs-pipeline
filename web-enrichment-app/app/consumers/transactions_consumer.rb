@@ -8,9 +8,8 @@ class TransactionsConsumer < ApplicationConsumer
       # Buscamos por event_id (el hash generado en Python)
       transaction = Transaction.find_or_initialize_by(event_id: data["event_id"])
 
-      # Lógica de seguridad: Si ya está aprobada, ignoramos el mensaje de Kafka
-      # Esto evita que una re-ingesta de un CSV viejo arruine tus datos curados
       next if transaction.aprobado?
+      next if transaction.persisted? && transaction.manually_edited?
 
       results = CategorizerService.guess(data["detalles"])
 

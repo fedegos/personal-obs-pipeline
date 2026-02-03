@@ -10,20 +10,27 @@
     <div id="transactions-container" class="transactions-grid">
       <% @pending.each do |t| %>
         <%= render "shared/transaction_card", transaction: t, suggested: @suggested[t.id] do %>
-          <%= form_with model: t, url: approve_transaction_path(t), method: :patch,
-                        html: { class: "transaction-approval-form" } do |f| %>
-            <div class="approval-form-box">
-              <%= render "shared/transaction_form_fields",
-                        f: f,
-                        categories_map: @categories_map,
-                        categories_list: @categories_list,
-                        suggested: @suggested[t.id] %>
+          <div data-controller="auto-save"
+               data-auto-save-url-value="<%= transaction_path(t) %>"
+               class="transaction-approval-wrapper">
+            <%= form_with model: t, url: approve_transaction_path(t), method: :patch,
+                          html: { class: "transaction-approval-form", data: { auto_save_target: "form" } } do |f| %>
+              <div class="approval-form-box">
+                <%= render "shared/transaction_form_fields",
+                          f: f,
+                          categories_map: @categories_map,
+                          categories_list: @categories_list,
+                          suggested: @suggested[t.id],
+                          transaction: t,
+                          auto_save: true %>
 
-              <div class="approval-form-submit">
-                <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary" %>
+                <div class="approval-form-submit">
+                  <span data-auto-save-target="status" class="auto-save-status"></span>
+                  <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary" %>
+                </div>
               </div>
-            </div>
-          <% end %>
+            <% end %>
+          </div>
         <% end %>
       <% end %>
     </div>

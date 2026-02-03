@@ -19,6 +19,9 @@ application.register("parameters", ParametersController)
 import SearchController from "controllers/search_controller"
 application.register("search", SearchController)
 
+import AutoSaveController from "controllers/auto_save_controller"
+application.register("auto-save", AutoSaveController)
+
 import CategoryRulesFilterController from "controllers/category_rules_filter_controller"
 application.register("category-rules-filter", CategoryRulesFilterController)
 

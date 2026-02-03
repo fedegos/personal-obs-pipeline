@@ -1,9 +1,8 @@
 # app/controllers/transactions_controller.rb
 class TransactionsController < ApplicationController
-  # Saltamos la verificación de autenticidad para facilitar pruebas locales con Turbo
-  skip_before_action :verify_authenticity_token, only: [ :approve ]
+  skip_before_action :verify_authenticity_token, only: [ :approve, :update ]
 
- def index
+  def index
     @pending = Transaction.where(aprobado: false).order(fecha: :desc)
 
     # Replicar motor de reglas en memoria (categoría, subcategoría, sentimiento) sin persistir
@@ -25,11 +24,31 @@ class TransactionsController < ApplicationController
     @categories_list = @categories_map.keys
   end
 
+  def update
+    @transaction = Transaction.find(params[:id])
+    return head :forbidden if @transaction.aprobado?
+
+    attrs = transaction_params.merge(manually_edited: true)
+    attrs[:manually_edited] = false if params[:use_suggestion].present?
+
+    if @transaction.update(attrs)
+      respond_to do |format|
+        format.json { render json: { ok: true, saved_at: Time.current.iso8601 } }
+        format.turbo_stream
+        format.html { redirect_to transactions_path, notice: "Cambios guardados." }
+      end
+    else
+      respond_to do |format|
+        format.json { render json: { ok: false, errors: @transaction.errors.full_messages }, status: :unprocessable_entity }
+        format.html { redirect_to transactions_path, alert: "No se pudo guardar." }
+      end
+    end
+  end
+
   def approve
     @transaction = Transaction.find(params[:id])
 
-    # Intentamos actualizar con los datos del formulario (categoría y sentimiento)
-    if @transaction.update(transaction_params.merge(aprobado: true))
+    if @transaction.update(transaction_params.merge(aprobado: true, manually_edited: false))
 
       # 1. Publicar el evento enriquecido en Kafka Clean (hacia Telegraf -> InfluxDB)
       @transaction.publish_clean_event
@@ -50,7 +69,6 @@ class TransactionsController < ApplicationController
   private
 
   def transaction_params
-    # Permitimos los campos de enriquecimiento manual
     params.require(:transaction).permit(:categoria, :sub_categoria, :sentimiento)
   end
 end

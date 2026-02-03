@@ -19,8 +19,11 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
-  get "transactions", to: "transactions#index", as: "transactions"
-  patch "transactions/:id/approve", to: "transactions#approve", as: "approve_transaction"
+  resources :transactions, only: [ :index, :update ] do
+    member do
+      patch :approve
+    end
+  end
 
   # Redirigir la raíz a las transacciones
   root "transactions#index"

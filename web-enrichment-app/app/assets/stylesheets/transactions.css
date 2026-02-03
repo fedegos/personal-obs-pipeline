@@ -34,6 +34,12 @@
   grid-template-columns: 1fr;
 }
 
+/* Wrapper del formulario (auto-save) */
+.transaction-approval-wrapper {
+  width: 100%;
+  display: block;
+}
+
 /* Formulario de aprobación dentro de la tarjeta */
 .transaction-approval-form {
   flex-grow: 1;
@@ -56,4 +62,40 @@
 
 .approval-form-submit {
   margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auto-save-status {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.auto-save-status.auto-save-guardando {
+  color: #3b82f6;
+}
+
+.auto-save-status.auto-save-guardado {
+  color: #059669;
+}
+
+.auto-save-status.auto-save-error {
+  color: #dc2626;
+}
+
+.btn-use-suggestion {
+  background: transparent;
+  border: 1px dashed #94a3b8;
+  color: #64748b;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-use-suggestion:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
 }

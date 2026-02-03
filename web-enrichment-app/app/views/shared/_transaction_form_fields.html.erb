@@ -1,8 +1,6 @@
-<%# 
-  suggested = hash en memoria (opción B) con category, sub_category, sentimiento del motor de reglas.
-  Preferimos la sugerencia cuando el valor guardado está vacío o es el default "Varios" (nunca elegido por el usuario).
-%>
+<%# suggested = hash con category, sub_category, sentimiento del motor de reglas %>
 <% suggested ||= {} %>
+<% auto_save ||= false %>
 <%
   transaction = f.object
   # "Varios" es el default del motor cuando no hay match; si la transacción solo tiene eso, mostramos la sugerencia actual
@@ -15,7 +13,8 @@
   sentimiento_empty = display_sentimiento.blank? || !Transaction::SENTIMIENTOS.key?(display_sentimiento)
 %>
 
-<div data-controller="combo" class="form-combo-container">
+<div data-controller="combo"
+     class="form-combo-container"<% if auto_save %> data-action="blur->auto-save#change change->auto-save#change"<% end %>>
   <div id="categories-data" data-map="<%= categories_map.to_json %>" class="hidden"></div>
   
   <datalist id="categories-suggestions">
@@ -60,6 +59,19 @@
       <% end %>
     </div>
   </div>
+
+  <% if auto_save && transaction.respond_to?(:manually_edited?) && transaction.manually_edited? && suggested[:category].present? %>
+    <div class="form-field-group">
+      <button type="button"
+              class="btn-use-suggestion"
+              data-action="click->auto-save#useSuggestion"
+              data-categoria="<%= suggested[:category] %>"
+              data-sub-categoria="<%= suggested[:sub_category] %>"
+              data-sentimiento="<%= suggested[:sentimiento] %>">
+        ↩ Usar sugerencia
+      </button>
+    </div>
+  <% end %>
 
   <div class="form-field-group <%= 'form-field-required' if sentimiento_empty %>">
     <%= f.label :sentimiento, "Impacto / Sentimiento", class: "form-label-caps" do %>
