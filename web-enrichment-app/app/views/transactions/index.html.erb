@@ -1,20 +1,53 @@
-<div class="transactions-page-container">
+<div class="transactions-page-container" data-controller="shortcuts-help">
   <header class="transactions-header">
     <div>
-      <h1 class="transactions-title">📋 Gastos Pendientes</h1>
+      <h1 class="transactions-title">Gastos Pendientes</h1>
       <p class="transactions-subtitle">Revisa y categoriza tus últimos movimientos para InfluxDB.</p>
+    </div>
+    <div class="transactions-header-right">
+      <%= form_with url: transactions_path, method: :get, local: true,
+          data: { controller: "search", turbo_action: "advance", turbo_frame: "transactions_list" },
+          class: "transactions-filters-form" do |f| %>
+        <%= f.hidden_field :sort, value: params[:sort] || "fecha_desc" if !@pending.any? %>
+        <div class="search-field-wrapper">
+          <span class="search-icon">🔍</span>
+          <%= f.text_field :q,
+              value: params[:q],
+              placeholder: "Buscar en detalles...",
+              autocomplete: "off",
+              class: "input-search-ux search-input-with-icon",
+              data: { action: "input->search#submit" } %>
+        </div>
+        <% if @pending.any? %>
+          <div class="transactions-sort">
+            <label for="sort-select" class="transactions-sort-label">Orden:</label>
+            <%= f.select :sort,
+                options_for_select([
+                  ["Por fecha (reciente)", "fecha_desc"],
+                  ["Fáciles primero", "faciles_primero"],
+                  ["Monto ascendente", "monto_asc"],
+                  ["Monto descendente", "monto_desc"]
+                ], params[:sort] || "fecha_desc"),
+                {},
+                { id: "sort-select", class: "transactions-sort-select", onchange: "this.form.submit()" } %>
+          </div>
+        <% end %>
+      <% end %>
+      <%= render "transactions/progress", pending_count: @pending_count, approved_count: @approved_count, approved_this_week: @approved_this_week, total_count: @total_count %>
+      <button type="button" class="transactions-help-btn" data-action="click->shortcuts-help#open" data-shortcuts-help-target="trigger" title="Atajos de teclado (?)">?</button>
     </div>
   </header>
 
+  <%= turbo_frame_tag "transactions_list" do %>
   <% if @pending.any? %>
-    <div id="transactions-container" class="transactions-grid">
+    <div id="transactions-container" class="transactions-grid" data-controller="transactions-keyboard">
       <% @pending.each do |t| %>
         <%= render "shared/transaction_card", transaction: t, suggested: @suggested[t.id] do %>
-          <div data-controller="auto-save"
+          <div data-controller="auto-save approve"
                data-auto-save-url-value="<%= transaction_path(t) %>"
                class="transaction-approval-wrapper">
             <%= form_with model: t, url: approve_transaction_path(t), method: :patch,
-                          html: { class: "transaction-approval-form", data: { auto_save_target: "form" } } do |f| %>
+                          html: { class: "transaction-approval-form", data: { auto_save_target: "form", approve_target: "form" } } do |f| %>
               <div class="approval-form-box">
                 <%= render "shared/transaction_form_fields",
                           f: f,
@@ -26,6 +59,7 @@
 
                 <div class="approval-form-submit">
                   <span data-auto-save-target="status" class="auto-save-status"></span>
+                  <button type="button" data-auto-save-target="retryButton" data-action="click->auto-save#retry" class="btn-retry" style="display: none;">Reintentar</button>
                   <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary" %>
                 </div>
               </div>
@@ -35,9 +69,19 @@
       <% end %>
     </div>
   <% else %>
-    <%= render "shared/empty_state", 
-          icon: "🎉",
-          title: "¡Todo procesado!",
-          message: "No hay gastos pendientes de aprobación." %>
+    <% if params[:q].present? %>
+      <%= render "shared/empty_state", 
+            icon: "🔍",
+            title: "Sin resultados",
+            message: "No hay transacciones que coincidan con tu búsqueda." %>
+    <% else %>
+      <%= render "shared/empty_state", 
+            icon: "🎉",
+            title: "¡Todo procesado!",
+            message: "No hay gastos pendientes de aprobación." %>
+    <% end %>
   <% end %>
+  <% end %>
+
+  <%= render "transactions/shortcuts_help_modal" %>
 </div>

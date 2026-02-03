@@ -22,8 +22,17 @@ application.register("search", SearchController)
 import AutoSaveController from "controllers/auto_save_controller"
 application.register("auto-save", AutoSaveController)
 
+import ApproveController from "controllers/approve_controller"
+application.register("approve", ApproveController)
+
+import TransactionsKeyboardController from "controllers/transactions_keyboard_controller"
+application.register("transactions-keyboard", TransactionsKeyboardController)
+
 import CategoryRulesFilterController from "controllers/category_rules_filter_controller"
 application.register("category-rules-filter", CategoryRulesFilterController)
 
 import CategoryRulesModalController from "controllers/category_rules_modal_controller"
 application.register("category-rules-modal", CategoryRulesModalController)
+
+import ShortcutsHelpController from "controllers/shortcuts_help_controller"
+application.register("shortcuts-help", ShortcutsHelpController)

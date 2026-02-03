@@ -1,12 +1,18 @@
 <%# app/views/audit_corrections/index.turbo_stream.erb %>
 
 <% if @pagy.page == 1 %>
-  <%# 
-    IMPORTANTE: Usamos 'update' solo en el contenedor de las tarjetas. 
-    Esto mantiene el formulario de búsqueda y el cursor intactos.
-  %>
-  <%= turbo_stream.update "audit_results_container" do %>
-    <%= render partial: "transaction", collection: @records %>
+  <%# Actualizar el frame para que el form no pierda el foco %>
+  <%= turbo_stream.update "audit_results" do %>
+    <div id="audit_results_container" class="audit-results-container">
+      <%= render partial: "transaction", collection: @records %>
+    </div>
+    <div id="next_page" class="audit-pagination-container">
+      <% if @pagy.next %>
+        <%= turbo_frame_tag "audit_table_next", 
+              src: audit_corrections_path(page: @pagy.next, query: params[:query], fecha: params[:fecha], format: :turbo_stream), 
+              loading: :lazy %>
+      <% end %>
+    </div>
   <% end %>
 <% else %>
   <%# Para el scroll infinito, añadimos al final %>
@@ -15,13 +21,15 @@
   <% end %>
 <% end %>
 
-<%# Actualizamos el link de la siguiente página para Pagy %>
-<%= turbo_stream.replace "next_page" do %>
-  <div id="next_page" style="margin-top: 30px;">
-    <% if @pagy.next %>
-      <%= turbo_frame_tag "audit_table_next", 
-            src: audit_corrections_path(page: @pagy.next, query: params[:query], format: :turbo_stream), 
-            loading: :lazy %>
-    <% end %>
-  </div>
+<% if @pagy.page != 1 %>
+  <%# Actualizamos el link de la siguiente página para Pagy (solo en scroll infinito) %>
+  <%= turbo_stream.replace "next_page" do %>
+    <div id="next_page" class="audit-pagination-container">
+      <% if @pagy.next %>
+        <%= turbo_frame_tag "audit_table_next", 
+              src: audit_corrections_path(page: @pagy.next, query: params[:query], fecha: params[:fecha], format: :turbo_stream), 
+              loading: :lazy %>
+      <% end %>
+    </div>
+  <% end %>
 <% end %>

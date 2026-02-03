@@ -6,7 +6,7 @@ export default class extends Controller {
     debounce: { type: Number, default: 500 }
   }
 
-  static targets = ["form", "status"]
+  static targets = ["form", "status", "retryButton"]
 
   connect() {
     this.timeout = null
@@ -45,6 +45,10 @@ export default class extends Controller {
     } catch {
       this.setStatus("error")
     }
+  }
+
+  retry() {
+    this.save()
   }
 
   useSuggestion(event) {
@@ -86,9 +90,16 @@ export default class extends Controller {
   }
 
   setStatus(state) {
-    if (!this.hasStatusTarget) return
-    const el = this.statusTarget
-    el.textContent = { guardando: "Guardando…", guardado: "Guardado ✓", error: "Error al guardar" }[state] || ""
-    el.className = "auto-save-status auto-save-" + state
+    this.element.classList.remove("auto-save-guardado", "auto-save-error")
+    if (state === "guardado") this.element.classList.add("auto-save-guardado")
+    if (state === "error") this.element.classList.add("auto-save-error")
+    if (this.hasStatusTarget) {
+      const el = this.statusTarget
+      el.textContent = { guardando: "Guardando…", guardado: "Guardado ✓", error: "Error al guardar" }[state] || ""
+      el.className = "auto-save-status auto-save-" + state
+    }
+    if (this.hasRetryButtonTarget) {
+      this.retryButtonTarget.style.display = state === "error" ? "inline-block" : "none"
+    }
   }
 }

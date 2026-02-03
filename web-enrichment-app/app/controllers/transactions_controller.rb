@@ -3,7 +3,33 @@ class TransactionsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [ :approve, :update ]
 
   def index
-    @pending = Transaction.where(aprobado: false).order(fecha: :desc)
+    base = Transaction.where(aprobado: false)
+    if params[:q].present?
+      escaped = params[:q].to_s.gsub(/[%_\\]/) { |c| "\\#{c}" }
+      base = base.where("detalles ILIKE ?", "%#{escaped}%")
+    end
+    @pending = case params[:sort]
+    when "faciles_primero"
+      base.to_a.sort_by { |t|
+        r = CategorizerService.guess(t.detalles)
+        if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
+          r[:sub_category].present? ? 0 : 1  # 0 = más fácil (sugerencia completa), 1 = fácil
+        else
+          2  # requiere revisión manual
+        end
+      }
+    when "monto_asc"
+      base.order(monto: :asc)
+    when "monto_desc"
+      base.order(monto: :desc)
+    else
+      base.order(fecha: :desc)
+    end
+    @pending = @pending.to_a if @pending.is_a?(Array)
+    @pending_count = @pending.respond_to?(:size) ? @pending.size : @pending.count
+    @approved_count = Transaction.where(aprobado: true).count
+    @approved_this_week = Transaction.where(aprobado: true).where("updated_at >= ?", 1.week.ago).count
+    @total_count = @pending_count + @approved_count
 
     # Replicar motor de reglas en memoria (categoría, subcategoría, sentimiento) sin persistir
     @suggested = @pending.each_with_object({}) do |t, h|
