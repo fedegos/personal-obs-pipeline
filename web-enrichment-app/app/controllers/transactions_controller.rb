@@ -1,6 +1,6 @@
 # app/controllers/transactions_controller.rb
 class TransactionsController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [ :approve, :update ]
+  skip_before_action :verify_authenticity_token, only: [ :approve, :approve_similar, :update ]
 
   def index
     base = Transaction.where(aprobado: false)
@@ -8,6 +8,9 @@ class TransactionsController < ApplicationController
       escaped = params[:q].to_s.gsub(/[%_\\]/) { |c| "\\#{c}" }
       base = base.where("detalles ILIKE ?", "%#{escaped}%")
     end
+    base = base.where(fecha: params[:fecha]) if params[:fecha].present?
+    base = base.where("monto >= ?", params[:monto_min]) if params[:monto_min].present?
+    base = base.where("monto <= ?", params[:monto_max]) if params[:monto_max].present?
     @pending = case params[:sort]
     when "faciles_primero"
       base.to_a.sort_by { |t|
@@ -26,6 +29,12 @@ class TransactionsController < ApplicationController
       base.order(fecha: :desc)
     end
     @pending = @pending.to_a if @pending.is_a?(Array)
+    if params[:categoria].present?
+      @pending = @pending.select { |t|
+        r = CategorizerService.guess(t.detalles)
+        (r[:category] == params[:categoria]) || (r[:sub_category] == params[:categoria])
+      }
+    end
     @pending_count = @pending.respond_to?(:size) ? @pending.size : @pending.count
     @approved_count = Transaction.where(aprobado: true).count
     @approved_this_week = Transaction.where(aprobado: true).where("updated_at >= ?", 1.week.ago).count
@@ -48,6 +57,8 @@ class TransactionsController < ApplicationController
     end
 
     @categories_list = @categories_map.keys
+    @categories_for_filter = @categories_map.flat_map { |cat, subs| [ cat ] + subs }.uniq.sort
+    @first_time_empty = @pending_count == 0 && Transaction.count.zero?
   end
 
   def update
@@ -71,6 +82,28 @@ class TransactionsController < ApplicationController
     end
   end
 
+  def approve_similar
+    cat = params[:categoria].presence
+    sub = params[:sub_categoria].presence
+    sent = params[:sentimiento].presence
+    return redirect_to transactions_path, alert: "Faltan parámetros" if cat.blank? || sent.blank?
+
+    base = Transaction.where(aprobado: false)
+    approved_ids = []
+    base.find_each do |t|
+      r = CategorizerService.guess(t.detalles)
+      next unless r[:category] == cat && r[:sentimiento] == sent
+      next if sub.present? && r[:sub_category] != sub
+
+      if t.update(categoria: cat, sub_categoria: r[:sub_category], sentimiento: sent, aprobado: true, manually_edited: false)
+        t.publish_clean_event
+        approved_ids << t.id
+      end
+    end
+
+    redirect_to transactions_path, notice: "#{approved_ids.size} transacciones aprobadas."
+  end
+
   def approve
     @transaction = Transaction.find(params[:id])
 
@@ -85,8 +118,8 @@ class TransactionsController < ApplicationController
         format.html { redirect_to transactions_path, notice: "Aprobado." }
       end
     else
-      # En caso de error de validación
       respond_to do |format|
+        format.json { render json: { ok: false, errors: @transaction.errors.full_messages }, status: :unprocessable_entity }
         format.html { redirect_to transactions_path, alert: "No se pudo procesar la aprobación." }
       end
     end

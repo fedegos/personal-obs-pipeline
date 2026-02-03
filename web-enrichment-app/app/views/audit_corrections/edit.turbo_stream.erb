@@ -7,9 +7,19 @@
               style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; cursor: pointer; font-weight: bold;">✕</button>
 
       <div style="padding: 32px;">
-        <div style="margin-bottom: 24px;">
-          <h3 style="margin: 0; color: #0f172a; font-size: 1.25rem;">Corregir Transacción</h3>
-          <p style="margin: 4px 0 0; color: #64748b; font-size: 0.8rem; font-family: monospace;">UUID: <%= @transaction.event_id.last(12) %></p>
+        <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h3 style="margin: 0; color: #0f172a; font-size: 1.25rem;">Corregir Transacción</h3>
+            <p style="margin: 4px 0 0; color: #64748b; font-size: 0.8rem; font-family: monospace;">UUID: <%= @transaction.event_id.last(12) %></p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <%= link_to "← Anterior", prev_audit_correction_path(@transaction, request.query_parameters.slice("query", "fecha")), 
+                data: { turbo_frame: "_top" }, 
+                class: "btn-audit-nav" %>
+            <%= link_to "Siguiente →", next_audit_correction_path(@transaction, request.query_parameters.slice("query", "fecha")), 
+                data: { turbo_frame: "_top" }, 
+                class: "btn-audit-nav" %>
+          </div>
         </div>
 
         <%= form_with model: @transaction, url: audit_correction_path(@transaction), method: :patch do |f| %>

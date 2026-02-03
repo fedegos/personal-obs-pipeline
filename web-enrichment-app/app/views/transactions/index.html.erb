@@ -1,4 +1,4 @@
-<div class="transactions-page-container" data-controller="shortcuts-help">
+<div class="transactions-page-container" data-controller="shortcuts-help skeleton-loading" data-action="turbo:before-fetch-request@window->skeleton-loading#show">
   <header class="transactions-header">
     <div>
       <h1 class="transactions-title">Gastos Pendientes</h1>
@@ -18,6 +18,24 @@
               class: "input-search-ux search-input-with-icon",
               data: { action: "input->search#submit" } %>
         </div>
+        <div class="transactions-filter-date">
+          <%= f.date_field :fecha, value: params[:fecha], class: "transactions-filter-input",
+              data: { action: "change->search#submit" } %>
+        </div>
+        <div class="transactions-filter-monto">
+          <%= f.number_field :monto_min, value: params[:monto_min], placeholder: "Mín", step: 0.01, class: "transactions-filter-input transactions-filter-monto-input",
+              data: { action: "change->search#submit" } %>
+          <%= f.number_field :monto_max, value: params[:monto_max], placeholder: "Máx", step: 0.01, class: "transactions-filter-input transactions-filter-monto-input",
+              data: { action: "change->search#submit" } %>
+        </div>
+        <% if @categories_for_filter.any? %>
+          <div class="transactions-filter-cat">
+            <%= f.select :categoria,
+                options_for_select([ ["Todas las categorías", ""] ] + @categories_for_filter.map { |c| [ c, c ] }, params[:categoria]),
+                {},
+                { class: "transactions-sort-select", data: { action: "change->search#submit" } } %>
+          </div>
+        <% end %>
         <% if @pending.any? %>
           <div class="transactions-sort">
             <label for="sort-select" class="transactions-sort-label">Orden:</label>
@@ -43,11 +61,11 @@
     <div id="transactions-container" class="transactions-grid" data-controller="transactions-keyboard">
       <% @pending.each do |t| %>
         <%= render "shared/transaction_card", transaction: t, suggested: @suggested[t.id] do %>
-          <div data-controller="auto-save approve"
+          <div data-controller="auto-save approve transaction-validation approve-similar"
                data-auto-save-url-value="<%= transaction_path(t) %>"
                class="transaction-approval-wrapper">
             <%= form_with model: t, url: approve_transaction_path(t), method: :patch,
-                          html: { class: "transaction-approval-form", data: { auto_save_target: "form", approve_target: "form" } } do |f| %>
+                          html: { class: "transaction-approval-form", data: { turbo: false, auto_save_target: "form", approve_target: "form" } } do |f| %>
               <div class="approval-form-box">
                 <%= render "shared/transaction_form_fields",
                           f: f,
@@ -55,12 +73,13 @@
                           categories_list: @categories_list,
                           suggested: @suggested[t.id],
                           transaction: t,
-                          auto_save: true %>
+                          auto_save: true,
+                          approve_similar: true %>
 
                 <div class="approval-form-submit">
                   <span data-auto-save-target="status" class="auto-save-status"></span>
                   <button type="button" data-auto-save-target="retryButton" data-action="click->auto-save#retry" class="btn-retry" style="display: none;">Reintentar</button>
-                  <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary" %>
+                  <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary", data: { transaction_validation_target: "submit" } %>
                 </div>
               </div>
             <% end %>

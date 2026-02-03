@@ -9,7 +9,7 @@
 <% end %>
 
 <% if pending == 0 %>
-  <%= turbo_stream.update "transactions-container" do %>
+  <%= turbo_stream.update "transactions_list" do %>
     <%= render "shared/empty_state",
           icon: "🎉",
           title: "¡Lote completado!",

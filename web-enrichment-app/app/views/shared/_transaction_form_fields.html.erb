@@ -33,7 +33,7 @@
       <%= f.text_field :categoria,
           value: display_categoria,
           list: "categories-suggestions",
-          data: { combo_target: "input", action: "input->combo#checkNew" },
+          data: { combo_target: "input", action: "input->combo#checkNew", transaction_validation_target: ("categoria" if local_assigns[:auto_save]) }.compact,
           placeholder: categoria_empty ? "Ej: Hogar (requerido)" : "Ej: Hogar",
           autocomplete: "off",
           class: "form-input-modern #{'form-input-required' if categoria_empty}",
@@ -72,6 +72,19 @@
       </button>
     </div>
   <% end %>
+  <% if local_assigns[:approve_similar] && auto_save && suggested[:category].present? && suggested[:category] != "Varios" && suggested[:sentimiento].present? %>
+    <div class="form-field-group">
+      <button type="button"
+              class="btn-approve-similar"
+              data-action="click->approve-similar#confirm"
+              data-approve-similar-categoria-value="<%= suggested[:category] %>"
+              data-approve-similar-sub-categoria-value="<%= suggested[:sub_category] %>"
+              data-approve-similar-sentimiento-value="<%= suggested[:sentimiento] %>"
+              data-approve-similar-url-value="<%= approve_similar_transactions_path %>">
+        Aprobar similares
+      </button>
+    </div>
+  <% end %>
 
   <div class="form-field-group <%= 'form-field-required' if sentimiento_empty %>">
     <%= f.label :sentimiento, "Impacto / Sentimiento", class: "form-label-caps" do %>
@@ -84,7 +97,8 @@
           Transaction::SENTIMIENTOS.map { |k, v| [v, k] },
           { selected: display_sentimiento, prompt: sentimiento_empty ? "Seleccionar... (requerido)" : "Seleccionar..." },
           { class: "form-input-modern form-select-modern #{'form-input-required' if sentimiento_empty}",
-            required: sentimiento_empty } %>
+            required: sentimiento_empty,
+            data: { transaction_validation_target: ("sentimiento" if local_assigns[:auto_save]) }.compact } %>
     <% if sentimiento_empty %>
       <span class="field-help-text">Clasifica el impacto financiero del gasto</span>
     <% end %>

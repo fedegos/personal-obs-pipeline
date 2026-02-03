@@ -25,3 +25,19 @@
   text-align: center;
   padding-bottom: 100px;
 }
+
+.btn-audit-nav {
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.85rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-audit-nav:hover {
+  background: #e2e8f0;
+  color: #334155;
+}

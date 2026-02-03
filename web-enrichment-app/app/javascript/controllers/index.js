@@ -36,3 +36,18 @@ application.register("category-rules-modal", CategoryRulesModalController)
 
 import ShortcutsHelpController from "controllers/shortcuts_help_controller"
 application.register("shortcuts-help", ShortcutsHelpController)
+
+import TransactionValidationController from "controllers/transaction_validation_controller"
+application.register("transaction-validation", TransactionValidationController)
+
+import FileDropController from "controllers/file_drop_controller"
+application.register("file-drop", FileDropController)
+
+import UploadStatusController from "controllers/upload_status_controller"
+application.register("upload-status", UploadStatusController)
+
+import ApproveSimilarController from "controllers/approve_similar_controller"
+application.register("approve-similar", ApproveSimilarController)
+
+import SkeletonLoadingController from "controllers/skeleton_loading_controller"
+application.register("skeleton-loading", SkeletonLoadingController)
