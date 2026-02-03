@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_30_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_03_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -174,7 +174,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_210000) do
     t.jsonb "extra_params"
     t.string "file_key"
     t.datetime "processed_at"
+    t.string "processing_message"
     t.string "status"
+    t.integer "transactions_count"
     t.datetime "updated_at", null: false
     t.index ["file_key"], name: "index_source_files_on_file_key"
   end

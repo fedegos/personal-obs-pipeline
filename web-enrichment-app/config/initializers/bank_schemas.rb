@@ -15,6 +15,10 @@ BANK_SCHEMAS = {
   ],
   "bapro_pdf_visa" => [
     { key: "card_number", label: "Número de Tarjeta (ej. XXXX XXXX XXXX 3689)", type: "text", required: true }
+  ],
+  "amex_pdf" => [
+    { key: "card_number", label: "Número de Tarjeta (ej. XXXX XXXX 32003)", type: "text", required: true },
+    { key: "year", label: "Año del resumen (ej. 2025)", type: "number", required: false }
   ]
 }.with_indifferent_access.freeze
 
