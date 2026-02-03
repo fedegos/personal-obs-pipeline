@@ -16,7 +16,9 @@ def generate_event_id(row):
 
 def apply_standard_format(df: pd.DataFrame) -> pd.DataFrame:
     """Asegura que todas las columnas tengan el nombre y tipo correcto."""
-    df["fecha_transaccion"] = pd.to_datetime(df["fecha_transaccion"])
+    df["fecha_transaccion"] = pd.to_datetime(
+        df["fecha_transaccion"], format="mixed", errors="coerce"
+    )
     df["monto"] = pd.to_numeric(df["monto"])
     df["detalles"] = df["detalles"].astype(str).str.strip()
 
