@@ -19,12 +19,22 @@ def json_serial(obj):
     return str(obj)
 
 
-def send_feedback(source_file_id, status, error=None):
-    """Notifica a Rails el resultado del procesamiento"""
+def send_feedback(
+    source_file_id,
+    status,
+    error=None,
+    extractor=None,
+    transactions_count=None,
+    message=None,
+):
+    """Notifica a Rails el resultado del procesamiento."""
     payload = {
         "source_file_id": source_file_id,
         "status": "completed" if status == "success" else "failed",
         "error": error,
+        "extractor": extractor,
+        "transactions_count": transactions_count,
+        "message": message,
     }
     producer.produce("file_results", value=json.dumps(payload).encode("utf-8"))
     producer.flush()
@@ -61,10 +71,10 @@ def process_ingestion(data):
 
         # PROCESAMIENTO COMÚN
         if not df.empty:
+            count = len(df)
             df["event_id"] = df.apply(generate_event_id, axis=1)
 
             for _, row in df.iterrows():
-                # Enviamos a transacciones_raw
                 producer.produce(
                     "transacciones_raw",
                     key=str(row["event_id"]).encode(),
@@ -72,15 +82,34 @@ def process_ingestion(data):
                 )
 
             producer.flush()
-            send_feedback(source_id, "success")
-            print(f"✅ '{bank_name}' completada: {len(df)} registros enviados.")
+            send_feedback(
+                source_id,
+                "success",
+                extractor=bank_name,
+                transactions_count=count,
+                message=f"{count} transacciones procesadas",
+            )
+            print(f"✅ '{bank_name}' completada: {count} registros enviados.")
         else:
+            send_feedback(
+                source_id,
+                "success",
+                extractor=bank_name,
+                transactions_count=0,
+                message="Archivo vacío, 0 transacciones extraídas",
+            )
             print(f"⚠️ El extractor de {bank_name} devolvió un DataFrame vacío.")
-            send_feedback(source_id, "success")
 
     except Exception as e:
         print(f"❌ Error procesando {bank_name}: {e}")
-        send_feedback(source_id, "failed", error=str(e))
+        send_feedback(
+            source_id,
+            "failed",
+            error=str(e),
+            extractor=bank_name,
+            transactions_count=None,
+            message=None,
+        )
 
 
 def run_worker():

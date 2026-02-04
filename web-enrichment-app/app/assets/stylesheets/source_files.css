@@ -54,12 +54,59 @@
   font-size: 1rem;
 }
 
-.source-files-file-input {
+/* Estilos base solo para inputs fuera de la zona de drop */
+.source-files-field-group:not([data-controller*="file-drop"]) .source-files-file-input {
   padding: 8px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   background: #f8fafc;
   cursor: pointer;
+}
+
+.file-drop-zone {
+  position: relative;
+  padding: 24px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  min-height: 80px;
+  overflow: hidden;
+}
+
+/* Input fuera de pantalla: el clic lo activa vía label, evita cualquier resto del UI nativo */
+.file-drop-zone .source-files-file-input {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.file-drop-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.file-drop-hint {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.file-drop-zone--active,
+.source-files-field-group[data-file-drop-target="zone"]:has(.file-drop-zone--active) .file-drop-zone {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.file-drop-preview {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #475569;
 }
 
 /* Contenedor de esquema dinámico */
@@ -112,7 +159,14 @@
   border-top: 1px solid #e2e8f0;
   padding-top: 20px;
   display: flex;
+  align-items: center;
+  gap: 12px;
   justify-content: flex-end;
+}
+
+.upload-status-text {
+  font-size: 0.9rem;
+  color: #64748b;
 }
 
 /* Sección de historial */

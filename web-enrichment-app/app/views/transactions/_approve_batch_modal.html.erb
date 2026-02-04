@@ -1,0 +1,56 @@
+<%# locals: transactions, categoria, sub_categoria, sentimiento, sentimiento_display %>
+<div id="approve-batch-modal-overlay" class="approve-batch-modal-overlay" data-controller="category-rules-modal">
+  <div class="approve-batch-modal-backdrop" data-action="click->category-rules-modal#close"></div>
+  <div class="approve-batch-modal-box">
+    <button type="button" class="approve-batch-modal-close" data-action="click->category-rules-modal#close" aria-label="Cerrar">✕</button>
+    <div class="approve-batch-modal-inner">
+      <h3 id="approve-batch-modal-title" class="approve-batch-modal-title">Aprobar en bloque</h3>
+
+      <div class="approve-batch-modal-badges">
+        <span class="badge-category-audit"><%= categoria %></span>
+        <% if sub_categoria.present? %>
+          <span class="badge-subcategory-audit"><%= sub_categoria %></span>
+        <% end %>
+        <span class="badge-feeling-audit"><%= sentimiento_display %></span>
+      </div>
+
+      <% if transactions.any? %>
+        <div class="approve-batch-modal-list-wrapper">
+          <table class="approve-batch-modal-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Detalles</th>
+                <th>Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% transactions.each do |t| %>
+                <tr class="approve-batch-modal-row">
+                  <td class="approve-batch-modal-fecha"><%= t.fecha&.strftime("%d %b, %Y") %></td>
+                  <td class="approve-batch-modal-detalles" title="<%= t.detalles %>"><%= truncate(t.detalles.to_s, length: 80) %></td>
+                  <td class="approve-batch-modal-monto"><%= number_to_currency(t.monto) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <%= form_with url: approve_similar_transactions_path, method: :patch, data: { turbo: false }, class: "approve-batch-modal-form" do |f| %>
+          <%= f.hidden_field :categoria, value: categoria %>
+          <%= f.hidden_field :sub_categoria, value: sub_categoria %>
+          <%= f.hidden_field :sentimiento, value: sentimiento %>
+          <div class="approve-batch-modal-actions">
+            <%= f.submit "Confirmar", class: "btn-submit-dark" %>
+            <button type="button" class="btn-cancel-soft" data-action="click->category-rules-modal#close">Cancelar</button>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="approve-batch-modal-empty">No hay transacciones que coincidan con esos criterios.</p>
+        <div class="approve-batch-modal-actions">
+          <button type="button" class="btn-cancel-soft" data-action="click->category-rules-modal#close">Cerrar</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

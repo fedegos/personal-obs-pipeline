@@ -1,9 +1,12 @@
 <% current_message = local_assigns[:message] || flash[:notice] || flash[:alert] %>
+<% toast_type = local_assigns[:type] || (flash[:alert].present? ? :error : :success) %>
+<% icons = { success: "✓", error: "✕", info: "ℹ" } %>
+<% icon = local_assigns[:icon] || icons[toast_type] || icons[:success] %>
 
 <% if current_message.present? %>
-  <div class="toast-notification" data-controller="flash">
+  <div class="toast-notification toast-<%= toast_type %>" data-controller="flash">
     <div class="toast-content">
-      <span class="toast-icon">✅</span>
+      <span class="toast-icon"><%= icon %></span>
       <span class="toast-message">
         <%= current_message %>
       </span>

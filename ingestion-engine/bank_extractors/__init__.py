@@ -32,6 +32,7 @@ def list_extractors():
 
 
 from . import amex_extractor as amex_extractor  # noqa: E402
+from . import amex_pdf_extractor as amex_pdf_extractor  # noqa: E402
 from . import bapro_pdf_extractor as bapro_pdf_extractor  # noqa: E402
 from . import bbva_extractor as bbva_extractor  # noqa: E402
 from . import bbva_pdf_extractor as bbva_pdf_extractor  # noqa: E402

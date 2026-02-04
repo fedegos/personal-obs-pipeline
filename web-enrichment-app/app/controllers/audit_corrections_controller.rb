@@ -28,12 +28,19 @@ class AuditCorrectionsController < ApplicationController
 
   def edit
     @transaction = Transaction.find(params[:id])
-    # Cargamos la data para que el combo_controller funcione dentro del modal
     prepare_categories_data
 
     respond_to do |format|
       format.turbo_stream # Renderiza edit.turbo_stream.erb (el modal)
     end
+  end
+
+  def prev
+    redirect_to_neighbor(-1)
+  end
+
+  def next
+    redirect_to_neighbor(1)
   end
 
   def show
@@ -64,6 +71,35 @@ class AuditCorrectionsController < ApplicationController
   end
 
   private
+
+  def redirect_to_neighbor(offset)
+    @transaction = Transaction.find(params[:id])
+    scope = build_index_scope
+    ids = scope.pluck(:id)
+    idx = ids.index(@transaction.id)
+    return redirect_to audit_corrections_path, alert: "No encontrado" unless idx
+
+    neighbor_idx = idx + offset
+    query_params = { query: params[:query], fecha: params[:fecha], format: :turbo_stream }.reject { |_k, v| v.blank? }
+    if neighbor_idx < 0 || neighbor_idx >= ids.size
+      redirect_to audit_corrections_path
+    else
+      redirect_to edit_audit_correction_path(ids[neighbor_idx], **query_params)
+    end
+  end
+
+  def build_index_scope
+    scope = Transaction.aprobadas
+    if params[:query].present?
+      q = "%#{params[:query]}%"
+      scope = scope.where(
+        "event_id ILIKE ? OR detalles ILIKE ? OR categoria ILIKE ? OR sub_categoria ILIKE ? OR sentimiento ILIKE ?",
+        q, q, q, q, q
+      )
+    end
+    scope = scope.where(fecha: params[:fecha]) if params[:fecha].present?
+    scope.order(fecha: :desc).limit(500)
+  end
 
   # Centralizamos la lógica de categorías para no repetir código
   def prepare_categories_data

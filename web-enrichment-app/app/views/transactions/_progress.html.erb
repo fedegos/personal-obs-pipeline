@@ -1,0 +1,33 @@
+<% pending_count = local_assigns[:pending_count] || 0 %>
+<% approved_count = local_assigns[:approved_count] || 0 %>
+<% approved_this_week = local_assigns[:approved_this_week] || approved_count %>
+<% total_count = local_assigns[:total_count] || (pending_count + approved_count) %>
+<% progress_pct = total_count > 0 ? (approved_count.to_f / total_count * 100).round : 0 %>
+
+<div id="transactions-progress" class="transactions-progress">
+  <div class="transactions-progress-stats">
+    <span class="progress-pending"><%= pending_count %> pendientes</span>
+    <span class="progress-separator">|</span>
+    <span class="progress-approved"><%= approved_count %> aprobadas</span>
+    <% if approved_this_week > 0 %>
+      <span class="progress-separator">|</span>
+      <span class="progress-week"><%= approved_this_week %> esta semana</span>
+    <% end %>
+  </div>
+  <div class="transactions-progress-bar" role="progressbar" aria-valuenow="<%= progress_pct %>" aria-valuemin="0" aria-valuemax="100">
+    <div class="transactions-progress-fill" style="width: <%= progress_pct %>%;"></div>
+  </div>
+  <% if approved_count >= 1 || pending_count == 0 %>
+    <div class="transactions-badges">
+      <% if pending_count == 0 && approved_count > 0 %>
+        <span class="badge-progress" title="Lote vacío">Lote vacío</span>
+      <% end %>
+      <% if approved_count >= 1 && approved_count < 10 %>
+        <span class="badge-progress" title="Primera aprobación">Primera</span>
+      <% end %>
+      <% if approved_count >= 10 %>
+        <span class="badge-progress" title="10+ aprobadas">10+</span>
+      <% end %>
+    </div>
+  <% end %>
+</div>

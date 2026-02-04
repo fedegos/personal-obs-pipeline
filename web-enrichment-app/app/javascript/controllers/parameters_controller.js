@@ -2,7 +2,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["bankSelect", "schemaContainer", "fieldTemplate", "fileInput", "fileLabel"]
+  static targets = ["bankSelect", "schemaContainer", "fieldTemplate", "fileInput", "fileLabel", "fileLabelText"]
   static values = { 
     schemas: Object,
     noFileBanks: Array 
@@ -35,22 +35,29 @@ export default class extends Controller {
   }
 
   toggleFileInput(bank) {
+    // Al cambiar de banco, blanquear el archivo seleccionado
+    this.fileInputTarget.value = ""
+    this.fileInputTarget.dispatchEvent(new Event("change", { bubbles: true }))
+
     // Si el banco no está seleccionado o está en la lista de "no file"
     const isNoFileBank = this.noFileBanksValue.includes(bank)
-    
+
     if (bank && isNoFileBank) {
-      this.fileInputTarget.value =""
       this.fileInputTarget.disabled = true
       this.fileInputTarget.style.opacity = "0.4"
       this.fileInputTarget.style.cursor = "not-allowed"
       this.fileLabelTarget.style.opacity = "0.4"
-      this.fileLabelTarget.innerText = "Archivo (No requerido para Google Sheets)"
+      if (this.hasFileLabelTextTarget) {
+        this.fileLabelTextTarget.textContent = "Archivo (No requerido para Google Sheets)"
+      }
     } else {
       this.fileInputTarget.disabled = false
       this.fileInputTarget.style.opacity = "1"
       this.fileInputTarget.style.cursor = "default"
       this.fileLabelTarget.style.opacity = "1"
-      this.fileLabelTarget.innerText = "Archivo (Excel/CSV)"
+      if (this.hasFileLabelTextTarget) {
+        this.fileLabelTextTarget.textContent = "Archivo (Excel/CSV)"
+      }
     }
   }
 

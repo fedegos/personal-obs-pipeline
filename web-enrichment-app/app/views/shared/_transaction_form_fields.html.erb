@@ -1,8 +1,6 @@
-<%# 
-  suggested = hash en memoria (opción B) con category, sub_category, sentimiento del motor de reglas.
-  Preferimos la sugerencia cuando el valor guardado está vacío o es el default "Varios" (nunca elegido por el usuario).
-%>
+<%# suggested = hash con category, sub_category, sentimiento del motor de reglas %>
 <% suggested ||= {} %>
+<% auto_save ||= false %>
 <%
   transaction = f.object
   # "Varios" es el default del motor cuando no hay match; si la transacción solo tiene eso, mostramos la sugerencia actual
@@ -15,7 +13,8 @@
   sentimiento_empty = display_sentimiento.blank? || !Transaction::SENTIMIENTOS.key?(display_sentimiento)
 %>
 
-<div data-controller="combo" class="form-combo-container">
+<div data-controller="combo"
+     class="form-combo-container"<% if auto_save %> data-action="blur->auto-save#change change->auto-save#change"<% end %>>
   <div id="categories-data" data-map="<%= categories_map.to_json %>" class="hidden"></div>
   
   <datalist id="categories-suggestions">
@@ -34,7 +33,7 @@
       <%= f.text_field :categoria,
           value: display_categoria,
           list: "categories-suggestions",
-          data: { combo_target: "input", action: "input->combo#checkNew" },
+          data: { combo_target: "input", action: "input->combo#checkNew", transaction_validation_target: ("categoria" if local_assigns[:auto_save]) }.compact,
           placeholder: categoria_empty ? "Ej: Hogar (requerido)" : "Ej: Hogar",
           autocomplete: "off",
           class: "form-input-modern #{'form-input-required' if categoria_empty}",
@@ -61,6 +60,28 @@
     </div>
   </div>
 
+  <% if auto_save && transaction.respond_to?(:manually_edited?) && transaction.manually_edited? && suggested[:category].present? %>
+    <div class="form-field-group">
+      <button type="button"
+              class="btn-use-suggestion"
+              data-action="click->auto-save#useSuggestion"
+              data-categoria="<%= suggested[:category] %>"
+              data-sub-categoria="<%= suggested[:sub_category] %>"
+              data-sentimiento="<%= suggested[:sentimiento] %>">
+        ↩ Usar sugerencia
+      </button>
+    </div>
+  <% end %>
+  <% if local_assigns[:approve_similar] && auto_save && suggested[:category].present? && suggested[:category] != "Varios" && suggested[:sentimiento].present? %>
+    <div class="form-field-group">
+      <button type="button"
+              class="btn-approve-similar"
+              data-action="click->approve-similar#confirm">
+        Aprobar similares
+      </button>
+    </div>
+  <% end %>
+
   <div class="form-field-group <%= 'form-field-required' if sentimiento_empty %>">
     <%= f.label :sentimiento, "Impacto / Sentimiento", class: "form-label-caps" do %>
       Impacto / Sentimiento
@@ -72,7 +93,8 @@
           Transaction::SENTIMIENTOS.map { |k, v| [v, k] },
           { selected: display_sentimiento, prompt: sentimiento_empty ? "Seleccionar... (requerido)" : "Seleccionar..." },
           { class: "form-input-modern form-select-modern #{'form-input-required' if sentimiento_empty}",
-            required: sentimiento_empty } %>
+            required: sentimiento_empty,
+            data: { transaction_validation_target: ("sentimiento" if local_assigns[:auto_save]) }.compact } %>
     <% if sentimiento_empty %>
       <span class="field-help-text">Clasifica el impacto financiero del gasto</span>
     <% end %>

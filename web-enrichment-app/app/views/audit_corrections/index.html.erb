@@ -15,7 +15,7 @@
 
     <%# Buscador Estilizado %>
     <%= form_with url: audit_corrections_path, method: :get, 
-                  data: { controller: "search", turbo_action: "advance" }, 
+                  data: { controller: "search", turbo_action: "advance", turbo_frame: "audit_results" }, 
                   class: "search-container" do |f| %>
       
       <div class="search-field-wrapper">
@@ -37,19 +37,21 @@
     <% end %>
   </div>
 
-  <%# CONTENEDOR DE RESULTADOS %>
-  <div id="audit_results_container" class="audit-results-container">
-    <%= render partial: "transaction", collection: @records %>
-  </div>
+  <%# CONTENEDOR DE RESULTADOS - Turbo Frame para que el form no pierda el foco %>
+  <%= turbo_frame_tag "audit_results" do %>
+    <div id="audit_results_container" class="audit-results-container">
+      <%= render partial: "transaction", collection: @records %>
+    </div>
 
-  <%# SCROLL INFINITO %>
-  <div id="next_page" class="audit-pagination-container">
-    <% if @pagy.next %>
-      <%= turbo_frame_tag "audit_table_next", 
-            src: audit_corrections_path(page: @pagy.next, query: params[:query], format: :turbo_stream), 
-            loading: :lazy %>
-    <% end %>
-  </div>
+    <%# SCROLL INFINITO %>
+    <div id="next_page" class="audit-pagination-container">
+      <% if @pagy.next %>
+        <%= turbo_frame_tag "audit_table_next", 
+              src: audit_corrections_path(page: @pagy.next, query: params[:query], fecha: params[:fecha], format: :turbo_stream), 
+              loading: :lazy %>
+      <% end %>
+    </div>
+  <% end %>
 </div>
 
 <div id="modal-container"></div>

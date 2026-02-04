@@ -7,8 +7,13 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  transition: transform 0.2s;
+  transition: opacity 0.25s ease, transform 0.25s ease;
   min-height: 220px;
+}
+
+.transaction-card.transaction-card-approving {
+  opacity: 0.6;
+  transform: scale(0.98);
 }
 
 /* Con recomendación de categoría/subcategoría: revisar sugerencia (neutro/informativo) */

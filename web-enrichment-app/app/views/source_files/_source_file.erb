@@ -1,19 +1,26 @@
 <%# app/views/source_files/_source_file.html.erb %>
-<% 
-  status_colors = { 
-    'pending' => 'status-pending', 
-    'processed' => 'status-processed', 
-    'failed' => 'status-failed' 
+<%
+  status_colors = {
+    'pending' => 'status-pending',
+    'processed' => 'status-processed',
+    'failed' => 'status-failed'
   }
   status_class = status_colors[source_file.status] || 'status-pending'
+  transactions_display = source_file.transactions_count.nil? ? '—' : source_file.transactions_count
+  details = if source_file.status == 'failed'
+    source_file.error_message
+  elsif source_file.processing_message.present?
+    source_file.processing_message
+  else
+    source_file.file_key.presence || '—'
+  end
 %>
 <tr id="<%= dom_id(source_file) %>" class="source-file-row">
   <td class="source-file-cell"><%= source_file.created_at.strftime("%H:%M %d/%m/%y") %></td>
-  <td class="source-file-cell"><strong><%= source_file.bank.upcase %></strong></td>
+  <td class="source-file-cell"><strong><%= source_file.bank&.upcase || '—' %></strong></td>
   <td class="source-file-cell">
-    <span class="source-file-status <%= status_class %>">● <%= source_file.status.capitalize %></span>
+    <span class="source-file-status <%= status_class %>">● <%= source_file.status&.capitalize || 'pending' %></span>
   </td>
-  <td class="source-file-cell">
-    <small><%= source_file.status == 'failed' ? source_file.error_message : source_file.file_key + ":" + source_file.extra_params.to_json  %></small>
-  </td>
+  <td class="source-file-cell"><%= transactions_display %></td>
+  <td class="source-file-cell"><small><%= details %></small></td>
 </tr>

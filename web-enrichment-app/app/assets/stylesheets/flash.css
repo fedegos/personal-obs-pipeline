@@ -1,16 +1,29 @@
 /* app/assets/stylesheets/flash.css */
 
 .toast-notification {
-  pointer-events: auto; /* Permite interactuar con el mensaje */
-  background: #28a745; 
-  color: white; 
-  padding: 12px 24px; 
-  border-radius: 50px; /* Estilo 'píldora' moderno */
+  pointer-events: auto;
+  padding: 12px 24px;
+  border-radius: 50px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 250px;
   text-align: center;
   transition: all 0.5s ease-out;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.toast-notification.toast-success {
+  background: #059669;
+  color: white;
+}
+
+.toast-notification.toast-error {
+  background: #dc2626;
+  color: white;
+}
+
+.toast-notification.toast-info {
+  background: #3b82f6;
+  color: white;
 }
 
 .toast-content {

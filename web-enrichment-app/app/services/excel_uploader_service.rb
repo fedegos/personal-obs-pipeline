@@ -29,6 +29,9 @@ class ExcelUploaderService
     end
 
     # 5. Notificar a Kafka con Payload Universal
+    params = extra_params.to_h
+    params[:filename] = file.original_filename if file
+
     Karafka.producer.produce_async(
       topic: "file_uploaded",
       payload: {
@@ -42,7 +45,7 @@ class ExcelUploaderService
           location: file ? file_key : nil, # Path en S3 o null
           bucket: file ? S3_BUCKET_NAME : nil
         },
-        params: extra_params # Aquí viajan spreadsheet_id, year, etc.
+        params: params # spreadsheet_id, year, card_number, filename, etc.
       }.to_json
     )
   end

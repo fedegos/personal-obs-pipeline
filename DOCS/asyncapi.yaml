@@ -211,7 +211,7 @@ components:
       name: FileResult
       messageId: file-result
       title: Resultado de procesamiento de archivo
-      summary: Publicado por Python (send_feedback) tras procesar. Rails actualiza SourceFile (status, error_message).
+      summary: Publicado por Python (send_feedback) tras procesar. Rails actualiza SourceFile (status, error_message, transactions_count, processing_message).
       contentType: application/json
       payload:
         type: object
@@ -225,6 +225,15 @@ components:
           error:
             type: [ "string", "null" ]
             description: Mensaje de error si status es failed.
+          extractor:
+            type: [ "string", "null" ]
+            description: Extractor utilizado (ej. bbva_pdf_visa, amex_pdf).
+          transactions_count:
+            type: [ "integer", "null" ]
+            description: Cantidad de transacciones extraídas y enviadas.
+          message:
+            type: [ "string", "null" ]
+            description: Resumen legible (ej. "42 transacciones procesadas", "Archivo vacío, 0 transacciones extraídas").
 
     DomainEvent:
       name: DomainEvent

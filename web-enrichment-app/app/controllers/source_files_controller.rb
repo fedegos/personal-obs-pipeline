@@ -18,7 +18,7 @@ class SourceFilesController < ApplicationController
     # Quitamos schema.present? porque [] es falsey en .present?
     if bank_exists && (file_present || !needs_file) && required_keys_present?(schema, params[:extra_params])
       extra_params = params.fetch(:extra_params, {}).permit(
-        :credit_card, :spreadsheet_id, :sheet, :card_number, :card_network
+        :credit_card, :spreadsheet_id, :sheet, :card_number, :card_network, :year
       ).to_h
 
       ExcelUploaderService.call(params[:file], bank, extra_params)

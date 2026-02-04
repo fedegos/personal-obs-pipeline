@@ -1,3 +1,11 @@
 <div id="flash-container" style="position: fixed; top: 20px; left: calc(50% + 130px); transform: translateX(-50%); z-index: 9999; pointer-events: none;">
   <%= render "shared/flash" %>
+  <template id="toast-template">
+    <div class="toast-notification" data-controller="flash">
+      <div class="toast-content">
+        <span class="toast-icon"></span>
+        <span class="toast-message"></span>
+      </div>
+    </div>
+  </template>
 </div>

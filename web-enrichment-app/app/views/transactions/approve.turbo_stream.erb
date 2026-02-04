@@ -1,7 +1,22 @@
-<% # 1. Elimina la fila de la tabla instantáneamente %>
 <%= turbo_stream.remove "transaction_#{@transaction.id}" %>
 
-<% # 2. Inserta la notificación en el contenedor de flash %>
+<% pending = Transaction.where(aprobado: false).count %>
+<% approved = Transaction.where(aprobado: true).count %>
+<% approved_this_week = Transaction.where(aprobado: true).where("updated_at >= ?", 1.week.ago).count %>
+<% total = pending + approved %>
+<%= turbo_stream.update "transactions-progress" do %>
+  <%= render "transactions/progress", pending_count: pending, approved_count: approved, approved_this_week: approved_this_week, total_count: total %>
+<% end %>
+
+<% if pending == 0 %>
+  <%= turbo_stream.update "transactions_list" do %>
+    <%= render "shared/empty_state",
+          icon: "🎉",
+          title: "¡Lote completado!",
+          message: "#{approved} transacciones enviadas a InfluxDB." %>
+  <% end %>
+<% end %>
+
 <%= turbo_stream.append "flash-container" do %>
-  <%= render partial: "shared/flash", locals: { message: "Gasto enviado a InfluxDB" } %>
+  <%= render partial: "shared/flash", locals: { message: "Gasto enviado a InfluxDB", type: :success } %>
 <% end %>

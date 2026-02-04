@@ -114,6 +114,28 @@ class CategoryRulesExportImportServiceTest < ActiveSupport::TestCase
     assert_equal padre.id, hijo.parent_id
   end
 
+  test "import with same name different pattern updates rule instead of duplicating" do
+    existing = category_rules(:one)
+    initial_count = CategoryRule.count
+
+    payload = [ {
+      "name" => existing.name,
+      "pattern" => "NUEVO_PATTERN|otro",
+      "priority" => 99,
+      "sentimiento" => "Deseo",
+      "parent_name" => nil
+    } ]
+
+    assert_no_difference("CategoryRule.count") do
+      CategoryRulesExportImportService.import(payload.to_json)
+    end
+
+    existing.reload
+    assert_equal "NUEVO_PATTERN|otro", existing.pattern
+    assert_equal 99, existing.priority
+    assert_equal "Deseo", existing.sentimiento
+  end
+
   test "import with parent_name that does not exist raises with clear message" do
     payload = [ {
       "name" => "Huerfano",

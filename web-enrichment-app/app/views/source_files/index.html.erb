@@ -1,6 +1,6 @@
 <!-- app/views/source_files/index.html.erb -->
 <%# Usamos la constante definida en config/initializers/bank_schemas.rb %>
-<div data-controller="parameters" 
+<div data-controller="parameters"
     data-parameters-schemas-value="<%= BANK_SCHEMAS.to_json %>"
     data-parameters-no-file-banks-value="<%= NO_FILE_BANKS.to_json %>"
     class="source-files-page"
@@ -16,8 +16,9 @@
   </header>
 
   <!-- SECCIÓN DE CARGA -->
-  <section class="source-files-upload-section">
-    <%= form_with url: source_files_path, method: :post, local: true, multipart: true do |f| %>
+  <section class="source-files-upload-section" data-controller="upload-status">
+    <%= form_with url: source_files_path, method: :post, local: true, multipart: true,
+        data: { action: "submit->upload-status#submit" } do |f| %>
       
       <!-- GRID PRINCIPAL: Banco y Archivo -->
       <div class="source-files-form-grid">
@@ -36,14 +37,18 @@
             } %>
         </div>
 
-        <!-- Selector de Archivo -->
-        <div class="source-files-field-group">
-          <%= f.label :file, "Archivo (Excel/CSV)", 
-              class: "source-files-label", 
-              data: { parameters_target: "fileLabel" } %>
-          <%= f.file_field :file, 
-              data: { parameters_target: "fileInput" },
-              class: "source-files-file-input" %>
+        <!-- Selector de Archivo + Drag & Drop -->
+        <div class="source-files-field-group" data-controller="file-drop" data-file-drop-target="zone">
+          <%= f.label :file, class: "file-drop-label", data: { parameters_target: "fileLabel" } do %>
+            <span class="source-files-label" data-parameters-target="fileLabelText">Archivo (Excel/CSV)</span>
+            <div class="file-drop-zone">
+              <%= f.file_field :file, 
+                  data: { parameters_target: "fileInput", file_drop_target: "input" },
+                  class: "source-files-file-input" %>
+              <span class="file-drop-hint">Arrastrá un archivo aquí o hace clic para elegir</span>
+            </div>
+          <% end %>
+          <div data-file-drop-target="preview" class="file-drop-preview" style="display: none;"></div>
         </div>
       </div>
 
@@ -58,7 +63,8 @@
 
       <!-- BOTÓN DE ACCIÓN -->
       <div class="source-files-form-footer">
-        <%= f.submit "🚀 Iniciar Pipeline", class: "btn-pipeline-submit" %>
+        <%= f.submit "🚀 Iniciar Pipeline", class: "btn-pipeline-submit", data: { upload_status_target: "submit" } %>
+        <span data-upload-status-target="status" class="upload-status-text" style="display: none;">Subiendo...</span>
       </div>
 
       <!-- TEMPLATE (Invisible para el usuario, usado por Stimulus) -->
@@ -82,8 +88,9 @@
         <thead>
           <tr>
             <th>Fecha</th>
-            <th>Banco</th>
+            <th>Extractor</th>
             <th>Estado</th>
+            <th>Transacciones</th>
             <th>Detalles</th>
           </tr>
         </thead>
