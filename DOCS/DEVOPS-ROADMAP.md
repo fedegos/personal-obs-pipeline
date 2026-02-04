@@ -30,7 +30,7 @@
 
 **Impacto:** ⭐⭐⭐⭐⭐ (Crítico para recuperación)
 
-Para backup a demanda y restauración en desarrollo/test, ver [DOCS/OPERATIONS.md](OPERATIONS.md) (sección Backup y restauración). En producción, backup automático y restauración se documentan allí y en [DOCS/INFRA_MEMORANDUM.md](INFRA_MEMORANDUM.md).
+Para backup a demanda y restauración en desarrollo/test, ver [DOCS/OPERATIONS.md](OPERATIONS.md) (sección Backup y restauración). En producción, backup automático y restauración se documentan allí.
 
 ---
 

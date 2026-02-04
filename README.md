@@ -2,6 +2,10 @@
 
 Utiliza este archivo como tu panel de control.
 
+## Contexto
+
+**Audit-X** es un pipeline de observabilidad financiera personal: ingesta de archivos bancarios (Excel, CSV, PDF) → Kafka → enriquecimiento y curaduría en Rails → InfluxDB → Grafana. Stack: Docker Compose (Postgres, Redpanda/Kafka, InfluxDB, Grafana, MinIO, Rails, Karafka, ingestion_worker Python, Telegraf). Docs clave: [DOCS/OPERATIONS.md](DOCS/OPERATIONS.md) (runbook), [DOCS/ARCHITECTURE.md](DOCS/ARCHITECTURE.md) (diagrama y flujo), [DOCS/asyncapi.yaml](DOCS/asyncapi.yaml) (eventos Kafka).
+
 ## Flujo de desarrollo y CI
 
 El trabajo se hace en ramas (p. ej. `feature/nombre` o `develop`). Los cambios se integran a `main` solo vía **Pull Request**, con el **CI en verde** (lint y tests de Rails y Python en la raíz del repo, `.github/workflows/ci.yml`). Coolify despliega desde `main`; si algo falla en producción, se puede revertir el merge y volver a desplegar. Si tienes la extensión **Runme** instalada en VS Code, verás botones de "Run" en cada bloque.
