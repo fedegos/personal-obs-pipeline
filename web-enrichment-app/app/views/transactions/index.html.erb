@@ -1,4 +1,4 @@
-<div class="transactions-page-container" data-controller="shortcuts-help skeleton-loading" data-action="turbo:before-visit@window->skeleton-loading#show">
+<div class="transactions-page-container" data-controller="shortcuts-help skeleton-loading" data-action="turbo:submit-start@document->skeleton-loading#show turbo:frame-load@document->skeleton-loading#hide">
   <header class="transactions-header">
     <div>
       <h1 class="transactions-title">Gastos Pendientes</h1>
@@ -56,7 +56,8 @@
     </div>
   </header>
 
-  <%= turbo_frame_tag "transactions_list" do %>
+  <div class="transactions-frame-wrapper">
+    <%= turbo_frame_tag "transactions_list" do %>
   <% if @pending.any? %>
     <div id="transactions-container" class="transactions-grid" data-controller="transactions-keyboard">
       <% @pending.each do |t| %>
@@ -106,7 +107,16 @@
     <% end %>
   <% end %>
   <% end %>
+    <div id="skeleton-overlay" class="skeleton-overlay" aria-hidden="true">
+      <div class="skeleton-overlay-grid transactions-grid"></div>
+    </div>
+  </div>
 
   <%= render "transactions/shortcuts_help_modal" %>
   <div id="modal-container"></div>
+
+  <div id="cards-restore-buffer" aria-hidden="true" style="display: none;"></div>
+  <template id="skeleton-cards-template">
+    <%= render "shared/skeleton_transaction_card" %>
+  </template>
 </div>

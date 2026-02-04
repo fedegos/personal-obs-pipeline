@@ -30,13 +30,20 @@ export default class extends Controller {
     const formData = new FormData(form)
     formData.append("authenticity_token", document.querySelector('[name="csrf-token"]')?.content || "")
 
-    const cardHtml = card.outerHTML
     const grid = card.closest(".transactions-grid")
     const nextSibling = card.nextElementSibling
+    const buffer = document.getElementById("cards-restore-buffer") || (() => {
+      const b = document.createElement("div")
+      b.id = "cards-restore-buffer"
+      b.setAttribute("aria-hidden", "true")
+      b.style.display = "none"
+      document.body.appendChild(b)
+      return b
+    })()
 
     card.classList.add("transaction-card-approving")
     this.showToast("Enviando…", "info")
-    card.remove()
+    buffer.appendChild(card)
 
     try {
       const res = await fetch(approveUrl, {
@@ -50,49 +57,46 @@ export default class extends Controller {
       })
 
       if (res.ok) {
+        document.querySelectorAll("#flash-container [data-pending='true']").forEach((el) => el.remove())
         const text = await res.text()
         if (text.trim().length > 0 && window.Turbo) {
           window.Turbo.renderStreamMessage(text)
         }
       } else {
-        this.restoreCard(grid, nextSibling, cardHtml)
+        this.restoreCard(grid, nextSibling, card)
         const data = await res.json().catch(() => ({}))
         const msg = data.errors?.join?.(", ") || "No se pudo procesar la aprobación."
         this.showToast(msg, "error")
       }
     } catch (err) {
-      this.restoreCard(grid, nextSibling, cardHtml)
+      this.restoreCard(grid, nextSibling, card)
       this.showToast("Error de red. Reintente.", "error")
     }
   }
 
-  restoreCard(grid, nextSibling, cardHtml) {
-    if (!grid) return
-    const temp = document.createElement("div")
-    temp.innerHTML = cardHtml
-    const card = temp.firstElementChild
-    if (card) {
-      card.classList.remove("transaction-card-approving")
-      if (nextSibling) {
-        grid.insertBefore(card, nextSibling)
-      } else {
-        grid.appendChild(card)
-      }
+  restoreCard(grid, nextSibling, card) {
+    if (!grid || !card) return
+    card.classList.remove("transaction-card-approving")
+    if (nextSibling) {
+      grid.insertBefore(card, nextSibling)
+    } else {
+      grid.appendChild(card)
     }
   }
 
   showToast(message, type) {
     const container = document.getElementById("flash-container")
-    if (!container) return
-    const toast = document.createElement("div")
-    toast.className = `toast-notification toast-${type}`
-    toast.setAttribute("data-controller", "flash")
-    toast.innerHTML = `
-      <div class="toast-content">
-        <span class="toast-icon">${type === "error" ? "✕" : type === "info" ? "ℹ" : "✓"}</span>
-        <span class="toast-message">${message}</span>
-      </div>
-    `
+    const template = document.getElementById("toast-template")
+    if (!container || !template) return
+    const toast = template.content.cloneNode(true)
+    const wrapper = toast.firstElementChild
+    const iconEl = wrapper.querySelector(".toast-icon")
+    const msgEl = wrapper.querySelector(".toast-message")
+    const icons = { success: "✓", error: "✕", info: "ℹ" }
+    wrapper.className = `toast-notification toast-${type}`
+    if (type === "info") wrapper.setAttribute("data-pending", "true")
+    if (iconEl) iconEl.textContent = icons[type] || icons.success
+    if (msgEl) msgEl.textContent = message
     container.appendChild(toast)
   }
 }

@@ -4,13 +4,35 @@ export default class extends Controller {
   static values = { count: { type: Number, default: 3 } }
 
   show(e) {
-    const url = (typeof e?.detail?.url === "string" ? e.detail.url : "") || ""
-    if (url && !url.includes("transactions")) return
-    if (url && url.includes("approve_similar")) return
-    const frame = document.getElementById("transactions_list")
-    if (!frame || frame.querySelector(".skeleton-transaction-card")) return
-    const card = '<div class="skeleton-transaction-card"><div class="skeleton-card-header"><div class="skeleton-line skeleton-id"></div><div class="skeleton-line skeleton-amount"></div></div><div class="skeleton-card-body"><div class="skeleton-line skeleton-details"></div><div class="skeleton-line skeleton-date"></div></div><div class="skeleton-card-footer"><div class="skeleton-line skeleton-form"></div></div></div>'
-    const html = Array(this.countValue).fill(card).join("")
-    frame.innerHTML = `<div class="transactions-grid" id="transactions-container">${html}</div>`
+    const form = e?.target
+    if (!form || form.tagName !== "FORM") return
+    const turboFrame = form.getAttribute("data-turbo-frame")
+    if (turboFrame !== "transactions_list") return
+    const action = (form.action || "").toString()
+    if (action.includes("approve_similar")) return
+
+    const overlay = document.getElementById("skeleton-overlay")
+    const template = document.getElementById("skeleton-cards-template")
+    if (!overlay || !template) return
+
+    const grid = overlay.querySelector(".skeleton-overlay-grid")
+    if (!grid) return
+
+    grid.replaceChildren()
+    const fragment = document.createDocumentFragment()
+    for (let i = 0; i < this.countValue; i++) {
+      fragment.appendChild(template.content.cloneNode(true))
+    }
+    grid.appendChild(fragment)
+    overlay.classList.add("is-visible")
+  }
+
+  hide(e) {
+    if (e?.target?.id !== "transactions_list") return
+    const overlay = document.getElementById("skeleton-overlay")
+    if (!overlay) return
+    overlay.classList.remove("is-visible")
+    const grid = overlay.querySelector(".skeleton-overlay-grid")
+    if (grid) grid.replaceChildren()
   }
 }
