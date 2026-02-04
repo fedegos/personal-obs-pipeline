@@ -15,7 +15,8 @@ class CategoryRulesExportImportService
       array.to_json
     end
 
-    # Importa desde JSON. Idempotente: crea si no existe, actualiza si existe y difiere.
+    # Importa desde JSON. Idempotente: crea si no existe, actualiza si existe (pisa por nombre+ nivel).
+    # Unicidad: (name, parent_id). No se permiten categorías ni subcategorías con nombre duplicado al mismo nivel.
     # Orden esperado: raíces primero, luego hijos. parent_name que no exista => ArgumentError.
     def import(json_string)
       data = JSON.parse(json_string)
@@ -36,15 +37,16 @@ class CategoryRulesExportImportService
           id
         end
 
-        existing = CategoryRule.find_by(name: name, pattern: pattern, parent_id: parent_id)
+        # Buscar por nombre + nivel (parent_id). Si existe, pisar; si no, crear.
+        existing = CategoryRule.find_by(name: name, parent_id: parent_id)
 
         if existing
-          changed = (existing.priority != priority) || (existing.sentimiento != sentimiento)
-          existing.update!(priority: priority, sentimiento: sentimiento) if changed
+          changed = (existing.pattern != pattern) || (existing.priority != priority) || (existing.sentimiento != sentimiento)
+          existing.update!(pattern: pattern, priority: priority, sentimiento: sentimiento) if changed
         else
-          rule = CategoryRule.create!(name: name, pattern: pattern, priority: priority, sentimiento: sentimiento, parent_id: parent_id)
+          existing = CategoryRule.create!(name: name, pattern: pattern, priority: priority, sentimiento: sentimiento, parent_id: parent_id)
         end
-        name_to_id[name] = (existing || rule).id
+        name_to_id[name] = existing.id
       end
 
       {}
