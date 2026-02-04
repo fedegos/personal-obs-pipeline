@@ -58,6 +58,18 @@ make shell-web
 make backup-rules
 ```
 
+### Listar detalles únicos de transacciones
+
+Pluck de todos los detalles únicos (aprobadas o no) en la BD. Útil para auditar textos de transacciones o generar reglas de categorización.
+
+```sh {"name":"pluck-details"}
+docker compose exec -T web bin/rails runner "
+Transaction.distinct.pluck(:detalles).sort.each { |d| puts d }
+puts '---'
+puts \"Total de detalles únicos: #{Transaction.distinct.count(:detalles)}\"
+"
+```
+
 ---
 
 ## 👤 Gestión de Usuarios
@@ -69,7 +81,7 @@ Utiliza este bloque para dar de alta nuevos usuarios de forma segura. Al hacer c
 export EMAIL_USER
 export PASSWORD_USER
 
-docker compose exec -T web rails runner "
+docker compose exec -T web bin/rails runner "
 user = User.new(email: '$EMAIL_USER', password: '$PASSWORD_USER', password_confirmation: '$PASSWORD_USER')
 if user.save
   puts '✅ Usuario creado exitosamente: ' + user.email
@@ -82,7 +94,7 @@ end"
 
 ```sh {"name":"list-users"}
 
-docker compose exec -T web rails runner "User.all.each { |u| puts u.email }"
+docker compose exec -T web bin/rails runner "User.all.each { |u| puts u.email }"
 ```
 
 ## 🌅 Morning Checkup (Diagnóstico Diario)
