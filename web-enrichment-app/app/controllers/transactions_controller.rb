@@ -21,6 +21,16 @@ class TransactionsController < ApplicationController
           2  # requiere revisión manual
         end
       }
+    when "dificiles_primero"
+      base.to_a.sort_by { |t|
+        r = CategorizerService.guess(t.detalles)
+        score = if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
+          r[:sub_category].present? ? 0 : 1
+        else
+          2
+        end
+        -score  # invierte: difíciles (2) primero
+      }
     when "monto_asc"
       base.order(monto: :asc)
     when "monto_desc"
