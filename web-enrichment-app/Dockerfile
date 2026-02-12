@@ -1,12 +1,18 @@
 # Usa una versión estable de Ruby para 2026
 FROM ruby:3.2.2
 
-# Instalar dependencias necesarias para PostgreSQL y compilación de gemas
+# Instalar dependencias: PostgreSQL, compilación de gemas, Chromium para system tests
 RUN apt-get update -qq && apt-get install -y \
     build-essential \
     libpq-dev \
     nodejs \
-    curl
+    curl \
+    chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+# Chromium para system tests (Capybara/Selenium). Selenium Manager descarga chromedriver.
+ENV CHROME_PATH=/usr/bin/chromium
+ENV DISPLAY=:99
 
 # Crear el directorio de trabajo (debe coincidir con el volumen del compose)
 WORKDIR /app

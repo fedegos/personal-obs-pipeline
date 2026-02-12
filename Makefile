@@ -122,6 +122,7 @@ test-python: ## Correr solo tests de Python (pytest). Usa Docker si pytest no es
 test-all: test ## Alias: todas las pruebas
 
 test-rails-system: ## Rails: system tests (Capybara + Selenium). Requiere Chrome en el contenedor.
+	@docker compose exec -T db psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'rails_app_test' AND pid <> pg_backend_pid();" 2>/dev/null || true
 	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test:system
 
 test-rails-profile: ## Rails: tests con profiling (muestra los N más lentos). Ver DOCS/TEST-PROFILING.md

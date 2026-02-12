@@ -246,7 +246,7 @@ Eso ejecuta en orden: Brakeman, bundler-audit, importmap audit, RuboCop, tests R
 | Lint Rails | `make ci-rails-rubocop` (o `docker compose exec web bin/rubocop -f github`) |
 | Seguridad Rails | `make ci-rails-lint` (Brakeman + bundler-audit + importmap) |
 | Tests Rails (unit/controller) | `make test-rails` o `make ci-rails-test` |
-| System tests Rails | `make test-rails-system` o `make ci-rails-system-test` |
+| System tests Rails | `make test-rails-system` o `make ci-rails-system-test`. Requiere `make build-web` tras añadir Chromium al Dockerfile. |
 | Lint Python | `make ci-python-lint` |
 | Tests Python | `make test-python` o `make ci-python-test` |
 
