@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-test-rails ci-rails-system-test ci-python-lint ci-python-test logs-web build-web backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-ingestion test-profile
+.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-ingestion test test-rails test-rails-system test-python test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile
 
 .DEFAULT_GOAL := help
 
@@ -62,10 +62,12 @@ reset-history: clean-db clean-influx clean-kafka ## COMBO: Blanqueo total de act
 up: ## Levantar todo en segundo plano
 	docker compose up -d
 
-build-web: ## Reconstruir imagen del servicio web (hacer tras cambiar Gemfile/Gemfile.lock)
+build: build-web build-ingestion ## Reconstruir todas las imágenes (web + ingestion)
+
+build-web: ## Reconstruir imagen del servicio web (tras cambiar Gemfile/Gemfile.lock)
 	docker compose build web
 
-build-ingestion: ## Reconstruir imagen del worker Python (hacer tras cambiar requirements.txt)
+build-ingestion: ## Reconstruir imagen del worker Python (tras cambiar requirements.txt)
 	docker compose build ingestion_worker
 
 logs: ## Ver logs de todos los servicios con timestamps
@@ -104,16 +106,45 @@ inspect-influx: ## Ver qué está llegando exactamente a InfluxDB en tiempo real
 		'from(bucket: "$(INFLUX_BUCKET)") |> range(start: -5m) |> limit(n:10)' \
 		--org "$(INFLUX_ORG)" --token "$(INFLUX_TOKEN)"
 
-test: ## Correr tests de Rails (Minitest). Usa RAILS_ENV=test para no tocar la DB de desarrollo.
+# --- Tests ---
+test: test-rails test-python ## Correr todas las pruebas (Rails + Python)
+
+test-rails: ## Correr solo tests de Rails (Minitest). RAILS_ENV=test.
 	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test
 
-test-profile: ## Rails: tests con profiling (muestra los N tests más lentos). Ver DOCS/TEST-PROFILING.md
+test-python: ## Correr solo tests de Python (pytest). Usa Docker si pytest no está en el host.
+	@if command -v python3 >/dev/null 2>&1 && python3 -c "import pytest" 2>/dev/null; then \
+		cd ingestion-engine && python3 -m pytest tests/ -v --tb=short; \
+	else \
+		docker compose run --rm ingestion_worker python -m pytest tests/ -v --tb=short; \
+	fi
+
+test-all: test ## Alias: todas las pruebas
+
+test-rails-system: ## Rails: system tests (Capybara + Selenium). Requiere Chrome en el contenedor.
+	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test:system
+
+test-rails-profile: ## Rails: tests con profiling (muestra los N más lentos). Ver DOCS/TEST-PROFILING.md
 	docker compose exec -e RAILS_ENV=test -e TESTOPTS="--profile 25" web bin/rails db:test:prepare test
 
-test-python: ## Correr tests de Python (pytest)
-	cd ingestion-engine && python3 -m pytest tests/ -v --tb=short
+test-profile: test-rails-profile ## Alias: test-rails-profile
 
-test-all: test test-python ## Correr todas las pruebas (Rails + Python)
+# --- Cobertura de código ---
+test-coverage: test-rails-coverage test-python-coverage ## Correr cobertura de todo (Rails + Python)
+
+test-rails-coverage: ## Rails: tests con cobertura (SimpleCov). Reporte en web-enrichment-app/coverage/
+	docker compose exec -e RAILS_ENV=test -e PARALLEL_WORKERS=1 web bin/rails db:test:prepare test
+	@echo "📊 Reporte de cobertura en: web-enrichment-app/coverage/index.html"
+
+test-python-coverage: ## Python: tests con cobertura (pytest-cov). Reporte en ingestion-engine/htmlcov/
+	@if command -v python3 >/dev/null 2>&1 && python3 -c "import pytest" 2>/dev/null; then \
+		cd ingestion-engine && python3 -m pytest --cov=. --cov-report=term-missing --cov-report=html tests/; \
+	else \
+		docker compose run --rm ingestion_worker sh -c "pip install -q pytest-cov && python -m pytest --cov=. --cov-report=term-missing --cov-report=html tests/"; \
+	fi
+	@echo "📊 Reporte de cobertura en: ingestion-engine/htmlcov/index.html"
+
+test-all-coverage: test-coverage ## Alias: cobertura de todo
 
 # --- CI local: mismos checks que GitHub Actions (.github/workflows/ci.yml) ---
 ci-rails-lint: ## CI: Brakeman + bundler-audit + importmap audit
@@ -124,21 +155,14 @@ ci-rails-lint: ## CI: Brakeman + bundler-audit + importmap audit
 ci-rails-rubocop: ## CI: RuboCop (solo verificación, sin -A)
 	docker compose exec web bin/rubocop -f github
 
-ci-rails-test: ## CI: Minitest (RAILS_ENV=test → DB rails_app_test, no desarrollo)
-	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test
+ci-rails-test: test-rails ## CI: Minitest — delega en test-rails
 
-ci-test-rails: ci-rails-test ## Alias: mismo que ci-rails-test
-
-ci-rails-system-test: ## CI: System tests (RAILS_ENV=test → DB rails_app_test)
-	docker compose exec -e RAILS_ENV=test web bin/rails db:test:prepare test:system
+ci-rails-system-test: test-rails-system ## CI: System tests — delega en test-rails-system
 
 ci-python-lint: ## CI: Ruff check (dentro del contenedor ingestion_worker)
 	docker compose exec ingestion_worker python3 -m ruff check .
 
-ci-pyhon-lint: ci-python-lint ## Alias (typo) → ci-python-lint
-
-ci-python-test: ## CI: pytest (dentro del contenedor ingestion_worker)
-	docker compose exec ingestion_worker python3 -m pytest tests/ -v --tb=short
+ci-python-test: test-python ## CI: pytest — delega en test-python
 
 ci: ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test ## Correr todos los controles del CI (igual que GitHub Actions)
 

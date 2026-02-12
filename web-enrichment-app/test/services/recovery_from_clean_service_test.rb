@@ -68,4 +68,18 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
     assert_equal PAYLOAD_CLEAN["descripcion_cuota"], transaction.descripcion_cuota
     assert_equal true, transaction.aprobado
   end
+
+  test "apply_clean_message handles Time object for fecha" do
+    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-time-fecha", "fecha" => Time.zone.now)
+    transaction = RecoveryFromCleanService.apply_clean_message(payload)
+    assert transaction.persisted?
+    assert transaction.fecha.present?
+  end
+
+  test "apply_clean_message handles en_cuotas nil" do
+    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-nil-cuotas", "en_cuotas" => nil)
+    transaction = RecoveryFromCleanService.apply_clean_message(payload)
+    assert transaction.persisted?
+    assert_equal false, transaction.en_cuotas?
+  end
 end

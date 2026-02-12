@@ -23,7 +23,6 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
     assert_difference("CategoryRule.count") do
       post category_rules_url, params: { category_rule: { name: @category_rule.name, parent_id: @category_rule.parent_id, pattern: @category_rule.pattern, priority: @category_rule.priority } }
     end
-
     assert_redirected_to category_rule_url(CategoryRule.last)
   end
 
@@ -43,12 +42,10 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy category_rule" do
-    # Borrar una hoja (two) para que el count baje solo 1; si borramos one, dependent: :destroy elimina también two
     leaf = category_rules(:two)
     assert_difference("CategoryRule.count", -1) do
       delete category_rule_url(leaf)
     end
-
     assert_redirected_to category_rules_url
   end
 
@@ -73,5 +70,65 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
     post import_category_rules_url
     assert_redirected_to category_rules_url
     assert_match /adjuntar|contenido/, flash[:alert].to_s
+  end
+
+  test "index filters by sentimiento" do
+    get category_rules_url, params: { sentimiento: "Deseo" }
+    assert_response :success
+  end
+
+  test "index filters by blank sentimiento" do
+    get category_rules_url, params: { sentimiento: "_blank" }
+    assert_response :success
+  end
+
+  test "create with turbo_stream format" do
+    assert_difference("CategoryRule.count") do
+      post category_rules_url, params: { 
+        category_rule: { name: "New Rule", pattern: "NEW", priority: 1 } 
+      }, as: :turbo_stream
+    end
+    assert_response :success
+  end
+
+  test "create with invalid data renders new" do
+    post category_rules_url, params: { category_rule: { name: "", pattern: "X", priority: 1 } }
+    assert_response :unprocessable_entity
+  end
+
+  test "update with turbo_stream format" do
+    patch category_rule_url(@category_rule), params: { 
+      category_rule: { name: "Updated Name" } 
+    }, as: :turbo_stream
+    assert_response :success
+  end
+
+  test "destroy with turbo_stream format" do
+    leaf = category_rules(:two)
+    assert_difference("CategoryRule.count", -1) do
+      delete category_rule_url(leaf), as: :turbo_stream
+    end
+    assert_response :success
+  end
+
+  test "import with invalid JSON redirects with alert" do
+    post import_category_rules_url, params: { json: "not valid json" }
+    assert_redirected_to category_rules_url
+    assert_match /JSON/, flash[:alert]
+  end
+
+  test "new responds to turbo_stream" do
+    get new_category_rule_url, as: :turbo_stream
+    assert_response :success
+  end
+
+  test "edit responds to turbo_stream" do
+    get edit_category_rule_url(@category_rule), as: :turbo_stream
+    assert_response :success
+  end
+
+  test "show responds to turbo_stream" do
+    get category_rule_url(@category_rule), as: :turbo_stream
+    assert_response :success
   end
 end

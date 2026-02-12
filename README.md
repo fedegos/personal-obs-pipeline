@@ -10,6 +10,8 @@ Utiliza este archivo como tu panel de control.
 
 El trabajo se hace en ramas (p. ej. `feature/nombre` o `develop`). Los cambios se integran a `main` solo vía **Pull Request**, con el **CI en verde** (lint y tests de Rails y Python en la raíz del repo, `.github/workflows/ci.yml`). Coolify despliega desde `main`; si algo falla en producción, se puede revertir el merge y volver a desplegar. Si tienes la extensión **Runme** instalada en VS Code, verás botones de "Run" en cada bloque.
 
+**Tests locales:** `make test` (todo), `make test-rails`, `make test-rails-system`, `make test-python`. **Build:** `make build` (web + ingestion) o `make build-web` / `make build-ingestion`. Ver [DOCS/CI-REFERENCIA.md](DOCS/CI-REFERENCIA.md).
+
 ## 🚀 Gestión de Infraestructura
 
 Levanta o detiene el pipeline completo de servicios (Docker).
