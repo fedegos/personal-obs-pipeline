@@ -52,58 +52,84 @@ Si agregaste gemas nuevas o estás en una instalación limpia:
 
 ---
 
-## 📥 3. Fase 1: Ingesta (Python)
-Envía los datos de los extractores (Visa/Amex) hacia Kafka.
+## 📥 3. Carga de archivos e ingesta
 
-```bash
-# Activar entorno virtual
-source .venv/bin/activate
-# Ejecutar ingesta
-python main.py
-```
-*Los eventos quedarán en el tópico `transacciones_raw` y entrarán automáticamente a la web de Rails en estado "Pendiente".*
+### Flujo completo
 
-2. **Listar archivos en s3:**
+1. **Usuario sube archivo** en [http://localhost:3000/source_files](http://localhost:3000/source_files): selecciona banco, adjunta Excel/CSV/PDF (o conecta Google Sheets para AMEX).
+2. **Rails (ExcelUploaderService)** guarda el archivo en MinIO y publica en el tópico `file_uploaded`.
+3. **Python (ingestion_worker)** consume `file_uploaded`, descarga de MinIO, ejecuta el extractor según el banco, publica en `transacciones_raw` y en `file_results`.
+4. **Rails (TransactionsConsumer)** consume `transacciones_raw` y persiste en PostgreSQL (pendientes de aprobación).
+5. **Rails (FileResultsConsumer)** consume `file_results` y actualiza el estado del SourceFile (transacciones_count, extractor, mensaje).
+
+### Bancos y extractores
+
+| Banco | Tipo | Parámetros | Ubicación |
+|-------|------|------------|-----------|
+| `visa` | CSV | — | `bank_extractors/visa_extractor.py` |
+| `bbva` | CSV/Excel | card_number, card_network | `bank_extractors/bbva_extractor.py` |
+| `amex` | Google Sheets | credit_card, spreadsheet_id, sheet | `bank_extractors/amex_extractor.py` |
+| `bbva_pdf_visa` | PDF | card_number | `bank_extractors/bbva_pdf_extractor.py` |
+| `bapro_pdf_visa` | PDF | card_number | `bank_extractors/bapro_pdf_extractor.py` |
+| `amex_pdf` | PDF | card_number, year | `bank_extractors/amex_pdf_extractor.py` |
+
+Los parámetros se definen en `web-enrichment-app/config/initializers/bank_schemas.rb`. El formulario de carga los solicita dinámicamente según el banco.
+
+### Listar archivos en MinIO
+
 ```bash
 docker exec -it minio_s3 mc alias set local http://localhost:9000 {user} {password}
-```
-
-```bash
 docker exec -it minio_s3 mc du local/bank-ingestion
 ```
+
 ---
 
-## 🔍 4. Fase 2: Curaduría y Enriquecimiento (Rails)
-En esta fase, los datos están en PostgreSQL pero **no han llegado a InfluxDB**.
+## 🔍 4. Curaduría y aprobación (Rails)
+
+En esta fase, los datos están en PostgreSQL pero **no han llegado a InfluxDB** hasta que se aprueben.
 
 1. Entra a [http://localhost:3000/transactions](http://localhost:3000/transactions).
 2. Revisa las categorías sugeridas por el `CategorizerService`.
-3. Ajusta la categoría o el sentimiento si es necesario.
-4. Presiona **"Aprobar"**. 
-   *Esto publica el evento en `transacciones_clean`.*
+3. Ajusta la categoría, subcategoría o sentimiento si es necesario.
+4. **Edición en línea:** Los cambios se guardan automáticamente (auto-save) mientras la transacción sigue pendiente. El flag `manually_edited` evita que las reglas dinámicas sobrescriban correcciones manuales.
+5. Presiona **"Aprobar"** para publicar en `transacciones_clean`.
+6. **Aprobar similares:** Si varias transacciones comparten la misma categoría/sentimiento sugerida, puedes aprobarlas en bloque. El modal muestra el listado previo a confirmar.
+
+### Audit corrections (correcciones en lote)
+
+En [http://localhost:3000/audit_corrections](http://localhost:3000/audit_corrections) puedes corregir transacciones ya aprobadas. Navegación prev/siguiente entre registros; los cambios se republican en `transacciones_clean` para actualizar InfluxDB.
 
 ---
 
-## 📊 5. Fase 3: Visualización (Telegraf + Influx + Grafana)
-El servicio **Telegraf** está configurado para mover automáticamente todo lo que aparece en el tópico `transacciones_clean` hacia InfluxDB.
+## 📊 5. Visualización (Telegraf + InfluxDB + Grafana)
+
+El servicio **Telegraf** consume `transacciones_clean` y escribe en InfluxDB.
 
 1. Abre **Grafana** [http://localhost:3001](http://localhost:3001).
-2. Usa el Data Source de InfluxDB (Bucket: `finanzas`).
+2. Usa el Data Source de InfluxDB (Bucket: `finanzas` o el configurado en `INFLUX_BUCKET`).
 3. Filtra por los tags: `categoria`, `sentimiento` o `red`.
+
+### Estructura en InfluxDB (telegraf.conf)
+
+- **Tags:** `event_id`, `moneda`, `red` (definen la serie).
+- **Fields:** `monto`, `categoria`, `sub_categoria`, `sentimiento`, `detalles`, `numero_tarjeta`, `en_cuotas`, `descripcion_cuota`.
+- **Timestamp:** `fecha` de la transacción.
 
 ---
 
 ## ⚙️ Motor de Reglas y Extractores
 
 ### Reglas de categoría (export/import)
+
 En [http://localhost:3000/category_rules](http://localhost:3000/category_rules) puedes:
 - **Exportar:** descargar todas las reglas en JSON (jerárquico: raíz → hijos).
-- **Importar:** subir un archivo JSON o pegar el contenido; el servicio crea/actualiza reglas por `name` + `pattern` + `parent_name` (idempotente).
+- **Importar:** subir un archivo JSON o pegar el contenido. El servicio es idempotente: unicidad por `name` + nivel (`parent_id`). Si existe una regla con el mismo nombre en el mismo nivel, se actualiza en lugar de duplicar.
 
-Servicio: `CategoryRulesExportImportService` (export/import). Rutas: `GET /category_rules/export`, `POST /category_rules/import`.
+Servicio: `CategoryRulesExportImportService`. Rutas: `GET /category_rules/export`, `POST /category_rules/import`.
 
 ### Extractores de ingesta (Python)
-Además de los extractores por banco (Visa, Amex, BBVA CSV), existe el extractor **BBVA PDF Visa** (`bbva_pdf_visa`) para resúmenes de tarjeta en PDF. Usa `pdfplumber`; está registrado en `ingestion-engine/bank_extractors/` y en `web-enrichment-app/config/initializers/bank_schemas.rb`. Tests: `ingestion-engine/tests/test_extractors_pdf.py`.
+
+Extractores disponibles: Visa CSV, BBVA CSV, AMEX (Google Sheets), BBVA PDF Visa, BAPRO PDF Visa, AMEX PDF. Usan `pdfplumber` para PDF. Registrados en `ingestion-engine/bank_extractors/` y `web-enrichment-app/config/initializers/bank_schemas.rb`. Tests: `ingestion-engine/tests/test_extractors_pdf.py`, `test_extractors.py`.
 
 ---
 
@@ -135,7 +161,27 @@ La carpeta `backups/` está en `.gitignore`. Para InfluxDB se requieren `INFLUX_
 Restaurar InfluxDB/Grafana/MinIO/Redpanda desde un backup requiere procedimientos manuales (ej. `influx restore`, reemplazar contenido del volumen de Grafana/MinIO). Consulta la documentación de cada servicio si lo necesitas.
 
 ### Backup automático en producción
-En producción debe existir un **backup automático** (cron o job en Coolify/servidor) que ejecute `pg_dump` contra la base de producción y, si aplica, los mismos targets de InfluxDB/Grafana/MinIO. Ver [DOCS/INFRA_MEMORANDUM.md](DOCS/INFRA_MEMORANDUM.md) y [DOCS/DEVOPS-ROADMAP.md](DOCS/DEVOPS-ROADMAP.md).
+
+En producción debe existir un **backup automático** (cron o job en Coolify/servidor). Ejemplo de script (`backup.sh`) para PostgreSQL + subida a MinIO:
+
+```bash
+#!/bin/bash
+TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+BACKUP_NAME="backup_audit_x_$TIMESTAMP.sql.gz"
+CONTAINER_DB="$(docker ps -qf 'name=postgres' | head -1)"  # O el nombre del contenedor de Postgres
+
+echo "📦 Iniciando dump..."
+docker exec $CONTAINER_DB pg_dump -U postgres audit_x_prod | gzip > /tmp/$BACKUP_NAME
+
+# Opcional: subir a MinIO/S3
+# mc cp /tmp/$BACKUP_NAME myminio/backups-proyecto/
+# find ... -mtime +30 -delete  # Retención
+
+rm /tmp/$BACKUP_NAME
+echo "✅ Backup completado: $BACKUP_NAME"
+```
+
+Para InfluxDB/Grafana/MinIO, usar los mismos targets que en desarrollo (`make backup-influx`, etc.). Ver [DOCS/DEVOPS-ROADMAP.md](DOCS/DEVOPS-ROADMAP.md) para prioridades.
 
 ### Rollback en Postgres
 **No existe "rollback" de datos ya confirmados.** Una vez hecho `COMMIT`, la recuperación se hace **restaurando desde un backup**. Por eso el backup a demanda y automático es la pieza clave.
@@ -168,7 +214,31 @@ Relee el tópico `transacciones_raw` con el consumidor Karafka existente (`Trans
 
 Targets auxiliares:
 - `make clean-transactions-only` — Borra solo `transactions` (no `SourceFile`).
-- `make rebind-karafka-consumer` — Rebobina el consumer group al inicio (útil también para backfill de `numero_tarjeta` si se combina con lógica que permita actualizar aprobadas).
+- `make rebind-karafka-consumer` — Rebobina el consumer group al inicio.
+
+### Backfill de numero_tarjeta
+
+Las transacciones creadas antes de agregar el campo `numero_tarjeta` no tienen este dato. Los mensajes en Kafka `transacciones_raw` sí lo incluyen. Tras una recuperación desde `transacciones_clean` (que no incluye `numero_tarjeta`), o para completar registros antiguos:
+
+**Opción recomendada (script directo):**
+
+```bash
+make backfill-card-numbers
+```
+
+El script (`DataBackfillService.backfill_numero_tarjeta`) lee desde el inicio del tópico `transacciones_raw`, busca cada transacción por `event_id` y actualiza solo el campo `numero_tarjeta` si está vacío. Idempotente. Presiona Ctrl+C para detener cuando quieras.
+
+**Alternativa (rebind consumer):** Rebobinar el consumer group (`make rebind-karafka-consumer`) y reiniciar el worker. Requiere modificar temporalmente `TransactionsConsumer` para permitir actualizar aprobadas. Ver `make rebind-karafka-consumer` en el Makefile.
+
+**Verificar resultados:**
+
+```bash
+docker compose exec web bin/rails runner "puts 'Con numero_tarjeta: ' + Transaction.where.not(numero_tarjeta: [nil, '']).count.to_s; puts 'Sin: ' + Transaction.where(numero_tarjeta: [nil, '']).count.to_s"
+```
+
+O usar `make check-card-numbers` para un resumen rápido.
+
+**Notas:** Si Kafka ya purgó los mensajes (retención), no funcionará; habría que re-procesar los archivos originales desde MinIO. Si falla la conexión, verifica `docker compose ps redpanda` y `KAFKA_SERVERS` en `.env`.
 
 ---
 
@@ -178,23 +248,6 @@ Targets auxiliares:
 2. **Karafka Boot:** Si el worker no arranca, verifica que `app/consumers/application_consumer.rb` exista y que `karafka.rb` use `"TransactionsConsumer"` como string.
 3. **Persistencia:** Los datos residen en volúmenes nombrados de Docker (`postgres_data`, `influxdb_data`). No borrar a menos que se desee un hard-reset.
 4. **Sincronización:** Recuerda: **Escribe código en local, ejecuta en Docker.** Cualquier archivo generado con `rails generate` aparecerá en tu carpeta local gracias a los volúmenes montados.
-
-### Hotfix: `solid_cache_entries` / Solid Queue no existen (401 en login)
-Si en producción aparece **`PG::UndefinedTable: relation "solid_cache_entries" does not exist`** al hacer login (porque Rack::Attack usa Solid Cache para throttling):
-
-- **Opción A (recomendada):** Desplegar este hotfix y ejecutar migraciones en producción:
-  ```bash
-  RAILS_ENV=production bundle exec rails db:migrate
-  ```
-  Las migraciones `20260130120000_create_solid_cache_entries` y `20260130120001_create_solid_queue_tables` crean las tablas en la base principal.
-
-- **Opción B (sin redesplegar):** En el servidor de producción, con la app ya desplegada:
-  ```bash
-  cd /ruta/a/web-enrichment-app
-  RAILS_ENV=production bundle exec rails db:schema:load:cache
-  RAILS_ENV=production bundle exec rails db:schema:load:queue
-  ```
-  Eso carga los esquemas de cache y queue en la misma base (si usas una sola `DATABASE_URL`).
 
 ---
 *Tip: Usa `Ctrl + Shift + V` en VS Code para previsualizar este documento.*
