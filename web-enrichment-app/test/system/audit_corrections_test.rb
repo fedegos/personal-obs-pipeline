@@ -1,7 +1,7 @@
 require "application_system_test_case"
 
 class AuditCorrectionsTest < ApplicationSystemTestCase
-  fixtures :users, :transactions, :category_rules, :category_rules
+  fixtures :users, :transactions, :category_rules
 
   setup do
     @user = users(:one)
@@ -21,9 +21,12 @@ class AuditCorrectionsTest < ApplicationSystemTestCase
     within("#transaction_#{@approved_transaction.id}") { click_link "Corregir Registro" }
 
     within("#modal-overlay") do
-      fill_in "Categoría", with: "Supermercado"
+      fill_in "transaction_categoria", with: "Supermercado"
       click_button "Guardar Cambios"
     end
+
+    # Con turbo: false, full page redirect; el modal desaparece
+    assert_text "Registro actualizado"
 
     @approved_transaction.reload
     assert_equal "Supermercado", @approved_transaction.categoria
