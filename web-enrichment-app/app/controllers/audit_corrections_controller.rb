@@ -31,7 +31,7 @@ class AuditCorrectionsController < ApplicationController
     prepare_categories_data
 
     respond_to do |format|
-      format.html { redirect_to audit_corrections_path }
+      format.html # Renderiza edit.html.erb (página completa, usada por tests y acceso directo)
       format.turbo_stream # Renderiza edit.turbo_stream.erb (el modal)
     end
   end

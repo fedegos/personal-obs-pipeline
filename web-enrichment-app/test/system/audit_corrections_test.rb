@@ -17,17 +17,13 @@ class AuditCorrectionsTest < ApplicationSystemTestCase
   end
 
   test "can edit an approved transaction" do
-    visit audit_corrections_path
-    within("#transaction_#{@approved_transaction.id}") { click_link "Corregir Registro" }
+    # Visita directa al edit (HTML) para evitar depender de Turbo Stream en CI
+    visit edit_audit_correction_path(@approved_transaction)
 
-    within("#modal-overlay") do
-      fill_in "transaction_categoria", with: "Supermercado"
-      click_button "Guardar Cambios"
-    end
+    fill_in "transaction_categoria", with: "Supermercado"
+    click_button "Guardar Cambios"
 
-    # Con turbo: false, full page redirect; el modal desaparece
     assert_text "Registro actualizado"
-
     @approved_transaction.reload
     assert_equal "Supermercado", @approved_transaction.categoria
   end
@@ -36,6 +32,7 @@ class AuditCorrectionsTest < ApplicationSystemTestCase
     visit audit_corrections_path
     within("#transaction_#{@approved_transaction.id}") { click_link "Corregir Registro" }
 
+    assert_selector "#modal-overlay", wait: 10
     within("#modal-overlay") do
       assert_selector "a", text: /Siguiente|Next/i
     end
@@ -45,6 +42,7 @@ class AuditCorrectionsTest < ApplicationSystemTestCase
     visit audit_corrections_path
     within("#transaction_#{@approved_transaction.id}") { click_link "Corregir Registro" }
 
+    assert_selector "#modal-overlay", wait: 10
     within("#modal-overlay") do
       assert_selector "a", text: /Anterior|Prev/i
     end

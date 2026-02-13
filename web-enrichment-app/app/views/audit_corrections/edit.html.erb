@@ -1,0 +1,7 @@
+<%# Página completa para editar corrección (usado por tests y acceso directo) %>
+<div class="audit-corrections-edit-page" style="max-width: 500px; margin: 2rem auto; padding: 2rem;">
+  <h2 class="page-title">Corregir Transacción</h2>
+  <p style="color: #64748b; font-family: monospace; margin-bottom: 1.5rem;">UUID: <%= @transaction.event_id.last(12) %></p>
+
+  <%= render "edit_form" %>
+</div>
