@@ -1,0 +1,25 @@
+<%# Formulario de corrección: compartido entre modal (turbo_stream) y página completa (html) %>
+<%= form_with model: @transaction, url: audit_correction_path(@transaction), method: :patch, data: { turbo: false } do |f| %>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <span style="font-size: 0.9rem; color: #475569; font-weight: 600;">📅 <%= @transaction.fecha.strftime("%d %b, %Y") %></span>
+    <span style="font-size: 1.25rem; font-weight: 900; color: #0f172a;"><%= number_to_currency(@transaction.monto) %></span>
+  </div>
+
+  <div style="font-size: 1rem; color: #334155; margin-bottom: 24px; font-weight: 500; line-height: 1.5; padding: 0 4px;">
+    <%= @transaction.detalles %>
+  </div>
+
+  <%= render "shared/transaction_form_fields",
+             f: f,
+             categories_map: @categories_map,
+             categories_list: @categories_list %>
+
+  <div class="button-grid-modal">
+    <%= f.submit "✅ Guardar Cambios", class: "btn-submit-dark" %>
+    <% if local_assigns[:in_modal] %>
+      <button type="button" onclick="document.getElementById('modal-overlay').remove()" class="btn-cancel-soft">Cancelar</button>
+    <% else %>
+      <%= link_to "Cancelar", audit_corrections_path, class: "btn-cancel-soft" %>
+    <% end %>
+  </div>
+<% end %>

@@ -13,3 +13,8 @@ ingestion-engine/credentials.json
 ingestion-engine/samples/
 temp_creds.yml
 backups/
+
+# Coverage reports (SimpleCov, pytest-cov)
+web-enrichment-app/coverage/
+ingestion-engine/htmlcov/
+ingestion-engine/.coverage

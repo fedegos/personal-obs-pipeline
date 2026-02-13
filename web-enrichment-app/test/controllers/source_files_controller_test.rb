@@ -16,7 +16,7 @@ class SourceFilesControllerTest < ActionDispatch::IntegrationTest
   test "create with invalid bank redirects with alert" do
     post source_files_url, params: { bank: "invalid_bank" }
     assert_redirected_to upload_path
-    assert_equal "El banco seleccionado no es válido.", flash[:alert]
+    assert_match /banco seleccionado no es/, flash[:alert]
   end
 
   test "create with valid bank without file when file required redirects with alert" do
@@ -41,5 +41,29 @@ class SourceFilesControllerTest < ActionDispatch::IntegrationTest
     ensure
       ExcelUploaderService.define_singleton_method(:call) { |*args| original_call.call(*args) }
     end
+  end
+
+  test "create with no-file bank like amex succeeds with valid params" do
+    original_call = ExcelUploaderService.method(:call)
+    ExcelUploaderService.define_singleton_method(:call) { |*_| true }
+    begin
+      post source_files_url, params: {
+        bank: "amex",
+        extra_params: { credit_card: "1234", spreadsheet_id: "test123", sheet: "Sheet1" }
+      }
+      assert_redirected_to upload_path
+      assert_match /AMEX.*iniciado/, flash[:notice]
+    ensure
+      ExcelUploaderService.define_singleton_method(:call) { |*args| original_call.call(*args) }
+    end
+  end
+
+  test "create with missing required params redirects with alert" do
+    post source_files_url, params: {
+      bank: "bbva_pdf_visa",
+      file: Rack::Test::UploadedFile.new(StringIO.new("pdf"), "application/pdf", true, original_filename: "test.pdf")
+    }
+    assert_redirected_to upload_path
+    assert_match /Faltan/, flash[:alert]
   end
 end

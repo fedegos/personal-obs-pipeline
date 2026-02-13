@@ -12,3 +12,11 @@ two:
   pattern: COTO|Coto
   priority: 2
   parent: one
+
+# Regla para que "Detalle uno/dos" reciba sugerencia y muestre "Aprobar similares"
+detalle_match:
+  name: Supermercado
+  pattern: Detalle
+  priority: 5
+  parent_id:
+  sentimiento: Deseo

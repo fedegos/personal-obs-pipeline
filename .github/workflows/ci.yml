@@ -88,6 +88,13 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/web_enrichment_app_test
         run: bundle exec rails db:test:prepare test
 
+      - name: Upload Rails coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: rails-coverage
+          path: web-enrichment-app/coverage/
+          if-no-files-found: ignore
+
   rails-system-test:
     runs-on: ubuntu-latest
     defaults:
@@ -119,6 +126,7 @@ jobs:
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/web_enrichment_app_test
+          SKIP_COVERAGE: "1"
         run: bundle exec rails db:test:prepare test:system
 
       - name: Upload screenshots on failure
@@ -165,5 +173,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Pytest
-        run: python -m pytest tests/ -v --tb=short
+      - name: Pytest with coverage
+        run: python -m pytest --cov=. --cov-report=term-missing --cov-report=html tests/
+
+      - name: Upload Python coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: ingestion-engine/htmlcov/
+          if-no-files-found: ignore

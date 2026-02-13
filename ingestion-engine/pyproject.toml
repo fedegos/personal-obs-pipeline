@@ -23,3 +23,16 @@ filterwarnings = ["ignore::DeprecationWarning"]
 markers = [
     "regression: tests que usan PDFs reales en samples/ (pueden omitirse si no existen)",
 ]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", "test_*.py", "conftest.py", "main.py", "debug_consumer.py", "ingest.py", "upload_files.py"]
+
+[tool.coverage.report]
+fail_under = 70  # temporal, subir gradualmente hacia 90
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

@@ -1,5 +1,25 @@
 """Tests para la estructura del payload file_results enviado por send_feedback."""
 
+import pandas as pd
+
+from main import json_serial
+
+
+def test_json_serial_with_timestamp():
+    """json_serial convierte Timestamp a ISO string."""
+    ts = pd.Timestamp("2026-01-15 10:30:00")
+    result = json_serial(ts)
+    assert result == "2026-01-15T10:30:00"
+
+
+def test_json_serial_with_regular_object():
+    """json_serial convierte objetos regulares a string."""
+    result = json_serial(123)
+    assert result == "123"
+
+    result = json_serial({"key": "value"})
+    assert "key" in result
+
 
 def test_file_result_payload_structure():
     """El payload de file_results debe incluir extractor, transactions_count y message."""

@@ -93,10 +93,10 @@ A partir de ahí Coolify despliega desde `main` (si está configurado el deploy 
 |-----|----------|
 | **rails-lint** | Brakeman, bundler-audit, importmap audit |
 | **rails-rubocop** | RuboCop (solo si cambian archivos en `web-enrichment-app/`) |
-| **rails-test** | Postgres + `bin/rails db:test:prepare test` |
+| **rails-test** | Postgres + `bin/rails db:test:prepare test` + reporte SimpleCov |
 | **rails-system-test** | `bin/rails db:test:prepare test:system` |
 | **python-lint** | Ruff check (solo si cambian archivos en `ingestion-engine/`) |
-| **python-test** | `pytest tests/` (solo si cambian archivos en `ingestion-engine/`) |
+| **python-test** | `pytest --cov` + reporte pytest-cov |
 
 Los jobs de Rails solo corren si tocaste `web-enrichment-app/` o `.github/workflows/ci.yml`; los de Python, si tocaste `ingestion-engine/` o el workflow. Si tocaste ambos, se ejecutan todos.
 
@@ -119,14 +119,14 @@ docker compose exec web bin/brakeman --no-pager
 docker compose exec web bin/bundler-audit
 docker compose exec web bin/importmap audit
 
-# Tests (Minitest)
-docker compose exec web bin/rails db:test:prepare test
+# Tests
+make test              # todo (Rails + Python, unit/controller)
+make test-rails        # solo Rails (Minitest, unit/controller)
+make test-rails-system # solo Rails system tests (Capybara/Selenium)
+make test-python       # solo Python (pytest)
 
-# Profiling de tests lentos (muestra los 25 más lentos)
-make test-profile   # ver DOCS/TEST-PROFILING.md
-
-# System tests (opcional)
-docker compose exec web bin/rails db:test:prepare test:system
+# Profiling de tests Rails lentos (muestra los 25 más lentos)
+make test-rails-profile   # o make test-profile; ver DOCS/TEST-PROFILING.md
 ```
 
 **Sin Docker (desde `web-enrichment-app/`):**
@@ -167,7 +167,66 @@ python3 -m venv .venv
 
 ---
 
-## 5. Resumen rápido
+## 5. Resumen de targets de tests
+
+| Comando | Alcance |
+|---------|---------|
+| `make test` | Todo (Rails unit/controller + Python) |
+| `make test-rails` | Solo Rails (Minitest, unit/controller) |
+| `make test-rails-system` | Solo Rails system tests (Capybara/Selenium) |
+| `make test-python` | Solo Python (pytest) |
+
+Los targets `ci-rails-test`, `ci-rails-system-test` y `ci-python-test` delegan en los anteriores.
+
+---
+
+## 6. Cobertura de código
+
+El proyecto incluye herramientas de cobertura para Rails (SimpleCov) y Python (pytest-cov).
+
+### Comandos de cobertura
+
+| Comando | Alcance |
+|---------|---------|
+| `make test-coverage` | Todo (Rails + Python) |
+| `make test-rails-coverage` | Solo Rails |
+| `make test-python-coverage` | Solo Python |
+
+### Rails (SimpleCov)
+
+SimpleCov se ejecuta automaticamente al correr los tests de Rails. El reporte se genera en `web-enrichment-app/coverage/index.html`.
+
+```bash
+# Con Docker
+make test-rails-coverage   # o make test-coverage para todo
+
+# Sin Docker
+cd web-enrichment-app && RAILS_ENV=test PARALLEL_WORKERS=1 bin/rails test
+# Abrir coverage/index.html en el navegador
+```
+
+### Python (pytest-cov)
+
+```bash
+# Con Docker
+make test-python-coverage   # o make test-coverage para todo
+
+# Sin Docker
+cd ingestion-engine
+python -m pytest --cov=. --cov-report=term-missing --cov-report=html tests/
+# Abrir htmlcov/index.html en el navegador
+```
+
+### Umbrales
+
+- **Objetivo inicial:** 90% de cobertura minima
+- **Objetivo final:** 100% de codigo propio
+
+Los reportes de cobertura se suben como artefactos en el CI de GitHub Actions.
+
+---
+
+## 7. Resumen rápido
 
 **Todos los controles del CI de una vez (desde la raíz del repo, con Docker levantado):**
 
@@ -186,9 +245,10 @@ Eso ejecuta en orden: Brakeman, bundler-audit, importmap audit, RuboCop, tests R
 | Solo Python (lint + tests) | `make ci-python-lint ci-python-test` |
 | Lint Rails | `make ci-rails-rubocop` (o `docker compose exec web bin/rubocop -f github`) |
 | Seguridad Rails | `make ci-rails-lint` (Brakeman + bundler-audit + importmap) |
-| Tests Rails | `make ci-rails-test` |
+| Tests Rails (unit/controller) | `make test-rails` o `make ci-rails-test` |
+| System tests Rails | `make test-rails-system` o `make ci-rails-system-test`. Requiere `make build-web` tras añadir Chromium al Dockerfile. |
 | Lint Python | `make ci-python-lint` |
-| Tests Python | `make ci-python-test` |
+| Tests Python | `make test-python` o `make ci-python-test` |
 
 **Comandos directos (sin Make):** los mismos que en la [sección 4](#4-comandos-locales-para-reproducir-el-ci).
 
@@ -196,7 +256,7 @@ Si todos pasan en tu máquina, el CI debería pasar al hacer push (salvo diferen
 
 ---
 
-## 6. Si el CI falla
+## 8. Si el CI falla
 
 - Revisa la pestaña **Actions** del repo en GitHub y el job que falló.
 - Corrige en tu rama (lint o tests) y vuelve a hacer push al mismo PR; el CI se vuelve a ejecutar.
@@ -204,6 +264,6 @@ Si todos pasan en tu máquina, el CI debería pasar al hacer push (salvo diferen
 
 ---
 
-## 7. Opcional: branch protection
+## 9. Opcional: branch protection
 
 En GitHub: **Settings → Branches → Add rule** para `main` → marcar **Require status checks to pass before merging** y elegir los jobs del CI (rails-lint, rails-rubocop, rails-test, python-lint, python-test, etc.). Así no se puede mergear si el CI falla.

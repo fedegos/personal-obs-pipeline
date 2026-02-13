@@ -47,4 +47,38 @@ class AuditCorrectionsControllerTest < ActionDispatch::IntegrationTest
     }
     assert_redirected_to audit_corrections_path
   end
+
+  test "should navigate to next transaction" do
+    get next_audit_correction_url(@transaction), as: :turbo_stream
+    assert_response :redirect
+  end
+
+  test "should navigate to prev transaction" do
+    get prev_audit_correction_url(@transaction), as: :turbo_stream
+    assert_response :redirect
+  end
+
+  test "index responds to turbo_stream" do
+    get audit_corrections_url, as: :turbo_stream
+    assert_response :success
+  end
+
+  test "update with turbo_stream format" do
+    patch audit_correction_url(@transaction), params: {
+      transaction: {
+        monto: @transaction.monto,
+        categoria: "Nueva Categoria",
+        sub_categoria: "Nueva Sub",
+        sentimiento: @transaction.sentimiento,
+        detalles: @transaction.detalles,
+        fecha: @transaction.fecha
+      }
+    }, as: :turbo_stream
+    assert_response :success
+  end
+
+  test "show responds to turbo_stream" do
+    get audit_correction_url(@transaction), as: :turbo_stream
+    assert_response :success
+  end
 end
