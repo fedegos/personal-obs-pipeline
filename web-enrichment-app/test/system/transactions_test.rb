@@ -12,15 +12,15 @@ class TransactionsTest < ApplicationSystemTestCase
   test "visiting transactions index shows pending transactions" do
     visit transactions_path
 
-    assert_text "Transacciones Pendientes"
+    assert_text "Gastos Pendientes"
     assert_text @pending_transaction.detalles
   end
 
   test "can filter transactions by search term" do
     visit transactions_path
 
-    fill_in "Buscar", with: "Detalle uno"
-    
+    fill_in "q", with: "Detalle uno"
+
     assert_text "Detalle uno"
   end
 

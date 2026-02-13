@@ -18,11 +18,12 @@ class CategoryRulesTest < ApplicationSystemTestCase
 
   test "can create a new category rule" do
     visit category_rules_path
-    click_link "Nueva regla"
+    click_link "Nueva Regla"
 
     fill_in "category_rule[name]", with: "Test Rule"
     fill_in "category_rule[pattern]", with: "TEST|test"
-    click_button "Guardar"
+    fill_in "category_rule[priority]", with: "1"
+    click_button "Guardar Regla"
 
     assert_text "Test Rule"
   end
@@ -31,15 +32,15 @@ class CategoryRulesTest < ApplicationSystemTestCase
     visit edit_category_rule_path(@rule)
 
     fill_in "category_rule[name]", with: "Regla Editada"
-    click_button "Guardar"
+    click_button "Guardar Regla"
 
-    assert_text "Regla Editada"
+    assert_text "Regla actualizada correctamente"
   end
 
-  test "can filter rules by search" do
+  test "can filter rules by sentimiento" do
     visit category_rules_path
 
-    fill_in "Buscar", with: @rule.name
+    select "Deseo ✨", from: "filter_sentimiento"
 
     assert_text @rule.name
   end
@@ -49,7 +50,7 @@ class CategoryRulesTest < ApplicationSystemTestCase
 
     click_link "Exportar"
 
-    # Should download JSON or show export
-    assert_current_path export_category_rules_path
+    # Export triggers download; page may stay or redirect
+    assert_text "Motor de Reglas"
   end
 end

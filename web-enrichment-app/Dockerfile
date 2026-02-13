@@ -8,6 +8,9 @@ RUN apt-get update -qq && apt-get install -y \
     nodejs \
     curl \
     chromium \
+    chromium-driver \
+    libgbm1 \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Chromium para system tests (Capybara/Selenium). Selenium Manager descarga chromedriver.

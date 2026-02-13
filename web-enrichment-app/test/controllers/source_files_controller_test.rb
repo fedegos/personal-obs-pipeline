@@ -47,7 +47,7 @@ class SourceFilesControllerTest < ActionDispatch::IntegrationTest
     original_call = ExcelUploaderService.method(:call)
     ExcelUploaderService.define_singleton_method(:call) { |*_| true }
     begin
-      post source_files_url, params: { 
+      post source_files_url, params: {
         bank: "amex",
         extra_params: { credit_card: "1234", spreadsheet_id: "test123", sheet: "Sheet1" }
       }
@@ -59,7 +59,7 @@ class SourceFilesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create with missing required params redirects with alert" do
-    post source_files_url, params: { 
+    post source_files_url, params: {
       bank: "bbva_pdf_visa",
       file: Rack::Test::UploadedFile.new(StringIO.new("pdf"), "application/pdf", true, original_filename: "test.pdf")
     }

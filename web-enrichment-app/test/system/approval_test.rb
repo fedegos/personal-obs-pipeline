@@ -1,7 +1,7 @@
 require "application_system_test_case"
 
 class ApprovalTest < ApplicationSystemTestCase
-  fixtures :users, :transactions
+  fixtures :users, :transactions, :category_rules
 
   setup do
     @user = users(:one)
@@ -13,7 +13,7 @@ class ApprovalTest < ApplicationSystemTestCase
     visit transactions_path
 
     within("#transaction_#{@pending_transaction.id}") do
-      click_button "Aprobar"
+      click_button "Aprobar Transacción"
     end
 
     # Transaction should disappear from pending list
@@ -27,13 +27,12 @@ class ApprovalTest < ApplicationSystemTestCase
   test "approve similar button opens confirmation modal" do
     visit transactions_path
 
-    # Find and click the "Aprobar similares" button for a transaction
     within("#transaction_#{@pending_transaction.id}") do
       click_button "Aprobar similares"
     end
 
-    # Modal should appear
-    assert_selector ".modal", visible: true
+    # Modal de aprobación en bloque (clase real del overlay)
+    assert_selector ".approve-batch-modal-overlay", visible: true
     assert_text "similares"
   end
 end

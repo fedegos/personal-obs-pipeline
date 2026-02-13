@@ -1,20 +1,32 @@
 require "test_helper"
 
-# En Docker usamos Chromium (CHROME_PATH). En CI/host, el :headless_chrome por defecto.
+# En Docker (CHROME_PATH): Cuprite + Chromium. En host: Selenium :headless_chrome.
 if (chrome_binary = ENV["CHROME_PATH"]) && File.exist?(chrome_binary)
+  require "capybara/cuprite"
   Capybara.register_driver :headless_chrome do |app|
-    opts = Selenium::WebDriver::Chrome::Options.new
-    opts.binary = chrome_binary
-    opts.add_argument("--headless=new")
-    opts.add_argument("--no-sandbox")
-    opts.add_argument("--disable-dev-shm-usage")
-    opts.add_argument("--disable-gpu")
-    Capybara::Selenium::Driver.new(app, browser: :chrome, options: opts)
+    Capybara::Cuprite::Driver.new(
+      app,
+      browser_path: chrome_binary,
+      headless: true,
+      window_size: [ 1400, 1400 ],
+      browser_options: {
+        "no-sandbox": nil,
+        "disable-dev-shm-usage": nil,
+        "disable-gpu": nil,
+        "disable-software-rasterizer": nil
+      },
+      timeout: 10,
+    )
   end
+  SYSTEM_DRIVER = :headless_chrome
+  SYSTEM_DRIVER_OPTS = { screen_size: [ 1400, 1400 ] }
+else
+  SYSTEM_DRIVER = :selenium
+  SYSTEM_DRIVER_OPTS = { using: :headless_chrome, screen_size: [ 1400, 1400 ] }
 end
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
-  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
+  driven_by SYSTEM_DRIVER, **SYSTEM_DRIVER_OPTS
 
   # Helper para iniciar sesión en system tests
   def sign_in_as(user, password: "password")

@@ -13,7 +13,7 @@ SimpleCov.start "rails" do
   add_group "Services", "app/services"
   add_group "Consumers", "app/consumers"
   add_group "Helpers", "app/helpers"
-  minimum_coverage 60 # Temporalmente bajado mientras mejoramos cobertura
+  minimum_coverage ENV["SKIP_COVERAGE"] ? 0 : 60 # SKIP_COVERAGE=1 para system tests
 end
 
 require_relative "../config/environment"

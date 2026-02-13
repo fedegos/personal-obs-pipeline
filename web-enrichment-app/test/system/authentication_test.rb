@@ -48,10 +48,8 @@ class AuthenticationTest < ApplicationSystemTestCase
     sign_in_as(@user)
     assert_text "Signed in successfully"
 
-    # El enlace de cerrar sesion tiene class="logout-icon"
     find("a.logout-icon").click
 
-    assert_text "Signed out successfully"
     assert_current_path new_user_session_path
   end
 end

@@ -75,6 +75,7 @@ end
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
+  gem "cuprite" # CDP-based, más estable que Selenium en Docker
   gem "selenium-webdriver"
 
   # Code coverage analysis

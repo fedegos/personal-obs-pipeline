@@ -35,7 +35,7 @@ class ExcelUploaderServiceTest < ActiveSupport::TestCase
   test "call with file uploads to S3 and produces Kafka message" do
     uploads = []
     messages = []
-    
+
     fake_s3 = Object.new
     fake_s3.define_singleton_method(:put_object) { |**kwargs| uploads << kwargs }
 
@@ -50,7 +50,7 @@ class ExcelUploaderServiceTest < ActiveSupport::TestCase
     Karafka.define_singleton_method(:producer) { fake_producer }
 
     begin
-      tempfile = Tempfile.new(["test", ".xlsx"])
+      tempfile = Tempfile.new([ "test", ".xlsx" ])
       tempfile.write("test content")
       tempfile.rewind
 

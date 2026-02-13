@@ -84,8 +84,8 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
 
   test "create with turbo_stream format" do
     assert_difference("CategoryRule.count") do
-      post category_rules_url, params: { 
-        category_rule: { name: "New Rule", pattern: "NEW", priority: 1 } 
+      post category_rules_url, params: {
+        category_rule: { name: "New Rule", pattern: "NEW", priority: 1 }
       }, as: :turbo_stream
     end
     assert_response :success
@@ -97,8 +97,8 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update with turbo_stream format" do
-    patch category_rule_url(@category_rule), params: { 
-      category_rule: { name: "Updated Name" } 
+    patch category_rule_url(@category_rule), params: {
+      category_rule: { name: "Updated Name" }
     }, as: :turbo_stream
     assert_response :success
   end
