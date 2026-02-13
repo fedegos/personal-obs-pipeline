@@ -1,7 +1,7 @@
 require "application_system_test_case"
 
 class AuditCorrectionsTest < ApplicationSystemTestCase
-  fixtures :users, :transactions
+  fixtures :users, :transactions, :category_rules, :category_rules
 
   setup do
     @user = users(:one)
@@ -21,12 +21,12 @@ class AuditCorrectionsTest < ApplicationSystemTestCase
     within("#transaction_#{@approved_transaction.id}") { click_link "Corregir Registro" }
 
     within("#modal-overlay") do
-      fill_in "Categoría", with: "Categoria Corregida"
+      fill_in "Categoría", with: "Supermercado"
       click_button "Guardar Cambios"
     end
 
     @approved_transaction.reload
-    assert_equal "Categoria Corregida", @approved_transaction.categoria
+    assert_equal "Supermercado", @approved_transaction.categoria
   end
 
   test "can navigate to next transaction" do

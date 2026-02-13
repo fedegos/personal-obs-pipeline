@@ -13,11 +13,14 @@ class ApprovalTest < ApplicationSystemTestCase
     visit transactions_path
 
     within("#transaction_#{@pending_transaction.id}") do
+      # Asegurar categoría y sentimiento válidos (evita submit deshabilitado por JS)
+      fill_in "Categoría", with: "Supermercado"
+      select "Deseo ✨", from: "Impacto / Sentimiento"
       click_button "Aprobar Transacción"
     end
 
     # Transaction should disappear from pending list
-    assert_no_selector "#transaction_#{@pending_transaction.id}"
+    assert_no_selector "#transaction_#{@pending_transaction.id}", wait: 5
 
     # Verify in database
     @pending_transaction.reload

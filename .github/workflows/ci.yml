@@ -126,6 +126,7 @@ jobs:
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/web_enrichment_app_test
+          SKIP_COVERAGE: "1"
         run: bundle exec rails db:test:prepare test:system
 
       - name: Upload screenshots on failure
