@@ -77,6 +77,9 @@ class RecoveryFromCleanService
 
     # Asigna atributos de un payload TransaccionClean a un objeto Transaction (sin guardar).
     def apply_clean_message_to(transaction, payload)
+      origen_val = payload["origen"].presence || "definitivo"
+      origen_val = "definitivo" unless Transaction::ORIGEN_VALIDOS.include?(origen_val)
+
       transaction.assign_attributes(
         event_id: payload["event_id"].to_s,
         fecha: parse_fecha(payload["fecha"]),
@@ -90,6 +93,8 @@ class RecoveryFromCleanService
         numero_tarjeta: payload["numero_tarjeta"],
         en_cuotas: payload["en_cuotas"].present? ? payload["en_cuotas"] : false,
         descripcion_cuota: payload["descripcion_cuota"],
+        fecha_vencimiento: parse_fecha_vencimiento(payload["fecha_vencimiento"]),
+        origen: origen_val,
         aprobado: true
       )
     end
@@ -101,6 +106,14 @@ class RecoveryFromCleanService
       return nil if value.blank?
 
       Time.zone.parse(value.to_s)
+    end
+
+    def parse_fecha_vencimiento(value)
+      return nil if value.blank?
+
+      Date.parse(value.to_s)
+    rescue ArgumentError
+      nil
     end
   end
 end

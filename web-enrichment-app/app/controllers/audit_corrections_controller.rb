@@ -113,6 +113,6 @@ class AuditCorrectionsController < ApplicationController
 
   def transaction_params
     # ⚠️ IMPORTANTE: Agregamos :sub_categoria
-    params.require(:transaction).permit(:monto, :categoria, :sub_categoria, :sentimiento, :detalles, :fecha)
+    params.require(:transaction).permit(:monto, :categoria, :sub_categoria, :sentimiento, :detalles, :fecha, :fecha_vencimiento)
   end
 end

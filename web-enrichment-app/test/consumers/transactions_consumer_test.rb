@@ -43,6 +43,7 @@ class TransactionsConsumerTest < ActiveSupport::TestCase
       assert_equal true, t.en_cuotas?
       assert_equal "2/3", t.descripcion_cuota
       assert_equal false, t.aprobado
+      assert_equal "definitivo", t.origen
     ensure
       CategorizerService.define_singleton_method(:guess) { |*args| original_guess.call(*args) }
       SentimentService.define_singleton_method(:analyze) { |*args| original_analyze.call(*args) }
@@ -72,5 +73,37 @@ class TransactionsConsumerTest < ActiveSupport::TestCase
     tx.reload
     assert tx.aprobado
     assert_equal 50.00, tx.monto.to_f
+  end
+
+  test "consume persists fecha_vencimiento and origen from payload" do
+    payload = {
+      "event_id"           => "test_event_fv_#{SecureRandom.hex(4)}",
+      "fecha_transaccion"  => 1.day.ago.to_date,
+      "monto"              => 99.99,
+      "moneda"             => "pesos",
+      "detalles"           => "Compra test",
+      "red"                => "Visa",
+      "fecha_vencimiento"  => "2026-01-31",
+      "origen"             => "parcial"
+    }
+
+    fake_message = OpenStruct.new(payload: payload)
+    consumer = TransactionsConsumer.allocate
+    consumer.define_singleton_method(:messages) { [ fake_message ] }
+
+    original_guess = CategorizerService.method(:guess)
+    original_analyze = SentimentService.method(:analyze)
+    CategorizerService.define_singleton_method(:guess) { |_| { category: "Hogar", sub_category: "Luz", sentimiento: "Necesario" } }
+    SentimentService.define_singleton_method(:analyze) { |_| "Necesario" }
+
+    begin
+      assert_difference("Transaction.count", 1) { consumer.consume }
+      t = Transaction.find_by(event_id: payload["event_id"])
+      assert_equal Date.parse("2026-01-31"), t.fecha_vencimiento
+      assert_equal "parcial", t.origen
+    ensure
+      CategorizerService.define_singleton_method(:guess) { |*args| original_guess.call(*args) }
+      SentimentService.define_singleton_method(:analyze) { |*args| original_analyze.call(*args) }
+    end
   end
 end

@@ -38,6 +38,8 @@ approved:
   aprobado: true
   en_cuotas: false
   descripcion_cuota:
+  fecha_vencimiento: 2026-01-31
+  origen: definitivo
 
 one_cuotas:
   event_id: fixture_event_one_cuotas

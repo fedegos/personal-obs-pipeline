@@ -119,7 +119,7 @@ grep -E --color=always "running|healthy|Status|$"
 
 ### 2. Flujo de Mensajes en Kafka
 
-__Especificación de eventos (AsyncAPI):__ Los tópicos, payloads y productores/consumidores están documentados en [DOCS/asyncapi.yaml](DOCS/asyncapi.yaml) (transacciones_raw, transacciones_clean, file_uploaded, file_results, domain_events). Validar el spec: `make validate-asyncapi` o [AsyncAPI Studio](https://studio.asyncapi.com/).
+__Especificación de eventos (AsyncAPI):__ Los tópicos, payloads y productores/consumidores están documentados en [DOCS/asyncapi.yaml](DOCS/asyncapi.yaml) (transacciones_raw, transacciones_clean, file_uploaded, file_results, domain_events). Los payloads incluyen `fecha_vencimiento` (opcional) y `origen` (parcial/definitivo). Ver [DOCS/FECHA-VENCIMIENTO.md](DOCS/FECHA-VENCIMIENTO.md). Validar el spec: `make validate-asyncapi` o [AsyncAPI Studio](https://studio.asyncapi.com/).
 
 Este comando verifica si hay "Lag" en Telegraf. Si el **LAG** es 0, significa que todos los gastos procesados en Rails ya llegaron a la base de datos.
 

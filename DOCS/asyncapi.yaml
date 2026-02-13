@@ -132,6 +132,15 @@ components:
           numero_operacion:
             type: string
             description: Número de operación (para event_id).
+          fecha_vencimiento:
+            type: string
+            format: date
+            description: Fecha de cierre/vencimiento del resumen (opcional).
+          origen:
+            type: string
+            enum: [ "parcial", "definitivo" ]
+            default: definitivo
+            description: parcial = cargas intermedias; definitivo = resúmenes cerrados.
 
     TransaccionClean:
       name: TransaccionClean
@@ -172,6 +181,15 @@ components:
           descripcion_cuota:
             type: string
             description: Cuota actual/total (ej. "2/3"). "-" si no aplica.
+          fecha_vencimiento:
+            type: string
+            format: date
+            description: Fecha de cierre/vencimiento del resumen (opcional).
+          origen:
+            type: string
+            enum: [ "parcial", "definitivo" ]
+            default: definitivo
+            description: parcial = cargas intermedias; definitivo = resúmenes cerrados.
 
     FileUploaded:
       name: FileUploaded
@@ -205,7 +223,7 @@ components:
                 type: [ "string", "null" ]
           params:
             type: object
-            description: Parámetros extra (spreadsheet_id, year, etc.).
+            description: Parámetros extra (spreadsheet_id, year, card_number, fecha_vencimiento, etc.). fecha_vencimiento (YYYY-MM-DD) opcional para cargas con archivo.
 
     FileResult:
       name: FileResult

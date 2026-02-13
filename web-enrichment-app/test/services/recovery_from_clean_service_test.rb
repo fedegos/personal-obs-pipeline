@@ -82,4 +82,23 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
     assert transaction.persisted?
     assert_equal false, transaction.en_cuotas?
   end
+
+  test "apply_clean_message maps fecha_vencimiento and origen" do
+    payload = PAYLOAD_CLEAN.merge(
+      "event_id" => "evt-fv-origen",
+      "fecha_vencimiento" => "2026-01-31",
+      "origen" => "parcial"
+    )
+    transaction = RecoveryFromCleanService.apply_clean_message(payload)
+    assert transaction.persisted?
+    assert_equal Date.parse("2026-01-31"), transaction.fecha_vencimiento
+    assert_equal "parcial", transaction.origen
+  end
+
+  test "apply_clean_message defaults origen to definitivo when missing" do
+    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-origen-default")
+    transaction = RecoveryFromCleanService.apply_clean_message(payload)
+    assert transaction.persisted?
+    assert_equal "definitivo", transaction.origen
+  end
 end

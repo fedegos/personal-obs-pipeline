@@ -13,6 +13,9 @@ class TransactionsConsumer < ApplicationConsumer
 
       results = CategorizerService.guess(data["detalles"])
 
+      origen_val = data["origen"].presence || "definitivo"
+      origen_val = "definitivo" unless Transaction::ORIGEN_VALIDOS.include?(origen_val)
+
       transaction.assign_attributes(
         fecha:        data["fecha_transaccion"],
         monto:        data["monto"],
@@ -22,6 +25,8 @@ class TransactionsConsumer < ApplicationConsumer
         numero_tarjeta: data["numero_tarjeta"],
         en_cuotas:    data["en_cuotas"].presence || false,
         descripcion_cuota: data["descripcion_cuota"].presence,
+        fecha_vencimiento: parse_fecha_vencimiento(data["fecha_vencimiento"]),
+        origen: origen_val,
         # El servicio de categorización puede usar Regex o incluso una IA local
         categoria:    results[:category],
         sub_categoria:  results[:sub_category],
@@ -35,5 +40,15 @@ class TransactionsConsumer < ApplicationConsumer
         Karafka.logger.error "Fallo al guardar transacción: #{transaction.errors.full_messages}"
       end
     end
+  end
+
+  private
+
+  def parse_fecha_vencimiento(value)
+    return nil if value.blank?
+
+    Date.parse(value.to_s)
+  rescue ArgumentError
+    nil
   end
 end

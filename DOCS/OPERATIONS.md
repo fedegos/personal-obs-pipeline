@@ -111,9 +111,14 @@ El servicio **Telegraf** consume `transacciones_clean` y escribe en InfluxDB.
 
 ### Estructura en InfluxDB (telegraf.conf)
 
-- **Tags:** `event_id`, `moneda`, `red` (definen la serie).
-- **Fields:** `monto`, `categoria`, `sub_categoria`, `sentimiento`, `detalles`, `numero_tarjeta`, `en_cuotas`, `descripcion_cuota`.
+- **Tags:** `event_id`, `moneda`, `red`, `fecha_vencimiento` (si está presente).
+- **Fields:** `monto`, `categoria`, `sub_categoria`, `sentimiento`, `detalles`, `numero_tarjeta`, `en_cuotas`, `descripcion_cuota`, `origen`.
 - **Timestamp:** `fecha` de la transacción.
+
+### Campos `fecha_vencimiento` y `origen`
+
+- **fecha_vencimiento:** Fecha de cierre o vencimiento del resumen (opcional). Útil para cargas parciales de Excel/CSV y para PDFs que incluyen esta fecha.
+- **origen:** Indica el tipo de carga: `parcial` (cargas intermedias) o `definitivo` (resúmenes cerrados). Default: `definitivo`. En cargas Excel/CSV/Sheets suele ser `parcial`; en PDF de resumen, `definitivo`.
 
 ---
 

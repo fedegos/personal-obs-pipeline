@@ -14,10 +14,16 @@ from .pdf.base import PdfExtractorBase
 from .pdf.utils import (
     MES_ES_A_EN,
     extract_cuota_c_xx_yy,
+    extract_fecha_vencimiento_pattern,
     mes_es_to_en,
     normalize_fecha_mes_es,
     normalize_monto,
     should_skip_text,
+)
+
+_PROX_VTO_RE = re.compile(
+    r"Prox\.Vto\.\s*(\d{1,2}[/\-\.]\d{1,2}(?:[/\-\.]\d{2,4})?)",
+    re.IGNORECASE,
 )
 
 _SKIP_PATTERNS = (
@@ -46,6 +52,10 @@ _MESES_VALIDOS = set(MES_ES_A_EN.keys()) | {m.rstrip(".") for m in MES_ES_A_EN.k
 class BaproPdfExtractor(PdfExtractorBase):
     extractor_id = "bapro_pdf_visa"
     default_network = "Visa"
+
+    def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
+        """Extrae Prox.Vto. DD/MM o DD/MM/YY."""
+        return extract_fecha_vencimiento_pattern(text, _PROX_VTO_RE)
 
     def _postprocess_fecha(self, fecha_str: str) -> str:
         return normalize_fecha_mes_es(fecha_str)

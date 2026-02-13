@@ -11,9 +11,13 @@ class Transaction < ApplicationRecord
     "Hormiga"   => "Gasto Hormiga 🐜"
   }.freeze
 
+  # origen: parcial = cargas intermedias, definitivo = resúmenes cerrados
+  ORIGEN_VALIDOS = %w[parcial definitivo].freeze
+
   # Validaciones para asegurar integridad antes de enviar a InfluxDB
   validates :event_id, presence: true, uniqueness: true
   validates :monto, :fecha, :detalles, presence: true
+  validates :origen, inclusion: { in: ORIGEN_VALIDOS }, allow_nil: false
 
   # Scopes útiles para tu controlador
   scope :pendientes, -> { where(aprobado: false) }

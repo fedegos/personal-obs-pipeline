@@ -1,66 +1,17 @@
-# Extractores PDF
+# Extractores PDF - Fecha de vencimiento
 
-Base común para extraer transacciones de resúmenes de tarjetas en PDF.
+## Patrones de extracción por banco
 
-## Arquitectura
+Los extractores pueden implementar `_extract_fecha_vencimiento(text, **kwargs)` para extraer la fecha de cierre o vencimiento del resumen.
 
-- **PdfExtractorBase**: clase abstracta con Template Method. Gestiona lectura de bytes, extracción de texto (pdfplumber), validaciones y armado del DataFrame.
-- **utils**: helpers compartidos (normalizar montos, meses, cuotas, fechas).
-- **Parsers**: cada banco implementa `_parse_transactions(text, **kwargs)` que retorna `list[dict]`.
+| Banco | Patrón | Ejemplo |
+|-------|--------|---------|
+| **AMEX** | `Vencimiento : DD/MM/YY` | Vencimiento : 27/11/25 |
+| **BBVA** | `Vto./Vencimiento/Cierre` + `DD/MM/YY` | Vto. 15/02/26 |
+| **BAPRO** | `Prox.Vto. DD/MM` o `DD/MM/YY` | Prox.Vto. 15/02/26 |
 
-## Agregar un nuevo extractor
+## Uso
 
-1. Crear `banco_x_pdf_extractor.py` en `bank_extractors/`.
-2. Subclasificar `PdfExtractorBase`:
-
-```python
-from . import register_extractor
-from .pdf.base import PdfExtractorBase
-from .pdf.utils import normalize_monto, should_skip_text
-
-class BancoXPdfExtractor(PdfExtractorBase):
-    extractor_id = "banco_x_pdf"
-    default_network = "Visa"
-
-    def _parse_transactions(self, text: str, **kwargs) -> list[dict]:
-        rows = []
-        for line in text.split("\n"):
-            # ... parsear línea ...
-            rows.append({
-                "fecha_transaccion": "...",
-                "monto": ...,
-                "detalles": "...",
-                "moneda": "pesos",
-                "numero_operacion": "...",
-                "en_cuotas": False,
-                "descripcion_cuota": "-",
-            })
-        return rows
-
-_extractor = BancoXPdfExtractor()
-
-@register_extractor("banco_x_pdf")
-def extract_banco_x_pdf(file_content: bytes, **kwargs):
-    return _extractor.extract(file_content, **kwargs)
-```
-
-3. Importar el módulo en `bank_extractors/__init__.py`.
-4. Añadir el banco en `config/initializers/bank_schemas.rb` (Rails) si aplica.
-
-## Utilidades disponibles
-
-| Función | Uso |
-|---------|-----|
-| `normalize_monto(value)` | Convierte "1.500,50" → 1500.5 |
-| `mes_es_to_en(mes, strict)` | "Ene"/"Enero" → "Jan" |
-| `normalize_fecha_mes_es(fecha_str)` | Reemplaza meses ES en DD-MMM-YY |
-| `extract_cuota_c_xx_yy(detalles)` | Detecta C.01/06 → (True, "01/06") |
-| `extract_cuota_amex(detalles)` | Detecta CUOTA 04/06 DE ... |
-| `should_skip_text(text, patterns)` | Excluye líneas/bloques no transaccionales |
-| `deduce_year(...)` | Deduce año según período de facturación (AMEX) |
-
-## Tests
-
-- Tests unitarios con texto simulado en `tests/test_extractors_pdf.py`.
-- Tests de regresión (`@pytest.mark.regression`) con PDFs reales en `samples/`.
-  Se omiten automáticamente si `samples/` no existe (p. ej. en CI sin muestras).
+- La fecha se añade a todas las filas del DataFrame cuando se extrae correctamente.
+- Si el PDF no contiene el patrón, `fecha_vencimiento` no se incluye (opcional).
+- Para cargas Excel/CSV, `fecha_vencimiento` puede venir desde la UI (`params`) en el evento `file_uploaded`.

@@ -16,11 +16,14 @@ from .pdf.utils import (
     MONTH_EN_TO_NUM,
     deduce_year,
     extract_cuota_amex,
+    extract_fecha_vencimiento_pattern,
     extract_year_from_filename,
     mes_es_to_en,
     normalize_monto,
     should_skip_text,
 )
+
+_VENCIMIENTO_RE = re.compile(r"Vencimiento\s*:\s*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})", re.IGNORECASE)
 
 _SKIP_PATTERNS = (
     r"Detalle mes anterior",
@@ -61,6 +64,10 @@ def _extract_billing_period(text: str) -> tuple[int, int] | None:
 class AmexPdfExtractor(PdfExtractorBase):
     extractor_id = "amex_pdf"
     default_network = "Amex"
+
+    def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
+        """Extrae 'Vencimiento : DD/MM/YY' de la primera página."""
+        return extract_fecha_vencimiento_pattern(text, _VENCIMIENTO_RE)
 
     def _parse_transactions(self, text: str, **kwargs) -> list[dict]:
         billing_period = kwargs.get("billing_period")

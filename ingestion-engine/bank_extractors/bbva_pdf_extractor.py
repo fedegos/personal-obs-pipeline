@@ -11,9 +11,15 @@ from . import register_extractor
 from .pdf.base import PdfExtractorBase
 from .pdf.utils import (
     extract_cuota_c_xx_yy,
+    extract_fecha_vencimiento_pattern,
     normalize_fecha_mes_es,
     normalize_monto,
     should_skip_text,
+)
+
+_VTO_CIERRE_RE = re.compile(
+    r"(?:Vto\.|Vencimiento|Cierre)\s*[:\s]*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})",
+    re.IGNORECASE,
 )
 
 _SKIP_PATTERNS = (
@@ -38,6 +44,10 @@ _USD_IN_LINE_RE = re.compile(r"\bUSD\s+([\d.,]+)", re.IGNORECASE)
 class BbvaPdfExtractor(PdfExtractorBase):
     extractor_id = "bbva_pdf_visa"
     default_network = "Visa"
+
+    def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
+        """Extrae Vto./Vencimiento/Cierre con fecha DD/MM/YY."""
+        return extract_fecha_vencimiento_pattern(text, _VTO_CIERRE_RE)
 
     def _postprocess_fecha(self, fecha_str: str) -> str:
         return normalize_fecha_mes_es(fecha_str)

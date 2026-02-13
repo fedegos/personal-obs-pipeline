@@ -49,6 +49,14 @@
             💱 <%= transaction.moneda %>
           </span>
         <% end %>
+        <% if transaction.fecha_vencimiento.present? %>
+          <span class="badge-fecha-venc">
+            📆 Vto. <%= transaction.fecha_vencimiento.strftime("%d/%m") %>
+          </span>
+        <% end %>
+        <% if transaction.origen.present? && transaction.origen != "definitivo" %>
+          <span class="badge-origen">📋 <%= transaction.origen %></span>
+        <% end %>
       </div>
     </div>
     <span class="transaction-amount"><%= number_to_currency(transaction.monto) %></span>

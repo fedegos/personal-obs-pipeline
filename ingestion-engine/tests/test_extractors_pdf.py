@@ -206,6 +206,14 @@ ________________________________________________________________________"""
         assert len(rows) == 1
         assert rows[0]["fecha_transaccion"] == "15-Nov-25"
 
+    def test_extract_fecha_vencimiento_from_text(self):
+        """_extract_fecha_vencimiento retorna YYYY-MM-DD cuando hay Vencimiento : DD/MM/YY."""
+        from bank_extractors.amex_pdf_extractor import _extractor
+
+        text = "Vencimiento : 27/11/25\nEstado de Cuenta\n..."
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2025-11-27"
+
     def test_skip_intereses_financieros_and_iva(self):
         """Excluye INTERESES FINANCIEROS e IVA 21%."""
         text = """15 de Marzo 1.234,56
