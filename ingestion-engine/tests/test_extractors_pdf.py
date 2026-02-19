@@ -214,6 +214,51 @@ ________________________________________________________________________"""
         result = _extractor._extract_fecha_vencimiento(text)
         assert result == "2025-11-27"
 
+    def test_extract_fecha_vencimiento_ignores_detalle_mes_anterior(self):
+        """No toma el vencimiento del ciclo anterior (Detalle mes anterior)."""
+        from bank_extractors.amex_pdf_extractor import _extractor
+
+        text = """Facturación
+Vencimiento : 29/01/25
+21/01/25 28/01/25
+Detalle mes anterior
+Vencimiento : 30/12/24
+Pago Min. $ : 11.074,69"""
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2025-01-29"  # Del encabezado, no 2024-12-30 de Detalle
+
+    def test_extract_fecha_vencimiento_returns_none_when_only_in_detalle_mes_anterior(self):
+        """Retorna None si el único Vencimiento : está en Detalle mes anterior."""
+        from bank_extractors.amex_pdf_extractor import _extractor
+
+        text = """Estado de Cuenta
+21/01/25 28/01/25
+Detalle mes anterior
+Vencimiento : 30/12/24
+Pago Min. $ : 11.074,69"""
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result is None  # Usar params en ese caso
+
+    def test_extract_fecha_vencimiento_from_table_vencimiento_actual(self):
+        """Extrae la 2ª fecha (Vencimiento Actual). Orden: Fact Actual, Vto Actual, Fact Próx, Vto Próx."""
+        from bank_extractors.amex_pdf_extractor import _extractor
+
+        text = """Facturación
+Vencimiento
+Actual
+Próxima
+FEDERICO GOSMAN 3766-367019-32003
+21/01/25
+28/01/25
+1.037.637,34
+Detalle mes anterior
+Vencimiento : 30/12/24
+18/02/25
+25/02/25
+Fecha y detalle de las transacciones"""
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2025-01-28"  # Vencimiento Actual (2ª fecha)
+
     def test_skip_intereses_financieros_and_iva(self):
         """Excluye INTERESES FINANCIEROS e IVA 21%."""
         text = """15 de Marzo 1.234,56

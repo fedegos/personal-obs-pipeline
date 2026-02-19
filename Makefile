@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-ingestion test test-rails test-rails-system test-python test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile
+.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-ingestion test test-rails test-rails-system test-python test-kafka-persistence test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile
 
 .DEFAULT_GOAL := help
 
@@ -118,6 +118,9 @@ test-python: ## Correr solo tests de Python (pytest). Usa Docker si pytest no es
 	else \
 		docker compose run --rm ingestion_worker python -m pytest tests/ -v --tb=short; \
 	fi
+
+test-kafka-persistence: ## Verificar que Kafka/Redpanda persiste tópicos y mensajes entre reinicios
+	bash scripts/test_kafka_persistence.sh
 
 test-all: test ## Alias: todas las pruebas
 

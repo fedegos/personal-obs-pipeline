@@ -24,6 +24,7 @@ from .pdf.utils import (
 )
 
 _VENCIMIENTO_RE = re.compile(r"Vencimiento\s*:\s*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})", re.IGNORECASE)
+_DATE_DDMMYY_RE = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{2,4})\b")
 
 _SKIP_PATTERNS = (
     r"Detalle mes anterior",
@@ -66,8 +67,30 @@ class AmexPdfExtractor(PdfExtractorBase):
     default_network = "Amex"
 
     def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
-        """Extrae 'Vencimiento : DD/MM/YY' de la primera página."""
-        return extract_fecha_vencimiento_pattern(text, _VENCIMIENTO_RE)
+        """Extrae fecha de vencimiento actual del encabezado.
+        1) Busca 'Vencimiento : DD/MM/YY' en el encabezado (antes de Detalle mes anterior).
+        2) Si no hay, toma la 3ª fecha de la tabla Facturación/Vencimiento (Vencimiento Actual)."""
+        first_page = text.split("\f")[0] if "\f" in text else text[:8000]
+        header_only = first_page.split("Detalle mes anterior")[0]
+        # Intento 1: formato explícito "Vencimiento : DD/MM/YY"
+        result = extract_fecha_vencimiento_pattern(header_only, _VENCIMIENTO_RE)
+        if result:
+            return result
+        # Intento 2: tabla con Facturación/Vencimiento × Actual/Próximo (orden por columnas)
+        # Col Actual: Fact Actual, Vto Actual. Col Próximo: Fact Próx, Vto Próx.
+        # La 2ª fecha es Vencimiento Actual.
+        block = first_page.split("Fecha y detalle")[0]
+        # Excluir "Vencimiento : DD/MM/YY" de Detalle (está después de header pero puede quedar)
+        block_masked = re.sub(r"Vencimiento\s*:\s*\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}", "Vencimiento : __SKIP__", block, flags=re.IGNORECASE)
+        dates = _DATE_DDMMYY_RE.findall(block_masked)
+        if len(dates) >= 2 and "Vencimiento" in block and "Actual" in block:
+            d, m_val, y = dates[1]  # 2ª fecha = Vencimiento Actual (col Actual)
+            year = int(y) if len(y) == 4 else 2000 + int(y)
+            try:
+                return f"{year:04d}-{int(m_val):02d}-{int(d):02d}"
+            except (ValueError, TypeError):
+                pass
+        return None
 
     def _parse_transactions(self, text: str, **kwargs) -> list[dict]:
         billing_period = kwargs.get("billing_period")

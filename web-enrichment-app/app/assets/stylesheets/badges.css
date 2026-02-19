@@ -102,6 +102,28 @@
   display: inline-block;
 }
 
+.badge-fecha-venc {
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: 500;
+  border: 1px solid #ddd6fe;
+  display: inline-block;
+}
+
+.badge-origen {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  display: inline-block;
+}
+
 /* Badge para indicar información incompleta */
 .badge-incomplete {
   background: #fef2f2;

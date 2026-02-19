@@ -79,7 +79,7 @@ def process_ingestion(data):
             origen = "definitivo" if bank_name in pdf_banks else "parcial"
             df["origen"] = origen
 
-            # fecha_vencimiento: desde params (UI) o columna del extractor (PDF)
+            # fecha_vencimiento: extraído del PDF (cuando es correcto) o params (UI)
             if "fecha_vencimiento" not in df.columns and params.get("fecha_vencimiento"):
                 df["fecha_vencimiento"] = params["fecha_vencimiento"]
 
