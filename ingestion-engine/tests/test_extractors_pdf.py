@@ -68,6 +68,31 @@ class TestBbvaPdfExtractor:
         assert rows[0]["moneda"] == "dolares"
         assert rows[0]["monto"] == 2.99
 
+    def test_extract_fecha_vencimiento_vto_format(self):
+        """Vto. 15/02/26 → 2026-02-15."""
+        from bank_extractors.bbva_pdf_extractor import _extractor
+
+        text = "Vto. 15/02/26\n25-Dic-25 STEAM 497321 100,00"
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2026-02-15"
+
+    def test_extract_fecha_vencimiento_cierre_format(self):
+        """Cierre 10/01/26 → 2026-01-10."""
+        from bank_extractors.bbva_pdf_extractor import _extractor
+
+        text = "Cierre 10/01/26\nResumen de cuenta"
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2026-01-10"
+
+    def test_extract_fecha_vencimiento_vencimiento_actual_table(self):
+        """Tabla BBVA: VENCIMIENTO ACTUAL + línea con DD-MMM-YY → 2ª columna."""
+        from bank_extractors.bbva_pdf_extractor import _extractor
+
+        text = """CIERRE ACTUAL VENCIMIENTO ACTUAL SALDO ACTUAL
+30-Oct-25 07-Nov-25 558.786,73"""
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2025-11-07"
+
 
 class TestBaproPdfExtractor:
     """BAPRO PDF extractor: YY Mes DD / DD forward-fill, cupon, desc, monto."""
@@ -132,6 +157,40 @@ class TestBaproPdfExtractor:
         assert len(rows) == 1
         assert "SU PAGO" not in str(rows)
         assert "IIBB" not in str(rows)
+
+    def test_extract_fecha_vencimiento_prox_vto_full_date(self):
+        """Prox.Vto. 15/03/26 → 2026-03-15."""
+        from bank_extractors.bapro_pdf_extractor import _extractor
+
+        text = """Prox.Vto. 15/03/26
+25 Agosto 02 080069 * RAPPI 5.499,00"""
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2026-03-15"
+
+    def test_extract_fecha_vencimiento_prox_vto_dd_mm_uses_default_year(self):
+        """Prox.Vto. 15/03 sin año → usa año del texto (25) o filename."""
+        from bank_extractors.bapro_pdf_extractor import _extractor
+
+        text = """Prox.Vto. 15/03
+25 Agosto 02 080069 * RAPPI 5.499,00"""
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2025-03-15"
+
+    def test_extract_fecha_vencimiento_prox_vto_with_year_kwarg(self):
+        """Prox.Vto. 15/03 usa year de kwargs cuando el texto no tiene transacciones."""
+        from bank_extractors.bapro_pdf_extractor import _extractor
+
+        text = "Prox.Vto. 15/03\nProx.Cierre 10/03"
+        result = _extractor._extract_fecha_vencimiento(text, year=2026)
+        assert result == "2026-03-15"
+
+    def test_extract_fecha_vencimiento_vencimiento_dd_mon_yy(self):
+        """VENCIMIENTO 07 Jul 25 → 2025-07-07 (formato BAPRO real)."""
+        from bank_extractors.bapro_pdf_extractor import _extractor
+
+        text = "VENCIMIENTO 07 Jul 25\n25 Junio 02 080069 * RAPPI 5.499,00"
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2025-07-07"
 
 
 class TestAmexPdfExtractor:
@@ -308,6 +367,8 @@ class TestAmexPdfRegression:
         assert (df["monto"] > 0).all()
         assert pd.api.types.is_datetime64_any_dtype(df["fecha_transaccion"])
         assert df["red"].iloc[0] == "Amex"
+        assert "fecha_vencimiento" in df.columns
+        assert df["fecha_vencimiento"].notna().any(), "AMEX sample debería traer fecha_vencimiento"
 
 
 @pytest.mark.regression
@@ -334,6 +395,8 @@ class TestBaproPdfRegression:
         if len(df) > 0:
             assert (df["monto"] > 0).all()
             assert pd.api.types.is_datetime64_any_dtype(df["fecha_transaccion"])
+            if "fecha_vencimiento" in df.columns and df["fecha_vencimiento"].notna().any():
+                assert len(df[df["fecha_vencimiento"].notna()]) > 0
 
 
 @pytest.mark.regression
@@ -360,3 +423,5 @@ class TestBbvaPdfRegression:
         if len(df) > 0:
             assert (df["monto"] > 0).all()
             assert pd.api.types.is_datetime64_any_dtype(df["fecha_transaccion"])
+            if "fecha_vencimiento" in df.columns and df["fecha_vencimiento"].notna().any():
+                assert len(df[df["fecha_vencimiento"].notna()]) > 0

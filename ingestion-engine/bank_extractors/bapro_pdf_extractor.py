@@ -13,8 +13,11 @@ from . import register_extractor
 from .pdf.base import PdfExtractorBase
 from .pdf.utils import (
     MES_ES_A_EN,
+    MONTH_EN_TO_NUM,
     extract_cuota_c_xx_yy,
     extract_fecha_vencimiento_pattern,
+    extract_year_from_bapro_text,
+    extract_year_from_filename,
     mes_es_to_en,
     normalize_fecha_mes_es,
     normalize_monto,
@@ -23,6 +26,11 @@ from .pdf.utils import (
 
 _PROX_VTO_RE = re.compile(
     r"Prox\.Vto\.\s*(\d{1,2}[/\-\.]\d{1,2}(?:[/\-\.]\d{2,4})?)",
+    re.IGNORECASE,
+)
+# BAPRO: "VENCIMIENTO 07 Jul 25" (DD Mon YY)
+_VENCIMIENTO_DD_MON_YY_RE = re.compile(
+    r"Vencimiento\s+(\d{1,2})\s+([A-Za-z]{3})\s+(\d{2})\b",
     re.IGNORECASE,
 )
 
@@ -54,8 +62,27 @@ class BaproPdfExtractor(PdfExtractorBase):
     default_network = "Visa"
 
     def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
-        """Extrae Prox.Vto. DD/MM o DD/MM/YY."""
-        return extract_fecha_vencimiento_pattern(text, _PROX_VTO_RE)
+        """Extrae Prox.Vto. DD/MM o DD/MM/YY, o 'VENCIMIENTO DD Mon YY'."""
+        default_year = (
+            kwargs.get("year")
+            or extract_year_from_filename(kwargs.get("filename"))
+            or extract_year_from_bapro_text(text)
+        )
+        if default_year is None:
+            import datetime
+            default_year = datetime.date.today().year
+        result = extract_fecha_vencimiento_pattern(text, _PROX_VTO_RE, default_year=default_year)
+        if result:
+            return result
+        m = _VENCIMIENTO_DD_MON_YY_RE.search(text)
+        if m:
+            dd, mon, yy = m.group(1).zfill(2), m.group(2), m.group(3)
+            month_en = mes_es_to_en(mon, strict=False) or mon[:3].capitalize()
+            month_num = MONTH_EN_TO_NUM.get(month_en)
+            if month_num is not None:
+                year = 2000 + int(yy) if int(yy) < 100 else int(yy)
+                return f"{year:04d}-{month_num:02d}-{int(dd):02d}"
+        return None
 
     def _postprocess_fecha(self, fecha_str: str) -> str:
         return normalize_fecha_mes_es(fecha_str)

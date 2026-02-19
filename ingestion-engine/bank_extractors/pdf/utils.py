@@ -22,6 +22,7 @@ MES_ES_A_EN: dict[str, str] = {
     "Jul": "Jul",
     "Ago": "Aug",
     "Sep": "Sep",
+    "Set": "Sep",
     "Setiem": "Sep",
     "Setiembre": "Sep",
     "Oct": "Oct",
@@ -129,6 +130,16 @@ def extract_year_from_filename(
         return None
     m = re.search(pattern, filename)
     return int(m.group(1)) if m else None
+
+
+def extract_year_from_bapro_text(text: str) -> Optional[int]:
+    """Extrae año de la primera transacción BAPRO (formato 'YY Mes DD cupon...')."""
+    months = "|".join(re.escape(m) for m in MES_ES_A_EN.keys())
+    m = re.search(rf"\b(\d{{2}})\s+({months})\s+\d{{2}}\s+\d{{6}}", text, re.IGNORECASE)
+    if not m:
+        return None
+    yy = int(m.group(1))
+    return 2000 + yy if yy < 100 else yy
 
 
 def should_skip_text(text: str, patterns: tuple[str, ...]) -> bool:
