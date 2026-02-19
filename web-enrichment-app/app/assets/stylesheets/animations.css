@@ -34,13 +34,13 @@
   pointer-events: none;
 }
 
-/* Animaciones para filas de source files */
-.source-file-row[id^="source_file_"] {
+/* Animaciones para cards de source files */
+.source-file-card[id^="source_file_"] {
   transition: all 0.5s ease;
 }
 
-/* Solo se aplica cuando la fila es reemplazada por Turbo */
-.source-file-row {
+/* Solo se aplica cuando la card es reemplazada por Turbo */
+.source-file-card {
   animation: highlight 2s ease-out;
 }
 
