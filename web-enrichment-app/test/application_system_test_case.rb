@@ -26,15 +26,14 @@ else
 end
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
+  include Warden::Test::Helpers
   driven_by SYSTEM_DRIVER, **SYSTEM_DRIVER_OPTS
+  setup { Warden.test_mode! }
+  teardown { Warden.test_reset! }
 
   # Helper para iniciar sesión en system tests
-  def sign_in_as(user, password: "password")
-    visit new_user_session_path
-    fill_in "Email", with: user.email
-    fill_in "Password", with: password
-    click_button "Log in"
-    assert_text "Signed in successfully" # Flash de Devise
+  def sign_in_as(user, _password: "password")
+    login_as(user, scope: :user)
   end
 
   # Helper para cerrar sesión

@@ -1,0 +1,30 @@
+<%= render "shared/transaction_card", transaction: transaction, suggested: suggested_map[transaction.id] do %>
+  <div data-controller="auto-save approve transaction-validation approve-similar"
+       data-auto-save-url-value="<%= transaction_path(transaction) %>"
+       data-approve-similar-categoria-value="<%= suggested_map[transaction.id]&.dig(:category) %>"
+       data-approve-similar-sub-categoria-value="<%= suggested_map[transaction.id]&.dig(:sub_category) %>"
+       data-approve-similar-sentimiento-value="<%= suggested_map[transaction.id]&.dig(:sentimiento) %>"
+       data-approve-similar-preview-url-value="<%= approve_similar_preview_transactions_path %>"
+       data-approve-similar-url-value="<%= approve_similar_transactions_path %>"
+       class="transaction-approval-wrapper">
+    <%= form_with model: transaction, url: approve_transaction_path(transaction), method: :patch,
+                  html: { class: "transaction-approval-form", data: { turbo: false, auto_save_target: "form", approve_target: "form" } } do |f| %>
+      <div class="approval-form-box">
+        <%= render "shared/transaction_form_fields",
+                  f: f,
+                  categories_map: categories_map,
+                  categories_list: categories_list,
+                  suggested: suggested_map[transaction.id],
+                  transaction: transaction,
+                  auto_save: true,
+                  approve_similar: true %>
+
+        <div class="approval-form-submit">
+          <span data-auto-save-target="status" class="auto-save-status"></span>
+          <button type="button" data-auto-save-target="retryButton" data-action="click->auto-save#retry" class="btn-retry" style="display: none;">Reintentar</button>
+          <%= f.submit "✅ Aprobar Transacción", class: "btn-submit-primary", data: { transaction_validation_target: "submit" } %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

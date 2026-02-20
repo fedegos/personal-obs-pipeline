@@ -207,6 +207,30 @@
   grid-template-columns: 1fr;
 }
 
+/* Paginación/infinite scroll */
+.transactions-pagination-container {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.transactions-pagination-sentinel {
+  width: 1px;
+  height: 1px;
+}
+
+.transactions-pagination-status {
+  min-height: 1rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
 /* Wrapper del formulario (auto-save) */
 .transaction-approval-wrapper {
   width: 100%;

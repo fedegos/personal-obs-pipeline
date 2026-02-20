@@ -1,0 +1,16 @@
+<% if @page == 1 %>
+  <%= turbo_stream.update "transactions_list" do %>
+    <%= render "transactions/results" %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.append "transactions-container" do %>
+    <%= render partial: "transactions/transaction_card_item",
+               collection: @pending,
+               as: :transaction,
+               locals: { suggested_map: @suggested, categories_map: @categories_map, categories_list: @categories_list } %>
+  <% end %>
+
+  <%= turbo_stream.replace "transactions-next-page" do %>
+    <%= render "transactions/load_more", next_page: @next_page, filter_params: @filter_params %>
+  <% end %>
+<% end %>
