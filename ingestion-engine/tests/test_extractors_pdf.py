@@ -8,6 +8,9 @@ from bank_extractors.amex_pdf_extractor import _parse_transactions_from_text as 
 from bank_extractors.bapro_pdf_extractor import (
     _parse_transactions_from_text as _parse_bapro,
 )
+from bank_extractors.bapro_mc_pdf_extractor import (
+    _parse_transactions_from_text as _parse_bapro_mc,
+)
 from bank_extractors.bbva_pdf_extractor import _parse_transactions_from_text
 
 # Minimal valid PDF (one empty page). Extractor should return empty DataFrame or parse if table present.
@@ -339,6 +342,75 @@ ________________________________________________________________________"""
         assert "IVA" not in str(rows)
 
 
+class TestBaproMcPdfExtractor:
+    """BAPRO MasterCard PDF extractor: DD-Mon-YY + cupon + monto."""
+
+    def test_get_extractor_bapro_pdf_mastercard_returns_callable(self):
+        fn = get_extractor("bapro_pdf_mastercard")
+        assert callable(fn)
+
+    def test_extract_bapro_pdf_mastercard_returns_dataframe_with_required_columns(self):
+        extract = get_extractor("bapro_pdf_mastercard")
+        df = extract(b"")
+        assert isinstance(df, pd.DataFrame)
+        for col in ["fecha_transaccion", "monto", "detalles"]:
+            assert col in df.columns, f"missing column {col}"
+
+    def test_parse_compra_usd_marks_dolares(self):
+        text = """DETALLE DEL MES
+FECHA NRO CUPON PESOS DOLARES
+COMPRAS DEL MES
+23-Ago-25 NETFLIX.COM (USA,ARS, 15999,00) 00090 12,10
+TOTAL TITULAR GOSMAN FEDERICO HORA 377354,73 12,10"""
+        rows = _parse_bapro_mc(text)
+        assert len(rows) == 1
+        assert rows[0]["fecha_transaccion"] == "23-Aug-25"
+        assert rows[0]["numero_operacion"] == "00090"
+        assert rows[0]["moneda"] == "dolares"
+        assert rows[0]["monto"] == 12.10
+
+    def test_parse_compra_pesos_marks_pesos(self):
+        text = """DETALLE DEL MES
+FECHA NRO CUPON PESOS DOLARES
+COMPRAS DEL MES
+26-Ago-25 PRIME VIDEO 00753 7993,77
+TOTAL TITULAR GOSMAN FEDERICO HORA 377354,73 12,10"""
+        rows = _parse_bapro_mc(text)
+        assert len(rows) == 1
+        assert rows[0]["numero_operacion"] == "00753"
+        assert rows[0]["moneda"] == "pesos"
+        assert rows[0]["monto"] == 7993.77
+
+    def test_parse_cuotas_extracts_en_cuotas(self):
+        text = """DETALLE DEL MES
+FECHA NRO CUPON PESOS DOLARES
+CUOTAS DEL MES
+30-Nov-24 KAMADO B10 09/12 06874 277251,33
+TOTAL TITULAR GOSMAN FEDERICO HORA 377354,73 12,10"""
+        rows = _parse_bapro_mc(text)
+        assert len(rows) == 1
+        assert rows[0]["en_cuotas"] is True
+        assert rows[0]["descripcion_cuota"] == "09/12"
+
+    def test_debitos_automaticos_09_25_does_not_mark_cuotas(self):
+        text = """DETALLE DEL MES
+FECHA NRO CUPON PESOS DOLARES
+DEBITOS AUTOMATICOS
+19-Ago-25 AYSASADA01006217 09/25 04417 19119,63
+TOTAL TITULAR GOSMAN FEDERICO HORA 377354,73 12,10"""
+        rows = _parse_bapro_mc(text)
+        assert len(rows) == 1
+        assert rows[0]["en_cuotas"] is False
+        assert rows[0]["descripcion_cuota"] is None
+
+    def test_extract_fecha_vencimiento_v_encimiento_actual(self):
+        from bank_extractors.bapro_mc_pdf_extractor import _extractor
+
+        text = "V encimiento actual: 08-Sep-25 Pago Mínimo: $ 105300,00"
+        result = _extractor._extract_fecha_vencimiento(text)
+        assert result == "2025-09-08"
+
+
 # --- Tests de regresión con PDFs reales (samples/ está en .gitignore) ---
 
 
@@ -397,6 +469,36 @@ class TestBaproPdfRegression:
             assert pd.api.types.is_datetime64_any_dtype(df["fecha_transaccion"])
             if "fecha_vencimiento" in df.columns and df["fecha_vencimiento"].notna().any():
                 assert len(df[df["fecha_vencimiento"].notna()]) > 0
+
+
+@pytest.mark.regression
+class TestBaproMcPdfRegression:
+    """Regresión: extractor BAPRO MasterCard sobre PDFs reales."""
+
+    def test_bapro_mc_sample_returns_valid_dataframe(self):
+        import os
+
+        base = os.path.join(os.path.dirname(__file__), "..", "samples", "bapro_mc")
+        files = [f for f in os.listdir(base) if f.endswith(".pdf")] if os.path.isdir(base) else []
+        if not files:
+            pytest.skip("samples/bapro_mc/ no disponible")
+        path = os.path.join(base, sorted(files)[0])
+
+        with open(path, "rb") as f:
+            content = f.read()
+        extract = get_extractor("bapro_pdf_mastercard")
+        df = extract(content)
+        assert isinstance(df, pd.DataFrame)
+        assert "fecha_transaccion" in df.columns
+        assert "monto" in df.columns
+        assert "detalles" in df.columns
+        assert "red" in df.columns
+        assert "fecha_vencimiento" in df.columns
+        if len(df) > 0:
+            assert (df["monto"] > 0).all()
+            assert pd.api.types.is_datetime64_any_dtype(df["fecha_transaccion"])
+            assert df["red"].iloc[0] == "Mastercard"
+            assert df["fecha_vencimiento"].notna().any()
 
 
 @pytest.mark.regression

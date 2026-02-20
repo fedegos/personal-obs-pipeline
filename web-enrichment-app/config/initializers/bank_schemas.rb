@@ -22,6 +22,9 @@ BANK_SCHEMAS = {
   "bapro_pdf_visa" => [
     { key: "card_number", label: "Número de Tarjeta (ej. 3689)", type: "text", required: true }
   ] + COMMON_FILE_PARAMS,
+  "bapro_pdf_mastercard" => [
+    { key: "card_number", label: "Número de Tarjeta (ej. 7330)", type: "text", required: true }
+  ] + COMMON_FILE_PARAMS,
   "amex_pdf" => [
     { key: "card_number", label: "Número de Tarjeta (ej. 32003)", type: "text", required: true },
     { key: "year", label: "Año del resumen (ej. 2025)", type: "number", required: false }
