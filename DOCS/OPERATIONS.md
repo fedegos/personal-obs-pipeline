@@ -107,7 +107,10 @@ El servicio **Telegraf** consume `transacciones_clean` y escribe en InfluxDB.
 
 1. Abre **Grafana** [http://localhost:3001](http://localhost:3001).
 2. Usa el Data Source de InfluxDB (Bucket: `finanzas` o el configurado en `INFLUX_BUCKET`).
-3. Filtra por los tags: `categoria`, `sentimiento` o `red`.
+3. En Flux, recuerda el contrato actual:
+   - **Tags:** `event_id`, `moneda`, `red`, `fecha_vencimiento`
+   - **Fields:** `monto`, `categoria`, `sentimiento`, `origen` (y otros)
+   - Para filtrar `categoria`/`sentimiento`/`origen`, primero trae esos fields y aplica `pivot`.
 
 ### Estructura en InfluxDB (telegraf.conf)
 
@@ -119,6 +122,15 @@ El servicio **Telegraf** consume `transacciones_clean` y escribe en InfluxDB.
 
 - **fecha_vencimiento:** Fecha de cierre o vencimiento del resumen (opcional). Útil para cargas parciales de Excel/CSV y para PDFs que incluyen esta fecha.
 - **origen:** Indica el tipo de carga: `parcial` (cargas intermedias) o `definitivo` (resúmenes cerrados). Default: `definitivo`. En cargas Excel/CSV/Sheets suele ser `parcial`; en PDF de resumen, `definitivo`.
+
+### Que tablero usar para cada pregunta
+
+- **Vista rápida diaria:** `Audit-X - Overview`.
+- **Como evoluciona el gasto en el año:** `Audit-X - Evolución Anual`.
+- **Que categorias subieron o bajaron fuerte:** `Audit-X - Variaciones y Desvíos`.
+- **Monitoreo operativo de datos no definitivos:** `Audit-X - Táctico Operativo`.
+- **Patrones de consumo por dia del mes:** `Audit-X - Mapa Día del Mes`.
+- **Seguimiento ejecutivo de acumulados:** `Audit-X - Acumulados`.
 
 ---
 

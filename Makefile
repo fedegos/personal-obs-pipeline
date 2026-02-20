@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-ingestion test test-rails test-rails-system test-python test-kafka-persistence test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile
+.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-grafana restart-ingestion test test-rails test-rails-system test-python test-kafka-persistence test-grafana-dashboards test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile
 
 .DEFAULT_GOAL := help
 
@@ -84,6 +84,9 @@ restart-all: down up ## Reiniciar todos los contenendores.
 restart-web: ## Reiniciar la web.
 	docker compose restart web
 
+restart-grafana: ## Reiniciar Grafana.
+	docker compose restart grafana
+
 down-volumes: ## Bajar todo y limpiar volúmenes (atención: borra datos persistentes)
 	docker compose down -v
 
@@ -122,7 +125,10 @@ test-python: ## Correr solo tests de Python (pytest). Usa Docker si pytest no es
 test-kafka-persistence: ## Verificar que Kafka/Redpanda persiste tópicos y mensajes entre reinicios
 	bash scripts/test_kafka_persistence.sh
 
-test-all: test ## Alias: todas las pruebas
+test-grafana-dashboards: ## Verificar sintaxis/ejecución de queries Flux en dashboards Grafana
+	bash scripts/test_grafana_dashboards.sh
+
+test-all: test test-grafana-dashboards ## Alias: todas las pruebas
 
 test-rails-system: ## Rails: system tests (Capybara + Selenium). Requiere Chrome en el contenedor.
 	@docker compose exec -T db psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'rails_app_test' AND pid <> pg_backend_pid();" 2>/dev/null || true

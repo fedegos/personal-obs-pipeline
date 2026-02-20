@@ -24,7 +24,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -66,14 +66,14 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": []
         },
         "gridPos": {
           "h": 7,
-          "w": 14,
-          "x": 0,
+          "w": 12,
+          "x": 12,
           "y": 0
         },
         "id": 10,
@@ -103,7 +103,7 @@
         "pluginVersion": "12.3.1",
         "targets": [
           {
-            "query": "import \"date\"\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  // 1. Creamos la etiqueta del día ANTES de agrupar\r\n  |> map(fn: (r) => ({\r\n      r with \r\n      dia: if date.weekDay(t: r._time) == 0 then \"0. Dom\"\r\n           else if date.weekDay(t: r._time) == 1 then \"1. Lun\"\r\n           else if date.weekDay(t: r._time) == 2 then \"2. Mar\"\r\n           else if date.weekDay(t: r._time) == 3 then \"3. Mié\"\r\n           else if date.weekDay(t: r._time) == 4 then \"4. Jue\"\r\n           else if date.weekDay(t: r._time) == 5 then \"5. Vie\"\r\n           else \"6. Sáb\"\r\n    }))\r\n  // 2. Agrupamos por esa columna 'dia'\r\n  |> group(columns: [\"dia\"])\r\n  // 3. Sumamos los valores de cada grupo\r\n  |> sum(column: \"_value\")\r\n  // 4. IMPORTANTE: Esto convierte las tablas separadas en una sola tabla legible\r\n  |> group()",
+            "query": "import \"date\"\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> map(fn: (r) => ({\r\n      r with \r\n      dia: if date.weekDay(t: r._time) == 0 then \"0. Dom\"\r\n           else if date.weekDay(t: r._time) == 1 then \"1. Lun\"\r\n           else if date.weekDay(t: r._time) == 2 then \"2. Mar\"\r\n           else if date.weekDay(t: r._time) == 3 then \"3. Mié\"\r\n           else if date.weekDay(t: r._time) == 4 then \"4. Jue\"\r\n           else if date.weekDay(t: r._time) == 5 then \"5. Vie\"\r\n           else \"6. Sáb\"\r\n    }))\r\n  |> group(columns: [\"dia\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()",
             "refId": "A"
           }
         ],
@@ -119,7 +119,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -140,14 +140,14 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": []
         },
         "gridPos": {
           "h": 7,
-          "w": 5,
-          "x": 14,
+          "w": 6,
+          "x": 6,
           "y": 0
         },
         "id": 2,
@@ -178,7 +178,7 @@
         "pluginVersion": "12.3.1",
         "targets": [
           {
-            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"sentimiento\")\r\n  // El pivot une el monto con su sentimiento usando el ID del evento\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> group(columns: [\"sentimiento\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()",
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"sentimiento\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> group(columns: [\"sentimiento\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()",
             "refId": "A"
           }
         ],
@@ -188,7 +188,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -209,14 +209,14 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": []
         },
         "gridPos": {
           "h": 7,
-          "w": 5,
-          "x": 19,
+          "w": 6,
+          "x": 0,
           "y": 0
         },
         "id": 1,
@@ -242,9 +242,9 @@
           {
             "datasource": {
               "type": "influxdb",
-              "uid": "afan8s6uxjpc0e"
+              "uid": "influxdb-main"
             },
-            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  // 1. Forzamos que TODO sea una sola tabla eliminando todos los tags\r\n  |> group() \r\n  // 2. Agrupamos por tiempo (esto crea la base del gráfico)\r\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: true)\r\n  // 3. Llenamos con ceros los huecos donde no hubo gasto antes de acumular\r\n  |> fill(value: 0.0)\r\n  // 4. Acumulamos\r\n  |> cumulativeSum() \r\n  |> yield(name: \"total_real\")",
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> group()\r\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: true)\r\n  |> fill(column: \"monto\", value: 0.0)\r\n  |> cumulativeSum(columns: [\"monto\"])\r\n  |> map(fn: (r) => ({ r with _value: r.monto }))\r\n  |> yield(name: \"total_real\")",
             "refId": "A"
           }
         ],
@@ -254,7 +254,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -290,7 +290,7 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": [
             {
@@ -354,7 +354,7 @@
         "pluginVersion": "12.3.1",
         "targets": [
           {
-            "query": "import \"date\"\r\n\r\n// 1. Definimos periodos de 30 días para que tus datos entren en \"Actual\"\r\nahora = now()\r\nhaceTreintaDias = date.add(d: -30d, to: ahora)\r\nhaceSesentaDias = date.add(d: -60d, to: ahora)\r\n\r\ndata = from(bucket: \"finanzas\")\r\n  |> range(start: haceSesentaDias) \r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\")\r\n  |> map(fn: (r) => ({ r with _time: date.truncate(t: r._time, unit: 1s) }))\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => exists r.categoria and exists r.monto)\r\n\r\nstats = data\r\n  |> map(fn: (r) => ({\r\n      r with\r\n      // Ahora el punto de corte son 30 días\r\n      periodo: if r._time >= haceTreintaDias then \"actual\" else \"pasado\"\r\n    }))\r\n  |> group(columns: [\"categoria\", \"periodo\"])\r\n  |> sum(column: \"monto\")\r\n  |> group(columns: [\"categoria\"])\r\n  |> pivot(rowKey:[\"categoria\"], columnKey: [\"periodo\"], valueColumn: \"monto\")\r\n\r\nstats\r\n  |> map(fn: (r) => ({\r\n      categoria: r.categoria,\r\n      actual: if exists r.actual then r.actual else 0.0,\r\n      pasado: if exists r.pasado then r.pasado else 0.0,\r\n      diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0),\r\n      variacion_pct: \r\n        if exists r.pasado and r.pasado > 0.0 then \r\n            ((if exists r.actual then r.actual else 0.0) - r.pasado) / r.pasado * 100.0 \r\n        else if (if exists r.actual then r.actual else 0.0) > 0.0 then \r\n            99999.0 // Aquí es donde tratamos el \"Infinito\" (pasado 0, actual > 0)\r\n        else \r\n            0.0\r\n    }))\r\n  |> group() \r\n  |> sort(columns: [\"actual\"], desc: true)\r\n  |> keep(columns: [\"categoria\", \"actual\", \"pasado\", \"diferencia\", \"variacion_pct\"])",
+            "query": "import \"date\"\r\n\r\nahora = now()\r\nhaceTreintaDias = date.add(d: -30d, to: ahora)\r\nhaceSesentaDias = date.add(d: -60d, to: ahora)\r\n\r\ndata = from(bucket: \"finanzas\")\r\n  |> range(start: haceSesentaDias)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\" or r[\"_field\"] == \"origen\")\r\n  |> map(fn: (r) => ({ r with _time: date.truncate(t: r._time, unit: 1s) }))\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> filter(fn: (r) => exists r.categoria and exists r.monto)\r\n\r\nstats = data\r\n  |> map(fn: (r) => ({\r\n      r with\r\n      periodo: if r._time >= haceTreintaDias then \"actual\" else \"pasado\"\r\n    }))\r\n  |> group(columns: [\"categoria\", \"periodo\"])\r\n  |> sum(column: \"monto\")\r\n  |> group(columns: [\"categoria\"])\r\n  |> pivot(rowKey:[\"categoria\"], columnKey: [\"periodo\"], valueColumn: \"monto\")\r\n\r\nstats\r\n  |> map(fn: (r) => ({\r\n      categoria: r.categoria,\r\n      actual: if exists r.actual then r.actual else 0.0,\r\n      pasado: if exists r.pasado then r.pasado else 0.0,\r\n      diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0),\r\n      variacion_pct: \r\n        if exists r.pasado and r.pasado > 0.0 then \r\n            ((if exists r.actual then r.actual else 0.0) - r.pasado) / r.pasado * 100.0 \r\n        else if (if exists r.actual then r.actual else 0.0) > 0.0 then \r\n            99999.0\r\n        else \r\n            0.0\r\n    }))\r\n  |> group()\r\n  |> sort(columns: [\"actual\"], desc: true)\r\n  |> keep(columns: [\"categoria\", \"actual\", \"pasado\", \"diferencia\", \"variacion_pct\"])",
             "refId": "A"
           }
         ],
@@ -364,7 +364,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -422,7 +422,7 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": []
         },
@@ -449,16 +449,16 @@
         "pluginVersion": "12.3.1",
         "targets": [
           {
-            "query": "import \"date\"\r\n\r\nmes_inicio = date.truncate(t: now(), unit: 1mo)\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: mes_inicio) \r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  |> group() // <--- UNIFICA TODAS LAS CATEGORÍAS AQUÍ\r\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: true)\r\n  |> fill(column: \"_value\", value: 0.0)\r\n  |> cumulativeSum()\r\n  // CAMBIO CLAVE: Renombramos la columna de valor para Grafana\r\n  |> map(fn: (r) => ({ r with _field: \"monto\", Mes: \"Mes Actual\" })) // Agregamos el tag 'Mes'\r\n  |> group(columns: [\"Mes\"]) // <--- ESTO ES VITAL\r\n\r\n",
+            "query": "import \"date\"\r\n\r\nmes_inicio = date.truncate(t: now(), unit: 1mo)\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: mes_inicio)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> group()\r\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: true)\r\n  |> fill(column: \"monto\", value: 0.0)\r\n  |> cumulativeSum(columns: [\"monto\"])\r\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: \"monto\", Mes: \"Mes Actual\" }))\r\n  |> group(columns: [\"Mes\"])\r\n",
             "refId": "A"
           },
           {
             "datasource": {
               "type": "influxdb",
-              "uid": "afan8s6uxjpc0e"
+              "uid": "influxdb-main"
             },
             "hide": false,
-            "query": "import \"date\"\r\nimport \"experimental\"\r\n\r\nmes_pasado_inicio = date.truncate(t: experimental.addDuration(d: -1mo, to: now()), unit: 1mo)\r\nmes_pasado_fin = date.truncate(t: now(), unit: 1mo)\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: mes_pasado_inicio, stop: mes_pasado_fin)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  |> group() // <--- UNIFICA TODAS LAS CATEGORÍAS AQUÍ\r\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: true)\r\n  |> fill(column: \"_value\", value: 0.0)\r\n  |> cumulativeSum()\r\n  |> timeShift(duration: 1mo)\r\n  |> map(fn: (r) => ({ r with _field: \"monto\", Mes: \"Mes Anterior\" })) // Agregamos el tag 'Mes'\r\n  |> group(columns: [\"Mes\"]) // <--- ESTO ES VITAL\r\n\r\n",
+            "query": "import \"date\"\r\nimport \"experimental\"\r\n\r\nmes_pasado_inicio = date.truncate(t: experimental.addDuration(d: -1mo, to: now()), unit: 1mo)\r\nmes_pasado_fin = date.truncate(t: now(), unit: 1mo)\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: mes_pasado_inicio, stop: mes_pasado_fin)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> group()\r\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: true)\r\n  |> fill(column: \"monto\", value: 0.0)\r\n  |> cumulativeSum(columns: [\"monto\"])\r\n  |> timeShift(duration: 1mo)\r\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: \"monto\", Mes: \"Mes Anterior\" }))\r\n  |> group(columns: [\"Mes\"])\r\n",
             "refId": "B"
           }
         ],
@@ -468,7 +468,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -495,7 +495,7 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": []
         },
@@ -533,7 +533,7 @@
         "pluginVersion": "12.3.1",
         "targets": [
           {
-            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  // Traemos los tres campos necesarios\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\" or r[\"_field\"] == \"sub_categoria\")\r\n  // Pivotamos para tenerlos como columnas en la misma fila\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  // Creamos una nueva columna que combine ambos para la visualización\r\n  |> map(fn: (r) => ({\r\n      r with \r\n      jerarquia: r.categoria + \" > \" + r.sub_categoria\r\n    }))\r\n  // Agrupamos por la nueva jerarquía\r\n  |> group(columns: [\"jerarquia\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()\r\n  |> sort(columns: [\"monto\"], desc: true)\r\n  |> limit(n: 15)\r\n  |> rename(columns: {monto: \"Total\", jerarquia: \"Categoría Completa\"})",
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\" or r[\"_field\"] == \"sub_categoria\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> map(fn: (r) => ({\r\n      r with \r\n      jerarquia: r.categoria + \" > \" + r.sub_categoria\r\n    }))\r\n  |> group(columns: [\"jerarquia\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()\r\n  |> sort(columns: [\"monto\"], desc: true)\r\n  |> limit(n: 15)\r\n  |> rename(columns: {monto: \"Total\", jerarquia: \"Categoría Completa\"})",
             "refId": "A"
           }
         ],
@@ -543,7 +543,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -589,7 +589,7 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": []
         },
@@ -626,7 +626,7 @@
         "pluginVersion": "12.3.1",
         "targets": [
           {
-            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  // Filtramos solo los campos que necesitamos para procesar menos datos\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\")\r\n  // El truco mágico: convierte filas de fields en columnas\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  // Ahora 'categoria' es una columna real y podemos agrupar por ella\r\n  |> group(columns: [\"categoria\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()\r\n  |> sort(columns: [\"monto\"], desc: true)\r\n  |> rename(columns: {monto: \"Monto\"})",
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> group(columns: [\"categoria\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()\r\n  |> sort(columns: [\"monto\"], desc: true)\r\n  |> rename(columns: {monto: \"Monto\"})",
             "refId": "A"
           }
         ],
@@ -636,7 +636,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cfaynx7nlbeo0e"
+          "uid": "influxdb-main"
         },
         "fieldConfig": {
           "defaults": {
@@ -678,7 +678,7 @@
                 }
               ]
             },
-            "unit": "currencyUSD"
+            "unit": "currency:ARS"
           },
           "overrides": []
         },
@@ -716,7 +716,7 @@
         "pluginVersion": "12.3.1",
         "targets": [
           {
-            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  // 1. Traemos monto y categoria (ahora ambos son Fields)\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\")\r\n  // 2. Pivotamos para tener categoria y monto en la misma fila\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  // 3. Agrupamos por la columna categoria (que nació del pivot)\r\n  |> group(columns: [\"categoria\"])\r\n  // 4. aggregateWindow ahora debe saber que el valor está en la columna \"monto\"\r\n  |> aggregateWindow(every: 1w, fn: sum, column: \"monto\", createEmpty: false)\r\n  |> group(columns: [\"categoria\"])\r\n  |> drop(columns: [\"_start\", \"_stop\", \"_field\"]) // Quitamos el rastro del nombre del campo\r\n  |> rename(columns: {monto: \"_value\"}) // Renombramos a _value para que Grafana use el estándar\r\n  // 5. Limpieza final para Grafana\r\n  |> yield(name: \"Gastos Semanales\")",
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\" or r[\"_field\"] == \"origen\")\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\r\n  |> group(columns: [\"categoria\"])\r\n  |> aggregateWindow(every: 1w, fn: sum, column: \"monto\", createEmpty: false)\r\n  |> group(columns: [\"categoria\"])\r\n  |> drop(columns: [\"_start\", \"_stop\", \"_field\"])\r\n  |> rename(columns: {monto: \"_value\"})\r\n  |> yield(name: \"Gastos Semanales\")",
             "refId": "A"
           }
         ],
@@ -728,10 +728,61 @@
     "schemaVersion": 42,
     "tags": [],
     "templating": {
-      "list": []
+      "list": [
+        {
+          "allValue": "__all",
+          "current": {
+            "selected": true,
+            "text": "definitivo",
+            "value": "definitivo"
+          },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-main"
+          },
+          "definition": "from(bucket: \"finanzas\")\r\n  |> range(start: -24mo)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"origen\")\r\n  |> keep(columns: [\"_value\"])\r\n  |> distinct(column: \"_value\")\r\n  |> rename(columns: {_value: \"_value\"})",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Origen de carga",
+          "multi": false,
+          "name": "origen",
+          "options": [],
+          "query": "from(bucket: \"finanzas\")\r\n  |> range(start: -24mo)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"origen\")\r\n  |> keep(columns: [\"_value\"])\r\n  |> distinct(column: \"_value\")",
+          "refresh": 2,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 1,
+          "type": "query"
+        },
+        {
+          "allValue": "__all",
+          "current": {
+            "selected": true,
+            "text": "Todas",
+            "value": "__all"
+          },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-main"
+          },
+          "definition": "import \"influxdata/influxdb/schema\"\r\nschema.tagValues(bucket: \"finanzas\", tag: \"fecha_vencimiento\", start: -24mo)",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Vencimiento",
+          "multi": false,
+          "name": "fecha_vencimiento",
+          "options": [],
+          "query": "import \"influxdata/influxdb/schema\"\r\nschema.tagValues(bucket: \"finanzas\", tag: \"fecha_vencimiento\", start: -24mo)",
+          "refresh": 2,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 3,
+          "type": "query"
+        }
+      ]
     },
     "time": {
-      "from": "now-6h",
+      "from": "now-90d",
       "to": "now"
     },
     "timepicker": {},

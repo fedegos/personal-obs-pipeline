@@ -1,0 +1,197 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "id": 0,
+  "panels": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "query": "import \"date\"\n\nahora = now()\ninicio_actual = date.add(d: -30d, to: ahora)\ninicio_pasado = date.add(d: -60d, to: ahora)\n\nbase = from(bucket: \"finanzas\")\n  |> range(start: inicio_pasado, stop: ahora)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n\nstats = base\n  |> map(fn: (r) => ({\n      r with periodo: if r._time >= inicio_actual then \"actual\" else \"pasado\"\n    }))\n  |> group(columns: [\"categoria\", \"periodo\"])\n  |> sum(column: \"monto\")\n  |> group(columns: [\"categoria\"])\n  |> pivot(rowKey:[\"categoria\"], columnKey:[\"periodo\"], valueColumn:\"monto\")\n\nstats\n  |> map(fn: (r) => ({\n      categoria: r.categoria,\n      actual: if exists r.actual then r.actual else 0.0,\n      pasado: if exists r.pasado then r.pasado else 0.0,\n      diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0),\n      variacion_pct: if exists r.pasado and r.pasado > 0.0 then (((if exists r.actual then r.actual else 0.0) - r.pasado) / r.pasado) * 100.0 else 0.0\n    }))\n  |> group()\n  |> sort(columns:[\"diferencia\"], desc:true)",
+          "refId": "A"
+        }
+      ],
+      "title": "Variación mensual por categoría (30d vs 30d previos)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 2,
+      "targets": [
+        {
+          "query": "import \"date\"\n\nahora = now()\ninicio_actual = date.add(d: -30d, to: ahora)\ninicio_pasado = date.add(d: -60d, to: ahora)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_pasado, stop: ahora)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> map(fn: (r) => ({ r with periodo: if r._time >= inicio_actual then \"actual\" else \"pasado\" }))\n  |> group(columns: [\"categoria\", \"periodo\"])\n  |> sum(column: \"monto\")\n  |> group(columns: [\"categoria\"])\n  |> pivot(rowKey:[\"categoria\"], columnKey:[\"periodo\"], valueColumn:\"monto\")\n  |> map(fn: (r) => ({ categoria: r.categoria, diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0) }))\n  |> filter(fn: (r) => r.diferencia > 0.0)\n  |> sort(columns:[\"diferencia\"], desc:true)\n  |> limit(n: 10)\n  |> rename(columns:{diferencia:\"_value\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 subas (ARS)",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 3,
+      "targets": [
+        {
+          "query": "import \"date\"\n\nahora = now()\ninicio_actual = date.add(d: -30d, to: ahora)\ninicio_pasado = date.add(d: -60d, to: ahora)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_pasado, stop: ahora)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> map(fn: (r) => ({ r with periodo: if r._time >= inicio_actual then \"actual\" else \"pasado\" }))\n  |> group(columns: [\"categoria\", \"periodo\"])\n  |> sum(column: \"monto\")\n  |> group(columns: [\"categoria\"])\n  |> pivot(rowKey:[\"categoria\"], columnKey:[\"periodo\"], valueColumn:\"monto\")\n  |> map(fn: (r) => ({ categoria: r.categoria, diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0) }))\n  |> filter(fn: (r) => r.diferencia < 0.0)\n  |> sort(columns:[\"diferencia\"], desc:false)\n  |> limit(n: 10)\n  |> map(fn: (r) => ({ r with _value: -1.0 * r.diferencia }))",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 bajas (ARS)",
+      "type": "barchart"
+    }
+  ],
+  "schemaVersion": 42,
+  "tags": [
+    "analitico",
+    "variaciones"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "definitivo",
+          "value": "definitivo"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Origen de carga",
+        "name": "origen",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"origen\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Vencimiento",
+        "name": "fecha_vencimiento",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"fecha_vencimiento\", start: -24mo)",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Red",
+        "name": "red",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"red\", start: -24mo)",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Tarjeta",
+        "name": "numero_tarjeta",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"numero_tarjeta\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-180d",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Audit-X - Variaciones y Desvíos",
+  "uid": "auditx-variations",
+  "version": 1
+}
