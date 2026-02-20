@@ -1,0 +1,742 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 0,
+    "links": [],
+    "panels": [
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "continuous-GrYlRd"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineWidth": 1,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 14,
+          "x": 0,
+          "y": 0
+        },
+        "id": 10,
+        "options": {
+          "barRadius": 0,
+          "barWidth": 0.97,
+          "fullHighlight": false,
+          "groupWidth": 0.7,
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "orientation": "auto",
+          "showValue": "auto",
+          "stacking": "none",
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "single",
+            "sort": "none"
+          },
+          "xField": "dia",
+          "xTickLabelRotation": 0,
+          "xTickLabelSpacing": 0
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "query": "import \"date\"\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  // 1. Creamos la etiqueta del día ANTES de agrupar\r\n  |> map(fn: (r) => ({\r\n      r with \r\n      dia: if date.weekDay(t: r._time) == 0 then \"0. Dom\"\r\n           else if date.weekDay(t: r._time) == 1 then \"1. Lun\"\r\n           else if date.weekDay(t: r._time) == 2 then \"2. Mar\"\r\n           else if date.weekDay(t: r._time) == 3 then \"3. Mié\"\r\n           else if date.weekDay(t: r._time) == 4 then \"4. Jue\"\r\n           else if date.weekDay(t: r._time) == 5 then \"5. Vie\"\r\n           else \"6. Sáb\"\r\n    }))\r\n  // 2. Agrupamos por esa columna 'dia'\r\n  |> group(columns: [\"dia\"])\r\n  // 3. Sumamos los valores de cada grupo\r\n  |> sum(column: \"_value\")\r\n  // 4. IMPORTANTE: Esto convierte las tablas separadas en una sola tabla legible\r\n  |> group()",
+            "refId": "A"
+          }
+        ],
+        "title": "Perfil por día de la semana",
+        "transformations": [
+          {
+            "id": "merge",
+            "options": {}
+          }
+        ],
+        "type": "barchart"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 5,
+          "x": 14,
+          "y": 0
+        },
+        "id": 2,
+        "options": {
+          "displayMode": "gradient",
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": false
+          },
+          "maxVizHeight": 300,
+          "minVizHeight": 16,
+          "minVizWidth": 8,
+          "namePlacement": "auto",
+          "orientation": "vertical",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": true
+          },
+          "showUnfilled": true,
+          "sizing": "auto",
+          "valueMode": "color"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"sentimiento\")\r\n  // El pivot une el monto con su sentimiento usando el ID del evento\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> group(columns: [\"sentimiento\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()",
+            "refId": "A"
+          }
+        ],
+        "title": "Gastos por sentimiento",
+        "type": "bargauge"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 5,
+          "x": 19,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "percentChangeColorMode": "standard",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "afan8s6uxjpc0e"
+            },
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  // 1. Forzamos que TODO sea una sola tabla eliminando todos los tags\r\n  |> group() \r\n  // 2. Agrupamos por tiempo (esto crea la base del gráfico)\r\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: true)\r\n  // 3. Llenamos con ceros los huecos donde no hubo gasto antes de acumular\r\n  |> fill(value: 0.0)\r\n  // 4. Acumulamos\r\n  |> cumulativeSum() \r\n  |> yield(name: \"total_real\")",
+            "refId": "A"
+          }
+        ],
+        "title": "Gastos totales del período",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "footer": {
+                "reducers": []
+              },
+              "inspect": false
+            },
+            "decimals": 1,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "#EAB839",
+                  "value": 300
+                },
+                {
+                  "color": "red",
+                  "value": 500
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "variacion_pct"
+              },
+              "properties": [
+                {
+                  "id": "color"
+                },
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "type": "color-text"
+                  }
+                },
+                {
+                  "id": "unit",
+                  "value": "percent"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "variacion_pct"
+              },
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "99999": {
+                          "color": "purple",
+                          "index": 0,
+                          "text": "Nuevo"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 24,
+          "x": 0,
+          "y": 7
+        },
+        "id": 9,
+        "options": {
+          "cellHeight": "sm",
+          "frameIndex": 3,
+          "showHeader": true
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "query": "import \"date\"\r\n\r\n// 1. Definimos periodos de 30 días para que tus datos entren en \"Actual\"\r\nahora = now()\r\nhaceTreintaDias = date.add(d: -30d, to: ahora)\r\nhaceSesentaDias = date.add(d: -60d, to: ahora)\r\n\r\ndata = from(bucket: \"finanzas\")\r\n  |> range(start: haceSesentaDias) \r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\")\r\n  |> map(fn: (r) => ({ r with _time: date.truncate(t: r._time, unit: 1s) }))\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => exists r.categoria and exists r.monto)\r\n\r\nstats = data\r\n  |> map(fn: (r) => ({\r\n      r with\r\n      // Ahora el punto de corte son 30 días\r\n      periodo: if r._time >= haceTreintaDias then \"actual\" else \"pasado\"\r\n    }))\r\n  |> group(columns: [\"categoria\", \"periodo\"])\r\n  |> sum(column: \"monto\")\r\n  |> group(columns: [\"categoria\"])\r\n  |> pivot(rowKey:[\"categoria\"], columnKey: [\"periodo\"], valueColumn: \"monto\")\r\n\r\nstats\r\n  |> map(fn: (r) => ({\r\n      categoria: r.categoria,\r\n      actual: if exists r.actual then r.actual else 0.0,\r\n      pasado: if exists r.pasado then r.pasado else 0.0,\r\n      diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0),\r\n      variacion_pct: \r\n        if exists r.pasado and r.pasado > 0.0 then \r\n            ((if exists r.actual then r.actual else 0.0) - r.pasado) / r.pasado * 100.0 \r\n        else if (if exists r.actual then r.actual else 0.0) > 0.0 then \r\n            99999.0 // Aquí es donde tratamos el \"Infinito\" (pasado 0, actual > 0)\r\n        else \r\n            0.0\r\n    }))\r\n  |> group() \r\n  |> sort(columns: [\"actual\"], desc: true)\r\n  |> keep(columns: [\"categoria\", \"actual\", \"pasado\", \"diferencia\", \"variacion_pct\"])",
+            "refId": "A"
+          }
+        ],
+        "title": "Comparativa month-on-month",
+        "type": "table"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "#5794F2",
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "showValues": false,
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "decimals": 2,
+            "displayName": "${__field.labels.Mes}",
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 11,
+          "x": 0,
+          "y": 14
+        },
+        "id": 5,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "query": "import \"date\"\r\n\r\nmes_inicio = date.truncate(t: now(), unit: 1mo)\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: mes_inicio) \r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  |> group() // <--- UNIFICA TODAS LAS CATEGORÍAS AQUÍ\r\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: true)\r\n  |> fill(column: \"_value\", value: 0.0)\r\n  |> cumulativeSum()\r\n  // CAMBIO CLAVE: Renombramos la columna de valor para Grafana\r\n  |> map(fn: (r) => ({ r with _field: \"monto\", Mes: \"Mes Actual\" })) // Agregamos el tag 'Mes'\r\n  |> group(columns: [\"Mes\"]) // <--- ESTO ES VITAL\r\n\r\n",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "influxdb",
+              "uid": "afan8s6uxjpc0e"
+            },
+            "hide": false,
+            "query": "import \"date\"\r\nimport \"experimental\"\r\n\r\nmes_pasado_inicio = date.truncate(t: experimental.addDuration(d: -1mo, to: now()), unit: 1mo)\r\nmes_pasado_fin = date.truncate(t: now(), unit: 1mo)\r\n\r\nfrom(bucket: \"finanzas\")\r\n  |> range(start: mes_pasado_inicio, stop: mes_pasado_fin)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\")\r\n  |> group() // <--- UNIFICA TODAS LAS CATEGORÍAS AQUÍ\r\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: true)\r\n  |> fill(column: \"_value\", value: 0.0)\r\n  |> cumulativeSum()\r\n  |> timeShift(duration: 1mo)\r\n  |> map(fn: (r) => ({ r with _field: \"monto\", Mes: \"Mes Anterior\" })) // Agregamos el tag 'Mes'\r\n  |> group(columns: [\"Mes\"]) // <--- ESTO ES VITAL\r\n\r\n",
+            "refId": "B"
+          }
+        ],
+        "title": "Mes actual contra anterior",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "decimals": 1,
+            "mappings": [],
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "#EAB839",
+                  "value": 100000
+                },
+                {
+                  "color": "red",
+                  "value": 300000
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 16,
+          "w": 13,
+          "x": 11,
+          "y": 14
+        },
+        "id": 8,
+        "options": {
+          "displayMode": "gradient",
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": false
+          },
+          "maxVizHeight": 300,
+          "minVizHeight": 16,
+          "minVizWidth": 8,
+          "namePlacement": "auto",
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": true
+          },
+          "showUnfilled": true,
+          "sizing": "auto",
+          "valueMode": "color"
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  // Traemos los tres campos necesarios\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\" or r[\"_field\"] == \"sub_categoria\")\r\n  // Pivotamos para tenerlos como columnas en la misma fila\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  // Creamos una nueva columna que combine ambos para la visualización\r\n  |> map(fn: (r) => ({\r\n      r with \r\n      jerarquia: r.categoria + \" > \" + r.sub_categoria\r\n    }))\r\n  // Agrupamos por la nueva jerarquía\r\n  |> group(columns: [\"jerarquia\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()\r\n  |> sort(columns: [\"monto\"], desc: true)\r\n  |> limit(n: 15)\r\n  |> rename(columns: {monto: \"Total\", jerarquia: \"Categoría Completa\"})",
+            "refId": "A"
+          }
+        ],
+        "title": "Gastos por categoría y subcategoría",
+        "type": "bargauge"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineWidth": 1,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "thresholdsStyle": {
+                "mode": "area"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "#EAB839",
+                  "value": 100000
+                },
+                {
+                  "color": "red",
+                  "value": 300000
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 11,
+          "x": 0,
+          "y": 21
+        },
+        "id": 4,
+        "options": {
+          "barRadius": 0,
+          "barWidth": 0.97,
+          "fullHighlight": true,
+          "groupWidth": 0.7,
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": false
+          },
+          "orientation": "auto",
+          "showValue": "auto",
+          "stacking": "none",
+          "text": {},
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "single",
+            "sort": "none"
+          },
+          "xTickLabelRotation": -45,
+          "xTickLabelSpacing": 0
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  // Filtramos solo los campos que necesitamos para procesar menos datos\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\")\r\n  // El truco mágico: convierte filas de fields en columnas\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  // Ahora 'categoria' es una columna real y podemos agrupar por ella\r\n  |> group(columns: [\"categoria\"])\r\n  |> sum(column: \"monto\")\r\n  |> group()\r\n  |> sort(columns: [\"monto\"], desc: true)\r\n  |> rename(columns: {monto: \"Monto\"})",
+            "refId": "A"
+          }
+        ],
+        "title": "Gastos por categoría",
+        "type": "barchart"
+      },
+      {
+        "datasource": {
+          "type": "influxdb",
+          "uid": "cfaynx7nlbeo0e"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineWidth": 1,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 11,
+          "w": 24,
+          "x": 0,
+          "y": 30
+        },
+        "id": 3,
+        "options": {
+          "barRadius": 0,
+          "barWidth": 0.97,
+          "fullHighlight": false,
+          "groupWidth": 0.7,
+          "legend": {
+            "calcs": [
+              "sum"
+            ],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "orientation": "vertical",
+          "showValue": "never",
+          "stacking": "normal",
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "single",
+            "sort": "none"
+          },
+          "xTickLabelRotation": 0,
+          "xTickLabelSpacing": 0
+        },
+        "pluginVersion": "12.3.1",
+        "targets": [
+          {
+            "query": "from(bucket: \"finanzas\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\r\n  // 1. Traemos monto y categoria (ahora ambos son Fields)\r\n  |> filter(fn: (r) => r[\"_field\"] == \"monto\" or r[\"_field\"] == \"categoria\")\r\n  // 2. Pivotamos para tener categoria y monto en la misma fila\r\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  // 3. Agrupamos por la columna categoria (que nació del pivot)\r\n  |> group(columns: [\"categoria\"])\r\n  // 4. aggregateWindow ahora debe saber que el valor está en la columna \"monto\"\r\n  |> aggregateWindow(every: 1w, fn: sum, column: \"monto\", createEmpty: false)\r\n  |> group(columns: [\"categoria\"])\r\n  |> drop(columns: [\"_start\", \"_stop\", \"_field\"]) // Quitamos el rastro del nombre del campo\r\n  |> rename(columns: {monto: \"_value\"}) // Renombramos a _value para que Grafana use el estándar\r\n  // 5. Limpieza final para Grafana\r\n  |> yield(name: \"Gastos Semanales\")",
+            "refId": "A"
+          }
+        ],
+        "title": "Gastos semanales por categoría",
+        "type": "barchart"
+      }
+    ],
+    "preload": false,
+    "schemaVersion": 42,
+    "tags": [],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "Seguimiento de Gastos",
+    "uid": "adw6hg7",
+    "version": 2
+  }

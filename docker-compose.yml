@@ -89,9 +89,14 @@ services:
       - GF_DATE_FORMATS_DEFAULT_TIMEZONE=Browser
       - GF_DATE_FORMATS_FULL_DATE=DD/MM/YYYY HH:mm:ss
       # Forzar el idioma para separadores numéricos
-      - GF_DEFAULT_INSTANCE_LANGUAGE=es-AR 
+      - GF_DEFAULT_INSTANCE_LANGUAGE=es-AR
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - pipeline_net
 
