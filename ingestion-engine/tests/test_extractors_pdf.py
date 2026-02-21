@@ -341,6 +341,24 @@ ________________________________________________________________________"""
         assert "INTERESES" not in str(rows)
         assert "IVA" not in str(rows)
 
+    def test_skips_acreditacion_de_pago_ocr_corruption(self):
+        """Líneas de acreditación de pago (OCR corrupto) no deben parsearse como gastos."""
+        text = """________________________________________________________________________
+15 de Enero 50.000,00
+AACREDIBTACIOCN DE VDUESTREO PAGFO G ProHcesadoI el 26/12/2024 L M NCR
+REFERENCIA 12345
+________________________________________________________________________
+20 de Enero 1.500,00
+MERCADOPAGO *COMERCIO REAL
+REFERENCIA 67890
+________________________________________________________________________"""
+        rows = _parse_amex(text, billing_period=(1, 2025))
+        assert len(rows) == 1
+        assert "MERCADOPAGO" in rows[0]["detalles"]
+        assert not any(
+            "AACREDIBTACIOCN" in str(r.get("detalles", "")) for r in rows
+        )
+
 
 class TestBaproMcPdfExtractor:
     """BAPRO MasterCard PDF extractor: DD-Mon-YY + cupon + monto."""

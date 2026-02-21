@@ -37,6 +37,11 @@ _SKIP_PATTERNS = (
     r"Movimientos del Período",
     r"INTERESES FINANCIEROS",
     r"IVA\s+21%",
+    # Acreditación de pago (no es un gasto; variantes OCR)
+    r"AACREDIBTACIOCN",
+    r"ACREDITACI[OÓ]N\s+DE\s+(TU|TUESTRO|VUESTRO|VDUESTREO)\s+PAGO",
+    r"VDUESTREO\s+PAGFO",
+    r"ProHcesado",
 )
 
 _BLOCK_SEP_RE = re.compile(r"_+")
@@ -44,6 +49,12 @@ _DATE_AMOUNT_RE = re.compile(r"^(\d{1,2})\s+de\s+(\w+)\s+([\d.,]+)$")
 _REFERENCIA_RE = re.compile(r"REFERENCIA\s+(\d+)", re.IGNORECASE)
 _BILLING_PERIOD_RE = re.compile(r"ARGENTINA\s+\d+\s+\S+\s+(\d{2})/(\d{2})\b")
 _BILLING_DATE_FALLBACK_RE = re.compile(r"\b(\d{2})/(\d{2})/(\d{2})\b")
+
+# Detalles que indican acreditación de pago (no son gastos)
+_ACREDITACION_DETALLES_RE = re.compile(
+    r"AACREDIBTACIOCN|ACREDITACI[OÓ]N\s+DE\s+.*PAGO|VDUESTREO\s+PAGFO|ProHcesado",
+    re.IGNORECASE,
+)
 
 
 def _extract_billing_period(text: str) -> tuple[int, int] | None:
@@ -127,6 +138,8 @@ class AmexPdfExtractor(PdfExtractorBase):
                 continue
 
             detalles = lines[1]
+            if _ACREDITACION_DETALLES_RE.search(detalles):
+                continue
             en_cuotas, descripcion_cuota = extract_cuota_amex(detalles)
 
             ref_m = _REFERENCIA_RE.search(block)

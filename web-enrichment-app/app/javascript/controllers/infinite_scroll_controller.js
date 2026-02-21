@@ -58,10 +58,12 @@ export default class extends Controller {
   }
 
   setLoadingState(isLoading) {
-    if (this.hasButtonTarget) {
-      this.buttonTarget.disabled = isLoading
-      this.buttonTarget.hidden = isLoading
+    this.element.classList.toggle("transactions-pagination-loading", isLoading)
+    if (this.hasButtonTarget) this.buttonTarget.disabled = isLoading
+    if (this.hasStatusTarget) {
+      this.statusTarget.innerHTML = isLoading
+        ? '<span class="transactions-loading-inline"><span class="transactions-loading-spinner" aria-hidden="true"></span>Cargando...</span>'
+        : ""
     }
-    if (this.hasStatusTarget) this.statusTarget.textContent = isLoading ? "Cargando..." : ""
   }
 }
