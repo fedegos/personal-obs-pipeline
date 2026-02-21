@@ -33,7 +33,7 @@
   </div>
 
   <div class="category-rule-footer">
-    <%= link_to "✏️ Editar", edit_category_rule_path(rule, format: :turbo_stream, sentimiento: params[:sentimiento]), class: "btn-action-link", data: { turbo_prefetch: false } %>
+    <%= link_to "✏️ Editar", edit_category_rule_path(rule, format: :turbo_stream, sentimiento: params[:sentimiento], categoria_raiz: params[:categoria_raiz]), class: "btn-action-link", data: { turbo_prefetch: false } %>
     <%= button_to rule, method: :delete, data: { turbo_confirm: "¿Eliminar esta regla?" }, class: "btn-action-delete" do %>
       🗑️ Eliminar
     <% end %>

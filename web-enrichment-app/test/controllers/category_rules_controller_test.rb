@@ -82,6 +82,17 @@ class CategoryRulesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index filters by categoria_raiz" do
+    root = category_rules(:one)
+    get category_rules_url, params: { categoria_raiz: root.id }
+    assert_response :success
+    # Incluye la raíz y sus descendientes (ej. two es hijo de one)
+    assert_select ".category-rule-card", minimum: 1
+    doc = Nokogiri::HTML(response.body)
+    ids = doc.css(".category-rule-card").map { |el| el["id"] }
+    assert_includes ids, "category_rule_#{root.id}"
+  end
+
   test "create with turbo_stream format" do
     assert_difference("CategoryRule.count") do
       post category_rules_url, params: {

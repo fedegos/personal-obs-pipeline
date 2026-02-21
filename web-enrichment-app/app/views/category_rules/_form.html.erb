@@ -1,5 +1,7 @@
 <%= form_with model: category_rule, class: "category-rules-form" do |f| %>
-  <%= hidden_field_tag :sentimiento, local_assigns[:current_filter] if local_assigns[:current_filter].present? %>
+  <% fp = local_assigns[:filter_params] || {} %>
+  <%= hidden_field_tag :sentimiento, fp[:sentimiento] if fp[:sentimiento].present? %>
+  <%= hidden_field_tag :categoria_raiz, fp[:categoria_raiz] if fp[:categoria_raiz].present? %>
   <% if category_rule.errors.any? %>
     <div class="category-rules-form-errors">
       <ul>
