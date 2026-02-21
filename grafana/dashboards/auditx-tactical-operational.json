@@ -15,8 +15,9 @@
       }
     ]
   },
+  "description": "Operación día a día: parcial (Excel/Sheets) vs definitivo (PDF). Conteos y montos acumulados. Filtros: red, tarjeta. Usar para validar carga y reconciliación.",
   "editable": true,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": 0,
   "panels": [
     {
@@ -28,7 +29,32 @@
         "defaults": {
           "unit": "none"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Cantidad de eventos"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Cantidad de eventos"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 7,
@@ -55,7 +81,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Monto parcial (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Monto parcial (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 7,
@@ -82,7 +133,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Monto definitivo (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Monto definitivo (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 7,
@@ -109,7 +185,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos diarios (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos diarios (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -136,7 +237,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -152,7 +278,14 @@
         }
       ],
       "title": "Top categorías parciales",
-      "type": "barchart"
+      "type": "barchart",
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ]
+        }
+      }
     }
   ],
   "schemaVersion": 42,

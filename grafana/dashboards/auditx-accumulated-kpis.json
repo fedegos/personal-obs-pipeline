@@ -15,6 +15,7 @@
       }
     ]
   },
+  "description": "KPIs acumulados MTD/QTD/YTD para uso ejecutivo. Curva de acumulado diario del mes y participación por tarjeta. Filtros: origen, red, tarjeta.",
   "editable": true,
   "id": 0,
   "panels": [
@@ -27,7 +28,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "MTD (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "MTD (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -54,7 +80,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "QTD (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "QTD (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -81,7 +132,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "YTD (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "YTD (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -108,7 +184,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -119,7 +220,7 @@
       "id": 4,
       "targets": [
         {
-          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: true)\n  |> fill(column: \"monto\", value: 0.0)\n  |> cumulativeSum(columns: [\"monto\"])\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: true)\n  |> fill(column: \"monto\", value: 0.0)\n  |> cumulativeSum(columns: [\"monto\"])\n  |> map(fn: (r) => ({ r with _value: r.monto }))\n  |> keep(columns: [\"_time\", \"_value\"])",
           "refId": "A"
         }
       ],
@@ -135,7 +236,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -227,5 +353,6 @@
   "timezone": "browser",
   "title": "Audit-X - Acumulados",
   "uid": "auditx-accumulated-kpis",
-  "version": 1
+  "version": 1,
+  "graphTooltip": 1
 }

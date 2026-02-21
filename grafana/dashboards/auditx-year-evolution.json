@@ -15,9 +15,10 @@
       }
     ]
   },
+  "description": "Vista estratégica: evolución mensual año actual vs anterior, participación por red, total YTD. Filtros: origen, vencimiento, red, tarjeta. Usar para análisis anual y comparación interanual.",
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": 0,
   "links": [],
   "panels": [
@@ -30,7 +31,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -51,11 +77,11 @@
       },
       "targets": [
         {
-          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> aggregateWindow(every: 1mo, fn: sum, column: \"monto\", createEmpty: true)\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: \"YTD actual\" }))",
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> aggregateWindow(every: 1mo, fn: sum, column: \"monto\", createEmpty: true)\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: \"YTD actual\" }))\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])",
           "refId": "A"
         },
         {
-          "query": "import \"date\"\nimport \"experimental\"\n\ninicio_prev = date.truncate(t: experimental.addDuration(d: -1y, to: now()), unit: 1y)\nfin_prev = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_prev, stop: fin_prev)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> aggregateWindow(every: 1mo, fn: sum, column: \"monto\", createEmpty: true)\n  |> timeShift(duration: 1y)\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: \"Año previo\" }))",
+          "query": "import \"date\"\nimport \"experimental\"\n\ninicio_prev = date.truncate(t: experimental.addDuration(d: -1y, to: now()), unit: 1y)\nfin_prev = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_prev, stop: fin_prev)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> aggregateWindow(every: 1mo, fn: sum, column: \"monto\", createEmpty: true)\n  |> timeShift(duration: 1y)\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: \"Año previo\" }))\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])",
           "refId": "B"
         }
       ],
@@ -71,7 +97,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -87,7 +138,14 @@
         }
       ],
       "title": "Participación anual por red",
-      "type": "barchart"
+      "type": "barchart",
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ]
+        }
+      }
     },
     {
       "datasource": {
@@ -98,7 +156,32 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total YTD (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total YTD (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,

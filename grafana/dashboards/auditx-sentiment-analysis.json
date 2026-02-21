@@ -1,0 +1,318 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Análisis de gastos filtrado por sentimiento (Necesario, Deseo, Inversión, Ahorro, Hormiga). Muestra evolución temporal, rankings por categoría/subcategoría/detalle y KPIs. Útil para identificar patrones de gasto según impacto emocional.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Total gastado (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Total gastado (ARS)" }] }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> group()\n  |> sum(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+        "refId": "A"
+      }],
+      "title": "Total gastado",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "none" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Transacciones" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Transacciones" }] }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> map(fn: (r) => ({ r with n: 1 }))\n  |> group()\n  |> sum(column: \"n\")\n  |> map(fn: (r) => ({ _time: now(), _value: float(v: r.n) }))",
+        "refId": "A"
+      }],
+      "title": "Cantidad de transacciones",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Promedio por transacción (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Promedio por transacción (ARS)" }] }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> group()\n  |> mean(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+        "refId": "A"
+      }],
+      "title": "Promedio por transacción",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Ticket máximo (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Ticket máximo (ARS)" }] }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> group()\n  |> max(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+        "refId": "A"
+      }],
+      "title": "Ticket máximo",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Gastos diarios (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Gastos diarios (ARS)" }] },
+          { "matcher": { "id": "byRegexp", "options": "/Necesario|Deseo|Inversión|Ahorro|Hormiga/" }, "properties": [{ "id": "unit", "value": "none" }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 5 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> filter(fn: (r) => exists r.sentimiento and r.sentimiento != \"\")\n  |> group(columns: [\"sentimiento\"])\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: false)\n  |> sort(columns: [\"_time\"])\n  |> cumulativeSum(columns: [\"monto\"])\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: r.sentimiento }))\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])",
+        "refId": "A"
+      }],
+      "title": "Evolución diaria de gastos (acumulado)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "name" }, "properties": [{ "id": "unit", "value": "none" }, { "id": "displayName", "value": "Categoría" }] },
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 14 },
+      "id": 20,
+      "options": { "legend": { "calcs": ["sum"] }, "orientation": "horizontal", "xField": "name", "xTickLabelRotation": -45 },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> filter(fn: (r) => exists r.categoria and r.categoria != \"\")\n  |> group(columns: [\"categoria\"])\n  |> sum(column: \"monto\")\n  |> sort(columns: [\"monto\"], desc: true)\n  |> limit(n: 15)\n  |> map(fn: (r) => ({ _time: now(), name: string(v: r.categoria), _value: r.monto }))",
+        "refId": "A"
+      }],
+      "title": "Ranking por categoría",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "name" }, "properties": [{ "id": "unit", "value": "none" }, { "id": "displayName", "value": "Subcategoría" }] },
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 14 },
+      "id": 21,
+      "options": { "legend": { "calcs": ["sum"] }, "orientation": "horizontal", "xField": "name", "xTickLabelRotation": -45 },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"sub_categoria\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> filter(fn: (r) => exists r.sub_categoria and r.sub_categoria != \"\")\n  |> group(columns: [\"sub_categoria\"])\n  |> sum(column: \"monto\")\n  |> sort(columns: [\"monto\"], desc: true)\n  |> limit(n: 15)\n  |> map(fn: (r) => ({ _time: now(), name: string(v: r.sub_categoria), _value: r.monto }))",
+        "refId": "A"
+      }],
+      "title": "Ranking por subcategoría",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "name" }, "properties": [{ "id": "unit", "value": "none" }, { "id": "displayName", "value": "Detalle" }] },
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 24 },
+      "id": 22,
+      "options": { "legend": { "calcs": ["sum"] }, "orientation": "horizontal", "xField": "name", "xTickLabelRotation": -45 },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"detalles\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> filter(fn: (r) => exists r.detalles and r.detalles != \"\")\n  |> group(columns: [\"detalles\"])\n  |> sum(column: \"monto\")\n  |> sort(columns: [\"monto\"], desc: true)\n  |> limit(n: 15)\n  |> map(fn: (r) => ({ _time: now(), name: string(v: r.detalles), _value: r.monto }))",
+        "refId": "A"
+      }],
+      "title": "Ranking por detalle (descripción)",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "categoria" }, "properties": [{ "id": "unit", "value": "none" }] },
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Gastos (ARS)" }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 24 },
+      "id": 23,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right" } },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"sentimiento\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> filter(fn: (r) => exists r.categoria and r.categoria != \"\")\n  |> group(columns: [\"categoria\"])\n  |> sum(column: \"monto\")\n  |> sort(columns: [\"monto\"], desc: true)\n  |> limit(n: 10)",
+        "refId": "A"
+      }],
+      "title": "Distribución por categoría (pie)",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+      "fieldConfig": {
+        "defaults": { "unit": "currency:ARS" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Gastos semanales (ARS)" }] },
+          { "matcher": { "id": "byName", "options": "_value" }, "properties": [{ "id": "displayName", "value": "Gastos semanales (ARS)" }] },
+          { "matcher": { "id": "byRegexp", "options": "/Necesario|Deseo|Inversión|Ahorro|Hormiga/" }, "properties": [{ "id": "unit", "value": "none" }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 34 },
+      "id": 11,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "vertical",
+        "stacking": "normal",
+        "xField": "Time",
+        "xTickLabelRotation": -45
+      },
+      "targets": [{
+        "query": "from(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"sentimiento\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey: [\"_time\", \"event_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> filter(fn: (r) => \"${sentimiento}\" == \"__all\" or (exists r.sentimiento and r.sentimiento == \"${sentimiento}\"))\n  |> filter(fn: (r) => exists r.sentimiento and r.sentimiento != \"\")\n  |> group(columns: [\"sentimiento\"])\n  |> aggregateWindow(every: 1w, fn: sum, column: \"monto\", createEmpty: false)\n  |> map(fn: (r) => ({ r with _value: r.monto, _field: r.sentimiento }))\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])",
+        "refId": "A"
+      }],
+      "title": "Evolución semanal (barras apiladas)",
+      "type": "barchart"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": ["analitico", "sentimiento"],
+  "templating": {
+    "list": [
+      {
+        "allValue": "__all",
+        "current": { "selected": true, "text": "Todos", "value": "__all" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Sentimiento",
+        "multi": false,
+        "name": "sentimiento",
+        "options": [
+          { "selected": true, "text": "Todos", "value": "__all" },
+          { "selected": false, "text": "Necesario 🛠️", "value": "Necesario" },
+          { "selected": false, "text": "Deseo ✨", "value": "Deseo" },
+          { "selected": false, "text": "Inversión 📈", "value": "Inversión" },
+          { "selected": false, "text": "Ahorro 💰", "value": "Ahorro" },
+          { "selected": false, "text": "Hormiga 🐜", "value": "Hormiga" }
+        ],
+        "query": "__all,Necesario,Deseo,Inversión,Ahorro,Hormiga",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": "__all",
+        "current": { "selected": true, "text": "definitivo", "value": "definitivo" },
+        "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+        "includeAll": true,
+        "label": "Origen",
+        "multi": false,
+        "name": "origen",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"origen\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": { "selected": true, "text": "Todas", "value": "__all" },
+        "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+        "includeAll": true,
+        "label": "Vencimiento",
+        "multi": false,
+        "name": "fecha_vencimiento",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"fecha_vencimiento\", start: -24mo)",
+        "refresh": 2,
+        "sort": 3,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": { "selected": true, "text": "Todas", "value": "__all" },
+        "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+        "includeAll": true,
+        "label": "Red",
+        "multi": false,
+        "name": "red",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"red\", start: -24mo)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": { "selected": true, "text": "Todas", "value": "__all" },
+        "datasource": { "type": "influxdb", "uid": "influxdb-main" },
+        "includeAll": true,
+        "label": "Tarjeta",
+        "multi": false,
+        "name": "numero_tarjeta",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"numero_tarjeta\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-90d", "to": "now" },
+  "timezone": "browser",
+  "title": "Audit-X - Análisis por Sentimiento",
+  "uid": "auditx-sentiment-analysis",
+  "version": 1
+}

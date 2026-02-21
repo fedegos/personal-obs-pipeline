@@ -15,8 +15,9 @@
       }
     ]
   },
+  "description": "Análisis de variaciones: últimos 30 días vs 30 anteriores por categoría. Top subas y bajas en ARS. Filtros: origen, vencimiento, red, tarjeta. Usar para identificar categorías que crecen o se reducen.",
   "editable": true,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": 0,
   "panels": [
     {
@@ -28,7 +29,72 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "categoria"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Categoría"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "actual"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Últimos 30 días"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pasado"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "30 días anteriores"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "diferencia"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Diferencia"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "variacion_pct"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Variación %"
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -55,7 +121,42 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "categoria"
+            },
+            "properties": [
+              {"id": "unit", "value": "none"},
+              {"id": "displayName", "value": "Categoría"}
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Aumento (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Aumento (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -66,12 +167,20 @@
       "id": 2,
       "targets": [
         {
-          "query": "import \"date\"\n\nahora = now()\ninicio_actual = date.add(d: -30d, to: ahora)\ninicio_pasado = date.add(d: -60d, to: ahora)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_pasado, stop: ahora)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> map(fn: (r) => ({ r with periodo: if r._time >= inicio_actual then \"actual\" else \"pasado\" }))\n  |> group(columns: [\"categoria\", \"periodo\"])\n  |> sum(column: \"monto\")\n  |> group(columns: [\"categoria\"])\n  |> pivot(rowKey:[\"categoria\"], columnKey:[\"periodo\"], valueColumn:\"monto\")\n  |> map(fn: (r) => ({ categoria: r.categoria, diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0) }))\n  |> filter(fn: (r) => r.diferencia > 0.0)\n  |> sort(columns:[\"diferencia\"], desc:true)\n  |> limit(n: 10)\n  |> rename(columns:{diferencia:\"_value\"})",
+          "query": "import \"date\"\n\nahora = now()\ninicio_actual = date.add(d: -30d, to: ahora)\ninicio_pasado = date.add(d: -60d, to: ahora)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_pasado, stop: ahora)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> map(fn: (r) => ({ r with periodo: if r._time >= inicio_actual then \"actual\" else \"pasado\" }))\n  |> group(columns: [\"categoria\", \"periodo\"])\n  |> sum(column: \"monto\")\n  |> group(columns: [\"categoria\"])\n  |> pivot(rowKey:[\"categoria\"], columnKey:[\"periodo\"], valueColumn:\"monto\")\n  |> map(fn: (r) => ({ categoria: r.categoria, diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0) }))\n  |> filter(fn: (r) => r.diferencia > 0.0)\n  |> sort(columns:[\"diferencia\"], desc:true)\n  |> limit(n: 10)\n  |> rename(columns:{diferencia:\"_value\"})",
           "refId": "A"
         }
       ],
       "title": "Top 10 subas (ARS)",
-      "type": "barchart"
+      "type": "barchart",
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "xField": "categoria"
+      }
     },
     {
       "datasource": {
@@ -82,7 +191,42 @@
         "defaults": {
           "unit": "currency:ARS"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "categoria"
+            },
+            "properties": [
+              {"id": "unit", "value": "none"},
+              {"id": "displayName", "value": "Categoría"}
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Reducción (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Reducción (ARS)"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -93,12 +237,20 @@
       "id": 3,
       "targets": [
         {
-          "query": "import \"date\"\n\nahora = now()\ninicio_actual = date.add(d: -30d, to: ahora)\ninicio_pasado = date.add(d: -60d, to: ahora)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_pasado, stop: ahora)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> map(fn: (r) => ({ r with periodo: if r._time >= inicio_actual then \"actual\" else \"pasado\" }))\n  |> group(columns: [\"categoria\", \"periodo\"])\n  |> sum(column: \"monto\")\n  |> group(columns: [\"categoria\"])\n  |> pivot(rowKey:[\"categoria\"], columnKey:[\"periodo\"], valueColumn:\"monto\")\n  |> map(fn: (r) => ({ categoria: r.categoria, diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0) }))\n  |> filter(fn: (r) => r.diferencia < 0.0)\n  |> sort(columns:[\"diferencia\"], desc:false)\n  |> limit(n: 10)\n  |> map(fn: (r) => ({ r with _value: -1.0 * r.diferencia }))",
+          "query": "import \"date\"\n\nahora = now()\ninicio_actual = date.add(d: -30d, to: ahora)\ninicio_pasado = date.add(d: -60d, to: ahora)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_pasado, stop: ahora)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"categoria\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> map(fn: (r) => ({ r with periodo: if r._time >= inicio_actual then \"actual\" else \"pasado\" }))\n  |> group(columns: [\"categoria\", \"periodo\"])\n  |> sum(column: \"monto\")\n  |> group(columns: [\"categoria\"])\n  |> pivot(rowKey:[\"categoria\"], columnKey:[\"periodo\"], valueColumn:\"monto\")\n  |> map(fn: (r) => ({ categoria: r.categoria, diferencia: (if exists r.actual then r.actual else 0.0) - (if exists r.pasado then r.pasado else 0.0) }))\n  |> filter(fn: (r) => r.diferencia < 0.0)\n  |> sort(columns:[\"diferencia\"], desc:false)\n  |> limit(n: 10)\n  |> map(fn: (r) => ({ r with _value: -1.0 * r.diferencia }))",
           "refId": "A"
         }
       ],
       "title": "Top 10 bajas (ARS)",
-      "type": "barchart"
+      "type": "barchart",
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "xField": "categoria"
+      }
     }
   ],
   "schemaVersion": 42,
