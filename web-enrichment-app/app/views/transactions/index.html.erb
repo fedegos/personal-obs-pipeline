@@ -1,3 +1,6 @@
+<% content_for :head do %>
+  <%= turbo_exempts_page_from_cache %>
+<% end %>
 <div class="transactions-page-container" data-controller="shortcuts-help skeleton-loading" data-action="turbo:submit-start@document->skeleton-loading#show turbo:frame-load@document->skeleton-loading#hide">
   <header class="transactions-header">
     <div>

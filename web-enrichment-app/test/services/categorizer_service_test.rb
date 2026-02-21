@@ -41,4 +41,23 @@ class CategorizerServiceTest < ActiveSupport::TestCase
     result = CategorizerService.guess("y")
     assert result.key?(:category)
   end
+
+  # Reproduce: tras cambiar una regla en DB, guess() debe devolver el resultado actualizado.
+  # update_all evita callbacks → clear_cache no corre → simula otro proceso con caché obsoleto.
+  test "guess returns updated result when rules change in DB without callbacks" do
+    CategorizerService.clear_cache
+    # Fixtures: two (Coto) matchea COTO; devuelve Supermercado/Coto
+    result_before = CategorizerService.guess("Compra en COTO")
+    assert_equal "Supermercado", result_before[:category]
+    assert_equal "Coto", result_before[:sub_category]
+
+    # Cambiar la regla en DB sin callbacks (simula otro proceso que modificó la DB)
+    CategoryRule.where(id: category_rules(:two).id).update_all(pattern: "DIA|Dia")
+
+    # Con caché en proceso, guess() seguiría devolviendo Coto. Debe devolver nil (reglas frescas).
+    result_after = CategorizerService.guess("Compra en COTO")
+    # one (Supermercado) tiene pattern COTO|Coto → matchea como raíz → sub_category nil
+    assert_equal "Supermercado", result_after[:category]
+    assert_nil result_after[:sub_category], "Debe devolver sub_category nil; Coto ya no matchea"
+  end
 end
