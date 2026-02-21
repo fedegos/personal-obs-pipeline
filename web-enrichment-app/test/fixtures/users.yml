@@ -1,10 +1,9 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-# email debe ser único (índice único). encrypted_password: hash bcrypt para "password".
-
+# encrypted_password: bcrypt para "password" (cost 4 para tests rápidos)
 one:
   email: one@test.example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, "password") %>
+  encrypted_password: $2a$04$7pwJ0bPkTrvCkSrCZDJ7Ve37z4iyHiDEjN0ug5cJ7wKa72YRVIai2
 
 two:
   email: two@test.example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, "password") %>
+  encrypted_password: $2a$04$7pwJ0bPkTrvCkSrCZDJ7Ve37z4iyHiDEjN0ug5cJ7wKa72YRVIai2

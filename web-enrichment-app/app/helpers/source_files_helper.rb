@@ -2,7 +2,7 @@
 
 module SourceFilesHelper
   # Mapa de keys a labels (extraído de BANK_SCHEMAS)
-  PARAM_LABELS = BANK_SCHEMAS.values.flat_map { |fields| fields.map { |f| [f[:key].to_s, f[:label]] } }.to_h.freeze
+  PARAM_LABELS = BANK_SCHEMAS.values.flat_map { |fields| fields.map { |f| [ f[:key].to_s, f[:label] ] } }.to_h.freeze
 
   def format_extra_params(source_file)
     return [] if source_file.extra_params.blank?

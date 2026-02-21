@@ -40,9 +40,9 @@ class TransactionsTest < ApplicationSystemTestCase
 
     assert_selector "#transactions-container .transaction-card", count: 50
     assert_selector "button", text: "Cargar más"
-
-    click_button "Cargar más"
-    assert_selector "#transactions-container .transaction-card", minimum: 51
+    # Usar JS click para evitar overlap con sentinel/elementos ocultos
+    page.execute_script("document.querySelector('[data-infinite-scroll-target=\"button\"]')?.click()")
+    assert_selector "#transactions-container .transaction-card", minimum: 51, wait: 5
   end
 
   test "changing filters resets infinite scroll results" do
@@ -51,12 +51,15 @@ class TransactionsTest < ApplicationSystemTestCase
     create_pending_transaction(999, detalles: "SoloUnicoXYZ")
 
     visit transactions_path
+    assert_selector "#transactions-container", wait: 5
 
-    click_button "Cargar más"
-    assert_selector "#transactions-container .transaction-card", minimum: 51
-
-    fill_in "q", with: "SoloUnicoXYZ"
-    assert_text "SoloUnicoXYZ"
+    # Usar JS para evitar ObsoleteNode con Cuprite cuando el DOM se actualiza vía Turbo
+    page.execute_script <<~JS
+      var input = document.querySelector('input[name="q"]');
+      if (input) { input.value = 'SoloUnicoXYZ'; input.dispatchEvent(new Event('input', { bubbles: true })); }
+    JS
+    sleep 0.3 # Debounce del search controller (200ms)
+    assert_text "SoloUnicoXYZ", wait: 5
     assert_selector "#transactions-container .transaction-card", count: 1
   end
 

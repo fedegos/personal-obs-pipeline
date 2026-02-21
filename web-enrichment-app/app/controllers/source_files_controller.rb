@@ -4,7 +4,7 @@ class SourceFilesController < ApplicationController
 
   def index
     base = SourceFile.order(created_at: :desc)
-    @page = [ params[ :page ].to_i, 1 ].max
+    @page = [ params[:page].to_i, 1 ].max
     offset = (@page - 1) * ITEMS_PER_PAGE
     @source_files = base.offset(offset).limit(ITEMS_PER_PAGE)
     has_more = base.offset(offset + ITEMS_PER_PAGE).limit(1).exists?

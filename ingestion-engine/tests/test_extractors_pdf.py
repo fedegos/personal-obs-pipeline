@@ -5,11 +5,11 @@ import pytest
 
 from bank_extractors import get_extractor
 from bank_extractors.amex_pdf_extractor import _parse_transactions_from_text as _parse_amex
-from bank_extractors.bapro_pdf_extractor import (
-    _parse_transactions_from_text as _parse_bapro,
-)
 from bank_extractors.bapro_mc_pdf_extractor import (
     _parse_transactions_from_text as _parse_bapro_mc,
+)
+from bank_extractors.bapro_pdf_extractor import (
+    _parse_transactions_from_text as _parse_bapro,
 )
 from bank_extractors.bbva_pdf_extractor import _parse_transactions_from_text
 
