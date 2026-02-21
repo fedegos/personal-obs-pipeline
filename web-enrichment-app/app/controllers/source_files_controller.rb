@@ -1,7 +1,19 @@
 # app/controllers/source_files_controller.rb
 class SourceFilesController < ApplicationController
+  ITEMS_PER_PAGE = 20
+
   def index
-    @source_files = SourceFile.order(created_at: :desc).limit(15)
+    base = SourceFile.order(created_at: :desc)
+    @page = [ params[ :page ].to_i, 1 ].max
+    offset = (@page - 1) * ITEMS_PER_PAGE
+    @source_files = base.offset(offset).limit(ITEMS_PER_PAGE)
+    has_more = base.offset(offset + ITEMS_PER_PAGE).limit(1).exists?
+    @next_page = has_more ? @page + 1 : nil
+
+    respond_to do |format|
+      format.html
+      format.turbo_stream
+    end
   end
 
   def create

@@ -1,0 +1,10 @@
+<%# Solo append cuando page > 1; el load_more se actualiza siempre %>
+<%= turbo_stream.append "source_files_table" do %>
+  <% @source_files.each do |sf| %>
+    <%= render partial: "source_files/source_file", locals: { source_file: sf } %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace "source-files-next-page" do %>
+  <%= render "source_files/load_more", next_page: @next_page %>
+<% end %>

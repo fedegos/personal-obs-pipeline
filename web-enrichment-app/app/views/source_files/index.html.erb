@@ -88,5 +88,6 @@
         <%= render partial: "source_files/source_file", locals: { source_file: sf } %>
       <% end %>
     </div>
+    <%= render "source_files/load_more", next_page: @next_page %>
   </section>
 </div>

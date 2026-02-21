@@ -332,3 +332,20 @@
   color: #334155;
   line-height: 1.5;
 }
+
+/* Infinite scroll para historial */
+.source-files-pagination-container {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.source-files-pagination-container.transactions-pagination-loading [data-infinite-scroll-target="button"] {
+  display: none;
+}
