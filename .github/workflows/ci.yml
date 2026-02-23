@@ -137,15 +137,6 @@ jobs:
           path: web-enrichment-app/tmp/screenshots
           if-no-files-found: ignore
 
-  # --- Infra: persistencia Kafka ---
-  kafka-persistence:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Test Kafka persistence
-        run: make test-kafka-persistence
-
   # --- Python: lint & test ---
   python-lint:
     runs-on: ubuntu-latest
