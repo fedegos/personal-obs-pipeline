@@ -1,0 +1,22 @@
+<% if @pending.any? %>
+  <div id="transactions-container" class="transactions-grid" data-controller="transactions-keyboard">
+    <%= render partial: "transactions/transaction_card_item",
+               collection: @pending,
+               as: :transaction,
+               locals: { suggested_map: @suggested, categories_map: @categories_map, categories_list: @categories_list } %>
+  </div>
+
+  <%= render "transactions/load_more", next_page: @next_page, filter_params: @filter_params %>
+<% else %>
+  <% if params[:q].present? || params[:fecha].present? || params[:monto_min].present? || params[:monto_max].present? || params[:categoria].present? %>
+    <%= render "shared/empty_state",
+          icon: "🔍",
+          title: "Sin resultados",
+          message: "No hay transacciones que coincidan con tus filtros." %>
+  <% else %>
+    <%= render "shared/empty_state",
+          icon: "🎉",
+          title: "¡Todo procesado!",
+          message: "No hay gastos pendientes de aprobación." %>
+  <% end %>
+<% end %>

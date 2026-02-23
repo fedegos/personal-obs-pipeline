@@ -16,7 +16,9 @@ module Publishable
       red:              red,
       numero_tarjeta:   numero_tarjeta,
       en_cuotas:        en_cuotas?,
-      descripcion_cuota: descripcion_cuota
+      descripcion_cuota: descripcion_cuota,
+      fecha_vencimiento: fecha_vencimiento&.iso8601,
+      origen:           origen
     }
 
     begin

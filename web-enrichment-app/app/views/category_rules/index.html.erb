@@ -29,7 +29,19 @@
     </header>
 
     <%= form_with url: category_rules_path, method: :get, data: { controller: "category-rules-filter", turbo_frame: "_top" }, class: "category-rules-filter-form" do |f| %>
-      <label for="filter_sentimiento" class="category-rules-filter-label">Filtrar por sentimiento:</label>
+      <label for="filter_categoria_raiz" class="category-rules-filter-label">Categoría:</label>
+      <%= f.select :categoria_raiz,
+            options_for_select(
+              [["Todas las categorías", ""]] + @roots.map { |r| [r.name, r.id] },
+              params[:categoria_raiz]
+            ),
+            {},
+            {
+              id: "filter_categoria_raiz",
+              class: "category-rules-filter-select",
+              data: { action: "change->category-rules-filter#submit" }
+            } %>
+      <label for="filter_sentimiento" class="category-rules-filter-label">Sentimiento:</label>
       <%= f.select :sentimiento,
             options_for_select(
               [["Todos", ""], ["— Sin definir", "_blank"]] + Transaction::SENTIMIENTOS.map { |k, v| [v, k] },
@@ -51,7 +63,7 @@
     <div id="category_rules_empty" class="category-rules-empty-wrapper">
       <%= render "shared/empty_state",
             simple: true,
-            message: params[:sentimiento].present? ? "No hay reglas con ese sentimiento." : "No hay reglas configuradas aún. Comienza creando una categoría raíz." %>
+            message: params[:sentimiento].present? || params[:categoria_raiz].present? ? "No hay reglas que coincidan con los filtros." : "No hay reglas configuradas aún. Comienza creando una categoría raíz." %>
     </div>
   <% end %>
 </div>

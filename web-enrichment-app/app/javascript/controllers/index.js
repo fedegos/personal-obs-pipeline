@@ -51,3 +51,6 @@ application.register("approve-similar", ApproveSimilarController)
 
 import SkeletonLoadingController from "controllers/skeleton_loading_controller"
 application.register("skeleton-loading", SkeletonLoadingController)
+
+import InfiniteScrollController from "controllers/infinite_scroll_controller"
+application.register("infinite-scroll", InfiniteScrollController)

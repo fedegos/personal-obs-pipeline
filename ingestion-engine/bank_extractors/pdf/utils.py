@@ -22,6 +22,7 @@ MES_ES_A_EN: dict[str, str] = {
     "Jul": "Jul",
     "Ago": "Aug",
     "Sep": "Sep",
+    "Set": "Sep",
     "Setiem": "Sep",
     "Setiembre": "Sep",
     "Oct": "Oct",
@@ -131,9 +132,51 @@ def extract_year_from_filename(
     return int(m.group(1)) if m else None
 
 
+def extract_year_from_bapro_text(text: str) -> Optional[int]:
+    """Extrae año de la primera transacción BAPRO (formato 'YY Mes DD cupon...')."""
+    months = "|".join(re.escape(m) for m in MES_ES_A_EN.keys())
+    m = re.search(rf"\b(\d{{2}})\s+({months})\s+\d{{2}}\s+\d{{6}}", text, re.IGNORECASE)
+    if not m:
+        return None
+    yy = int(m.group(1))
+    return 2000 + yy if yy < 100 else yy
+
+
 def should_skip_text(text: str, patterns: tuple[str, ...]) -> bool:
     """True si el texto coincide con algún patrón de exclusión."""
     for pat in patterns:
         if re.search(pat, text, re.IGNORECASE):
             return True
     return False
+
+
+def extract_fecha_vencimiento_pattern(
+    text: str, pattern: re.Pattern, group: int = 1, default_year: int | None = None
+) -> str | None:
+    """
+    Busca fecha de vencimiento con un regex. Retorna YYYY-MM-DD o None.
+    El grupo capturado debe ser DD/MM/YY, DD/MM/YYYY, DD/MM (usa default_year).
+    """
+    m = pattern.search(text)
+    if not m:
+        return None
+    raw = m.group(group).strip()
+    for sep in ["/", "-", "."]:
+        if sep in raw:
+            parts = raw.split(sep)
+            if len(parts) == 3:
+                d, m_val, y = parts[0].zfill(2), parts[1].zfill(2), parts[2]
+                year = int(y)
+                if year < 100:
+                    year = 2000 + year
+                try:
+                    return f"{year:04d}-{m_val}-{d}"
+                except (ValueError, TypeError):
+                    pass
+            elif len(parts) == 2 and default_year is not None:
+                d, m_val = parts[0].zfill(2), parts[1].zfill(2)
+                try:
+                    return f"{default_year:04d}-{m_val}-{d}"
+                except (ValueError, TypeError):
+                    pass
+    return None

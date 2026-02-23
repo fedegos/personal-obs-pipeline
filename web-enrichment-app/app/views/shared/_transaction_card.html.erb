@@ -9,10 +9,11 @@
                 transaction.sentimiento.present? &&
                 Transaction::SENTIMIENTOS.key?(transaction.sentimiento)
   is_pending = !transaction.aprobado?
-  # Valores efectivos: sugerencia en memoria si existe, sino los guardados en la transacción
-  eff_cat = suggested&.dig(:category).presence || transaction.categoria
-  eff_sub = suggested&.dig(:sub_category).presence || transaction.sub_categoria
-  eff_sent = suggested&.dig(:sentimiento).presence || transaction.sentimiento
+  # Valores efectivos: si hay sugerencia, la usamos (incluyendo nil cuando la regla cambió);
+  # si no hay sugerencia, usamos los guardados en la transacción
+  eff_cat = suggested ? (suggested[:category].presence || transaction.categoria) : transaction.categoria
+  eff_sub = suggested ? suggested[:sub_category] : transaction.sub_categoria
+  eff_sent = suggested ? suggested[:sentimiento] : transaction.sentimiento
   has_recommendation = eff_cat.present? && (eff_cat != 'Varios' || eff_sub.present?)
   card_state = if is_pending && has_recommendation
     'transaction-card-suggested'
@@ -48,6 +49,14 @@
           <span class="badge-moneda">
             💱 <%= transaction.moneda %>
           </span>
+        <% end %>
+        <% if transaction.fecha_vencimiento.present? %>
+          <span class="badge-fecha-venc">
+            📆 Vto. <%= transaction.fecha_vencimiento.strftime("%d/%m") %>
+          </span>
+        <% end %>
+        <% if transaction.origen.present? && transaction.origen != "definitivo" %>
+          <span class="badge-origen">📋 <%= transaction.origen %></span>
         <% end %>
       </div>
     </div>

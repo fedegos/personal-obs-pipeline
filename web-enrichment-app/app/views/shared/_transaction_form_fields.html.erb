@@ -3,11 +3,10 @@
 <% auto_save ||= false %>
 <%
   transaction = f.object
-  # "Varios" es el default del motor cuando no hay match; si la transacción solo tiene eso, mostramos la sugerencia actual
-  has_real_categoria = transaction.categoria.present? && transaction.categoria != 'Varios'
-  display_categoria = has_real_categoria ? transaction.categoria : suggested[:category]
-  display_subcategoria = transaction.sub_categoria.presence || suggested[:sub_category]
-  display_sentimiento = (transaction.sentimiento.present? && Transaction::SENTIMIENTOS.key?(transaction.sentimiento)) ? transaction.sentimiento : suggested[:sentimiento]
+  # Si hay sugerencia, usamos la sugerencia actual (incl. categoría); si no, usamos lo guardado (para que la regla actualizada se refleje)
+  display_categoria = local_assigns.key?(:suggested) ? (suggested[:category] || transaction.categoria) : transaction.categoria
+  display_subcategoria = local_assigns.key?(:suggested) ? suggested[:sub_category] : transaction.sub_categoria
+  display_sentimiento = local_assigns.key?(:suggested) ? suggested[:sentimiento] : transaction.sentimiento
   categoria_empty = display_categoria.blank?
   subcategoria_empty = display_subcategoria.blank?
   sentimiento_empty = display_sentimiento.blank? || !Transaction::SENTIMIENTOS.key?(display_sentimiento)

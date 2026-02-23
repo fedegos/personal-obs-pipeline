@@ -1,0 +1,16 @@
+<div id="transactions-next-page">
+  <% if next_page.present? %>
+    <div class="transactions-pagination-container"
+         data-controller="infinite-scroll"
+         data-infinite-scroll-next-url-value="<%= transactions_path(filter_params.merge(page: next_page, format: :turbo_stream)) %>">
+      <div class="transactions-pagination-sentinel" data-infinite-scroll-target="sentinel" aria-hidden="true"></div>
+      <button type="button"
+              class="btn-secondary-action"
+              data-infinite-scroll-target="button"
+              data-action="click->infinite-scroll#loadMore">
+        Cargar más
+      </button>
+      <span class="transactions-pagination-status" data-infinite-scroll-target="status"></span>
+    </div>
+  <% end %>
+</div>

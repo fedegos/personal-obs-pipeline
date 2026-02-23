@@ -72,4 +72,47 @@ class TransactionTest < ActiveSupport::TestCase
     t.reload
     assert_not t.ready_to_publish?
   end
+
+  test "fecha_vencimiento is optional (nullable)" do
+    t = Transaction.new(
+      event_id: "ev_fv_nil",
+      monto: 10,
+      fecha: Time.current,
+      detalles: "test",
+      origen: "definitivo"
+    )
+    assert t.valid?
+    t.fecha_vencimiento = Date.current
+    assert t.valid?
+  end
+
+  test "origen accepts parcial and definitivo" do
+    t = transactions(:approved)
+    t.origen = "parcial"
+    assert t.valid?
+    t.origen = "definitivo"
+    assert t.valid?
+  end
+
+  test "origen rejects invalid values" do
+    t = Transaction.new(
+      event_id: "ev_orig_inv",
+      monto: 10,
+      fecha: Time.current,
+      detalles: "test",
+      origen: "invalido"
+    )
+    assert_not t.valid?
+    assert t.errors[:origen].any?
+  end
+
+  test "origen defaults to definitivo" do
+    t = Transaction.create!(
+      event_id: "ev_orig_def_#{SecureRandom.hex(8)}",
+      monto: 10,
+      fecha: Time.current,
+      detalles: "test"
+    )
+    assert_equal "definitivo", t.origen
+  end
 end

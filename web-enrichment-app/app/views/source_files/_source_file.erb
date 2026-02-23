@@ -6,21 +6,62 @@
     'failed' => 'status-failed'
   }
   status_class = status_colors[source_file.status] || 'status-pending'
-  transactions_display = source_file.transactions_count.nil? ? '—' : source_file.transactions_count
-  details = if source_file.status == 'failed'
+  transactions_display = source_file.transactions_count.nil? ? '—' : "#{source_file.transactions_count} transacciones"
+  formatted_params = format_extra_params(source_file)
+  detail_message = if source_file.status == 'failed'
     source_file.error_message
   elsif source_file.processing_message.present?
     source_file.processing_message
   else
-    source_file.file_key.presence || '—'
+    nil
   end
+  has_detail = formatted_params.any? || source_file.file_key.present? || detail_message.present? || source_file.processed_at.present?
 %>
-<tr id="<%= dom_id(source_file) %>" class="source-file-row">
-  <td class="source-file-cell"><%= source_file.created_at.strftime("%H:%M %d/%m/%y") %></td>
-  <td class="source-file-cell"><strong><%= source_file.bank&.upcase || '—' %></strong></td>
-  <td class="source-file-cell">
-    <span class="source-file-status <%= status_class %>">● <%= source_file.status&.capitalize || 'pending' %></span>
-  </td>
-  <td class="source-file-cell"><%= transactions_display %></td>
-  <td class="source-file-cell"><small><%= details %></small></td>
-</tr>
+<div id="<%= dom_id(source_file) %>" class="source-file-card">
+  <details class="source-file-card-details" <%= "open" if source_file.status == 'failed' %>>
+    <summary class="source-file-card-header">
+      <span class="source-file-card-date"><%= source_file.created_at.strftime("%d %b %Y, %H:%M") %></span>
+      <span class="source-file-card-bank"><%= source_file.bank&.upcase || '—' %></span>
+      <span class="source-file-card-status <%= status_class %>">● <%= source_file.status&.capitalize || 'Pendiente' %></span>
+      <span class="source-file-card-txs"><%= transactions_display %></span>
+      <% if has_detail %>
+        <span class="source-file-card-toggle">▼</span>
+      <% end %>
+    </summary>
+    <% if has_detail %>
+      <div class="source-file-card-detail">
+        <% if formatted_params.any? %>
+          <div class="source-file-detail-block">
+            <strong class="source-file-detail-label">Parámetros usados</strong>
+            <dl class="source-file-params-list">
+              <% formatted_params.each do |p| %>
+                <div class="source-file-param-row">
+                  <dt><%= p[:label] %></dt>
+                  <dd><%= p[:value] %></dd>
+                </div>
+              <% end %>
+            </dl>
+          </div>
+        <% end %>
+        <% if source_file.file_key.present? %>
+          <div class="source-file-detail-block">
+            <strong class="source-file-detail-label">Archivo</strong>
+            <p class="source-file-file-key"><%= source_file.file_key %></p>
+          </div>
+        <% end %>
+        <% if detail_message.present? %>
+          <div class="source-file-detail-block">
+            <strong class="source-file-detail-label"><%= source_file.status == 'failed' ? 'Error' : 'Mensaje' %></strong>
+            <p class="source-file-message"><%= detail_message %></p>
+          </div>
+        <% end %>
+        <% if source_file.processed_at.present? %>
+          <div class="source-file-detail-block">
+            <strong class="source-file-detail-label">Procesado</strong>
+            <p><%= source_file.processed_at.strftime("%d %b %Y, %H:%M") %></p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </details>
+</div>

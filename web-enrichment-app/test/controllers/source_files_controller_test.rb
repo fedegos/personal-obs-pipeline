@@ -13,6 +13,12 @@ class SourceFilesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index with turbo_stream format returns stream for pagination" do
+    get upload_url, params: { page: 2, format: :turbo_stream }
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+  end
+
   test "create with invalid bank redirects with alert" do
     post source_files_url, params: { bank: "invalid_bank" }
     assert_redirected_to upload_path

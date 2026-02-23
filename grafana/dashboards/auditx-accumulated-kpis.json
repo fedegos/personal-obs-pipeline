@@ -1,0 +1,358 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "KPIs acumulados MTD/QTD/YTD para uso ejecutivo. Curva de acumulado diario del mes y participación por tarjeta. Filtros: origen, red, tarjeta.",
+  "editable": true,
+  "id": 0,
+  "panels": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "MTD (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "MTD (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> sum(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+          "refId": "A"
+        }
+      ],
+      "title": "MTD acumulado",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "QTD (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "QTD (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "query": "import \"date\"\n\ninicio_trimestre = date.truncate(t: now(), unit: 3mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_trimestre)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> sum(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+          "refId": "A"
+        }
+      ],
+      "title": "QTD acumulado",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "YTD (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "YTD (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> sum(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+          "refId": "A"
+        }
+      ],
+      "title": "YTD acumulado",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 14,
+        "x": 0,
+        "y": 6
+      },
+      "id": 4,
+      "targets": [
+        {
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: true)\n  |> fill(column: \"monto\", value: 0.0)\n  |> cumulativeSum(columns: [\"monto\"])\n  |> map(fn: (r) => ({ r with _value: r.monto }))\n  |> keep(columns: [\"_time\", \"_value\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "Acumulado diario MTD",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 10,
+        "x": 14,
+        "y": 6
+      },
+      "id": 5,
+      "targets": [
+        {
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => exists r.numero_tarjeta)\n  |> group(columns: [\"numero_tarjeta\"])\n  |> sum(column: \"monto\")\n  |> group()",
+          "refId": "A"
+        }
+      ],
+      "title": "Participación anual por tarjeta",
+      "type": "piechart"
+    }
+  ],
+  "schemaVersion": 42,
+  "tags": [
+    "acumulados",
+    "ejecutivo"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "definitivo",
+          "value": "definitivo"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Origen de carga",
+        "name": "origen",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"origen\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Red",
+        "name": "red",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"red\", start: -24mo)",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Tarjeta",
+        "name": "numero_tarjeta",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"numero_tarjeta\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1y",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Audit-X - Acumulados",
+  "uid": "auditx-accumulated-kpis",
+  "version": 1,
+  "graphTooltip": 1
+}

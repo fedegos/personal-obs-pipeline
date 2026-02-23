@@ -74,11 +74,27 @@ def process_ingestion(data):
             count = len(df)
             df["event_id"] = df.apply(generate_event_id, axis=1)
 
+            # origen: definitivo para PDF, parcial para Excel/CSV/Sheets
+            pdf_banks = {"bbva_pdf_visa", "bapro_pdf_visa", "bapro_pdf_mastercard", "amex_pdf"}
+            origen = "definitivo" if bank_name in pdf_banks else "parcial"
+            df["origen"] = origen
+
+            # fecha_vencimiento: extraído del PDF (cuando es correcto) o params (UI)
+            if "fecha_vencimiento" not in df.columns and params.get("fecha_vencimiento"):
+                df["fecha_vencimiento"] = params["fecha_vencimiento"]
+
             for _, row in df.iterrows():
+                row_dict = row.to_dict()
+                # Serializar fecha_vencimiento si es Timestamp/date
+                if "fecha_vencimiento" in row_dict and pd.notna(row_dict.get("fecha_vencimiento")):
+                    fv = row_dict["fecha_vencimiento"]
+                    row_dict["fecha_vencimiento"] = (
+                        fv.strftime("%Y-%m-%d") if hasattr(fv, "strftime") else str(fv)
+                    )
                 producer.produce(
                     "transacciones_raw",
                     key=str(row["event_id"]).encode(),
-                    value=json.dumps(row.to_dict(), default=json_serial).encode("utf-8"),
+                    value=json.dumps(row_dict, default=json_serial).encode("utf-8"),
                 )
 
             producer.flush()

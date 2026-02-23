@@ -35,6 +35,8 @@ REQUIRED_COLUMNS = [
     "en_cuotas",
     "descripcion_cuota",
 ]
+# Opcional: los extractores pueden añadirla (PDF con fecha de cierre)
+OPTIONAL_COLUMNS = ["fecha_vencimiento"]
 
 # Límites por defecto
 MIN_FILE_BYTES = 100
@@ -88,7 +90,8 @@ class PdfExtractorBase(ABC):
         df["numero_tarjeta"] = card_number
         if postprocess_fecha and "fecha_transaccion" in df.columns:
             df["fecha_transaccion"] = df["fecha_transaccion"].apply(postprocess_fecha)
-        df = df[[c for c in REQUIRED_COLUMNS]]
+        output_cols = REQUIRED_COLUMNS + [c for c in OPTIONAL_COLUMNS if c in df.columns]
+        df = df[output_cols]
         df = df[df["monto"].notna() & (df["monto"] > 0)]
         return df
 
@@ -96,6 +99,10 @@ class PdfExtractorBase(ABC):
     def _parse_transactions(self, text: str, **kwargs) -> list[dict]:
         """Implementado por cada extractor. Convierte texto en lista de transacciones."""
         ...
+
+    def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
+        """Opcional: extrae fecha de cierre/vencimiento del resumen. Sobrescribir por banco."""
+        return None
 
     def extract(self, file_content: bytes, **kwargs) -> pd.DataFrame:
         """
@@ -119,6 +126,10 @@ class PdfExtractorBase(ABC):
                 return empty
 
             rows = self._parse_transactions(text, **kwargs)
+            fecha_venc = getattr(self, "_extract_fecha_vencimiento", lambda t, **kw: None)(text, **kwargs)
+            if fecha_venc and rows:
+                for r in rows:
+                    r["fecha_vencimiento"] = fecha_venc
             if not rows:
                 sample = text[:500].replace("\n", " ")
                 print(

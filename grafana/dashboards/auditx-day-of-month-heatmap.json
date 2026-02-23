@@ -1,0 +1,369 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Estacionalidad por día del mes: patrones de gasto (ej. ¿gastamos más los fines de semana?). Perfil por día (1-31) y por semana del mes. Filtros: origen, vencimiento, red, tarjeta.",
+  "editable": true,
+  "id": 0,
+  "panels": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dia_mes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "displayName",
+                "value": "Día"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "query": "import \"date\"\n\nfrom(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> map(fn: (r) => ({ r with dia_mes: if date.monthDay(t: r._time) < 10 then \"0\" + string(v: date.monthDay(t: r._time)) else string(v: date.monthDay(t: r._time)) }))\n  |> group(columns: [\"dia_mes\"])\n  |> sum(column: \"monto\")\n  |> rename(columns: {monto: \"_value\"})\n  |> sort(columns: [\"dia_mes\"])\n  |> group()",
+          "refId": "A"
+        }
+      ],
+      "title": "Perfil por día del mes",
+      "type": "barchart",
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "xField": "dia_mes"
+      }
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "semana_mes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "displayName",
+                "value": "Semana del mes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos acumulados (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "query": "import \"date\"\n\nfrom(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> map(fn: (r) => ({ r with semana_num: int(v: (date.monthDay(t: r._time)-1) / 7) + 1, semana_mes: \"Semana \" + string(v: int(v: (date.monthDay(t: r._time)-1) / 7) + 1) }))\n  |> group(columns: [\"semana_mes\", \"semana_num\"])\n  |> sum(column: \"monto\")\n  |> rename(columns: {monto: \"_value\"})\n  |> sort(columns: [\"semana_num\"])\n  |> drop(columns: [\"semana_num\"])\n  |> group()",
+          "refId": "A"
+        }
+      ],
+      "title": "Distribución por semana del mes",
+      "type": "barchart",
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "xField": "semana_mes"
+      }
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-main"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency:ARS"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "displayName",
+                "value": "Mes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dia"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "displayName",
+                "value": "Día"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "etiqueta"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "displayName",
+                "value": "Mes-Día"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gastos (ARS)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 1,
+      "targets": [
+        {
+          "query": "import \"date\"\n\nfrom(bucket: \"finanzas\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${fecha_vencimiento}\" == \"__all\" or (exists r.fecha_vencimiento and r.fecha_vencimiento == \"${fecha_vencimiento}\"))\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> map(fn: (r) => ({\n      r with\n      mes: string(v: date.month(t: r._time)),\n      dia: string(v: date.monthDay(t: r._time)),\n      etiqueta: string(v: date.month(t: r._time)) + \"-\" + string(v: date.monthDay(t: r._time))\n    }))\n  |> group(columns: [\"etiqueta\", \"mes\", \"dia\"])\n  |> sum(column: \"monto\")\n  |> rename(columns: {monto: \"_value\"})\n  |> group()",
+          "refId": "A"
+        }
+      ],
+      "title": "Matriz mes-día (gastos acumulados por día del mes)",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 42,
+  "tags": [
+    "estacionalidad",
+    "dia-del-mes"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "definitivo",
+          "value": "definitivo"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Origen de carga",
+        "name": "origen",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"origen\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Vencimiento",
+        "name": "fecha_vencimiento",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"fecha_vencimiento\", start: -24mo)",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Red",
+        "name": "red",
+        "options": [],
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"red\", start: -24mo)",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": "Todas",
+          "value": "__all"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-main"
+        },
+        "includeAll": true,
+        "label": "Tarjeta",
+        "name": "numero_tarjeta",
+        "options": [],
+        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"numero_tarjeta\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-365d",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Audit-X - Mapa Día del Mes",
+  "uid": "auditx-day-of-month-heatmap",
+  "version": 1,
+  "graphTooltip": 1
+}

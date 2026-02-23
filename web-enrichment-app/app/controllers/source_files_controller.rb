@@ -1,7 +1,19 @@
 # app/controllers/source_files_controller.rb
 class SourceFilesController < ApplicationController
+  ITEMS_PER_PAGE = 20
+
   def index
-    @source_files = SourceFile.order(created_at: :desc).limit(15)
+    base = SourceFile.order(created_at: :desc)
+    @page = [ params[:page].to_i, 1 ].max
+    offset = (@page - 1) * ITEMS_PER_PAGE
+    @source_files = base.offset(offset).limit(ITEMS_PER_PAGE)
+    has_more = base.offset(offset + ITEMS_PER_PAGE).limit(1).exists?
+    @next_page = has_more ? @page + 1 : nil
+
+    respond_to do |format|
+      format.html
+      format.turbo_stream
+    end
   end
 
   def create
@@ -18,7 +30,7 @@ class SourceFilesController < ApplicationController
     # Quitamos schema.present? porque [] es falsey en .present?
     if bank_exists && (file_present || !needs_file) && required_keys_present?(schema, params[:extra_params])
       extra_params = params.fetch(:extra_params, {}).permit(
-        :credit_card, :spreadsheet_id, :sheet, :card_number, :card_network, :year
+        :credit_card, :spreadsheet_id, :sheet, :card_number, :card_network, :year, :fecha_vencimiento, :fecha_vencimiento
       ).to_h
 
       ExcelUploaderService.call(params[:file], bank, extra_params)

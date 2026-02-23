@@ -80,6 +80,10 @@ flowchart LR
 | `file_results` | Python (send_feedback) | Rails (FileResultsConsumer) | Resultado del procesamiento (éxito, error, count). |
 | `domain_events` | Rails (DomainEventPublishable) | Opcional | Auditoría y reconstrucción. |
 
+## Documentación relacionada
+
+- **[EVENT-REPOSITORY-DESIGN.md](EVENT-REPOSITORY-DESIGN.md)** — Diseño del Event Repository inmutable append-only (versionado, upcasting, índice global).
+
 ## Principios de diseño
 
 - **Desacoplamiento:** Los servicios se comunican solo vía Kafka o URIs de MinIO.

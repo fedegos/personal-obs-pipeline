@@ -5,7 +5,7 @@
       <div class="category-rules-modal-inner">
         <h3 class="category-rules-modal-title">✏️ Editar Regla</h3>
         <p class="category-rules-modal-subtitle"><%= @category_rule.name %></p>
-        <%= render "form", category_rule: @category_rule, current_filter: params[:sentimiento] %>
+        <%= render "form", category_rule: @category_rule, filter_params: { sentimiento: params[:sentimiento], categoria_raiz: params[:categoria_raiz] } %>
         <div class="category-rules-modal-actions">
           <button type="button" class="btn-cancel-soft" data-action="click->category-rules-modal#close">Cancelar</button>
         </div>

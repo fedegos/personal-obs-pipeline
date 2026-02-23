@@ -305,6 +305,16 @@
   word-break: break-all;
 }
 
+/* Campo de edición regex: multilínea para evitar desborde */
+.category-rule-pattern-input {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 4em;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
 /* Sentimiento (opcional en regla) */
 .category-rule-sentimiento {
   font-size: 0.85rem;

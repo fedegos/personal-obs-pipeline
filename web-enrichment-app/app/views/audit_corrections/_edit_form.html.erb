@@ -9,6 +9,22 @@
     <%= @transaction.detalles %>
   </div>
 
+  <% if @transaction.fecha_vencimiento.present? || @transaction.origen.present? %>
+    <div style="display: flex; gap: 1rem; margin-bottom: 16px; flex-wrap: wrap;">
+      <% if @transaction.fecha_vencimiento.present? %>
+        <span style="font-size: 0.85rem; color: #64748b;">📆 Vto. <%= @transaction.fecha_vencimiento.strftime("%d %b, %Y") %></span>
+      <% end %>
+      <% if @transaction.origen.present? && @transaction.origen != "definitivo" %>
+        <span style="font-size: 0.85rem; color: #64748b;">📋 Origen: <%= @transaction.origen %></span>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="form-field-group" style="margin-bottom: 16px;">
+    <%= f.label :fecha_vencimiento, "Fecha vencimiento (opcional)", class: "form-label-caps" %>
+    <%= f.date_field :fecha_vencimiento, value: @transaction.fecha_vencimiento&.strftime("%Y-%m-%d"), class: "form-input-modern" %>
+  </div>
+
   <%= render "shared/transaction_form_fields",
              f: f,
              categories_map: @categories_map,

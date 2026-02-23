@@ -17,13 +17,12 @@ class AuditCorrectionsTest < ApplicationSystemTestCase
   end
 
   test "can edit an approved transaction" do
-    # Visita directa al edit (HTML) para evitar depender de Turbo Stream en CI
     visit edit_audit_correction_path(@approved_transaction)
 
     fill_in "transaction_categoria", with: "Supermercado"
     click_button "Guardar Cambios"
 
-    assert_text "Registro actualizado"
+    assert_text "Registro actualizado", wait: 5
     @approved_transaction.reload
     assert_equal "Supermercado", @approved_transaction.categoria
   end

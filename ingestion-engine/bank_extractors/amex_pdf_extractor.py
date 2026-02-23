@@ -16,11 +16,15 @@ from .pdf.utils import (
     MONTH_EN_TO_NUM,
     deduce_year,
     extract_cuota_amex,
+    extract_fecha_vencimiento_pattern,
     extract_year_from_filename,
     mes_es_to_en,
     normalize_monto,
     should_skip_text,
 )
+
+_VENCIMIENTO_RE = re.compile(r"Vencimiento\s*:\s*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})", re.IGNORECASE)
+_DATE_DDMMYY_RE = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{2,4})\b")
 
 _SKIP_PATTERNS = (
     r"Detalle mes anterior",
@@ -33,6 +37,11 @@ _SKIP_PATTERNS = (
     r"Movimientos del Período",
     r"INTERESES FINANCIEROS",
     r"IVA\s+21%",
+    # Acreditación de pago (no es un gasto; variantes OCR)
+    r"AACREDIBTACIOCN",
+    r"ACREDITACI[OÓ]N\s+DE\s+(TU|TUESTRO|VUESTRO|VDUESTREO)\s+PAGO",
+    r"VDUESTREO\s+PAGFO",
+    r"ProHcesado",
 )
 
 _BLOCK_SEP_RE = re.compile(r"_+")
@@ -40,6 +49,12 @@ _DATE_AMOUNT_RE = re.compile(r"^(\d{1,2})\s+de\s+(\w+)\s+([\d.,]+)$")
 _REFERENCIA_RE = re.compile(r"REFERENCIA\s+(\d+)", re.IGNORECASE)
 _BILLING_PERIOD_RE = re.compile(r"ARGENTINA\s+\d+\s+\S+\s+(\d{2})/(\d{2})\b")
 _BILLING_DATE_FALLBACK_RE = re.compile(r"\b(\d{2})/(\d{2})/(\d{2})\b")
+
+# Detalles que indican acreditación de pago (no son gastos)
+_ACREDITACION_DETALLES_RE = re.compile(
+    r"AACREDIBTACIOCN|ACREDITACI[OÓ]N\s+DE\s+.*PAGO|VDUESTREO\s+PAGFO|ProHcesado",
+    re.IGNORECASE,
+)
 
 
 def _extract_billing_period(text: str) -> tuple[int, int] | None:
@@ -61,6 +76,32 @@ def _extract_billing_period(text: str) -> tuple[int, int] | None:
 class AmexPdfExtractor(PdfExtractorBase):
     extractor_id = "amex_pdf"
     default_network = "Amex"
+
+    def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
+        """Extrae fecha de vencimiento actual del encabezado.
+        1) Busca 'Vencimiento : DD/MM/YY' en el encabezado (antes de Detalle mes anterior).
+        2) Si no hay, toma la 3ª fecha de la tabla Facturación/Vencimiento (Vencimiento Actual)."""
+        first_page = text.split("\f")[0] if "\f" in text else text[:8000]
+        header_only = first_page.split("Detalle mes anterior")[0]
+        # Intento 1: formato explícito "Vencimiento : DD/MM/YY"
+        result = extract_fecha_vencimiento_pattern(header_only, _VENCIMIENTO_RE)
+        if result:
+            return result
+        # Intento 2: tabla con Facturación/Vencimiento × Actual/Próximo (orden por columnas)
+        # Col Actual: Fact Actual, Vto Actual. Col Próximo: Fact Próx, Vto Próx.
+        # La 2ª fecha es Vencimiento Actual.
+        block = first_page.split("Fecha y detalle")[0]
+        # Excluir "Vencimiento : DD/MM/YY" de Detalle (está después de header pero puede quedar)
+        block_masked = re.sub(r"Vencimiento\s*:\s*\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}", "Vencimiento : __SKIP__", block, flags=re.IGNORECASE)
+        dates = _DATE_DDMMYY_RE.findall(block_masked)
+        if len(dates) >= 2 and "Vencimiento" in block and "Actual" in block:
+            d, m_val, y = dates[1]  # 2ª fecha = Vencimiento Actual (col Actual)
+            year = int(y) if len(y) == 4 else 2000 + int(y)
+            try:
+                return f"{year:04d}-{int(m_val):02d}-{int(d):02d}"
+            except (ValueError, TypeError):
+                pass
+        return None
 
     def _parse_transactions(self, text: str, **kwargs) -> list[dict]:
         billing_period = kwargs.get("billing_period")
@@ -97,6 +138,8 @@ class AmexPdfExtractor(PdfExtractorBase):
                 continue
 
             detalles = lines[1]
+            if _ACREDITACION_DETALLES_RE.search(detalles):
+                continue
             en_cuotas, descripcion_cuota = extract_cuota_amex(detalles)
 
             ref_m = _REFERENCIA_RE.search(block)

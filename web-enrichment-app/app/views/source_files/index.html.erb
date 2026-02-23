@@ -78,28 +78,16 @@
     <% end %>
   </section>
 
-  <!-- TABLA DE HISTORIAL -->
+  <!-- HISTORIAL DE PROCESAMIENTO (Cards expandibles) -->
   <section class="source-files-history-section">
     <div class="source-files-history-header">
       <h2 class="source-files-history-title">📜 Historial de Procesamiento</h2>
     </div>
-    <div class="source-files-table-wrapper">
-      <table class="source-files-table">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Extractor</th>
-            <th>Estado</th>
-            <th>Transacciones</th>
-            <th>Detalles</th>
-          </tr>
-        </thead>
-        <tbody id="source_files_table">
-          <% @source_files.each do |sf| %>
-            <%= render partial: "source_files/source_file", locals: { source_file: sf } %>
-          <% end %>
-        </tbody>
-      </table>
+    <div id="source_files_table" class="source-files-history-list">
+      <% @source_files.each do |sf| %>
+        <%= render partial: "source_files/source_file", locals: { source_file: sf } %>
+      <% end %>
     </div>
+    <%= render "source_files/load_more", next_page: @next_page %>
   </section>
 </div>

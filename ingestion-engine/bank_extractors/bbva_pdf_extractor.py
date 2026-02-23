@@ -11,10 +11,18 @@ from . import register_extractor
 from .pdf.base import PdfExtractorBase
 from .pdf.utils import (
     extract_cuota_c_xx_yy,
+    extract_fecha_vencimiento_pattern,
     normalize_fecha_mes_es,
     normalize_monto,
     should_skip_text,
 )
+
+_VTO_CIERRE_RE = re.compile(
+    r"(?:Vto\.|Vencimiento|Cierre)\s*[:\s]*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})",
+    re.IGNORECASE,
+)
+# BBVA tabla: header "VENCIMIENTO ACTUAL" y luego línea con "DD-MMM-YY DD-MMM-YY" (2º = vto)
+_DD_MMM_YY_RE = re.compile(r"(\d{2}-[A-Za-z]{3}-\d{2})\s+(\d{2}-[A-Za-z]{3}-\d{2})")
 
 _SKIP_PATTERNS = (
     r"SU PAGO EN PESOS",
@@ -38,6 +46,26 @@ _USD_IN_LINE_RE = re.compile(r"\bUSD\s+([\d.,]+)", re.IGNORECASE)
 class BbvaPdfExtractor(PdfExtractorBase):
     extractor_id = "bbva_pdf_visa"
     default_network = "Visa"
+
+    def _extract_fecha_vencimiento(self, text: str, **kwargs) -> str | None:
+        """Extrae Vto./Vencimiento/Cierre. Formatos: DD/MM/YY o tabla 'VENCIMIENTO ACTUAL' + DD-MMM-YY."""
+        result = extract_fecha_vencimiento_pattern(text, _VTO_CIERRE_RE)
+        if result:
+            return result
+        idx = text.upper().find("VENCIMIENTO ACTUAL")
+        if idx >= 0:
+            after_header = text[idx:]
+            for line in after_header.split("\n")[1:]:  # saltar la línea del header
+                m = _DD_MMM_YY_RE.search(line)
+                if m:
+                    dd_mmm_yy = m.group(2)
+                    normalized = normalize_fecha_mes_es(dd_mmm_yy)
+                    try:
+                        dt = pd.to_datetime(normalized, format="%d-%b-%y")
+                        return dt.strftime("%Y-%m-%d")
+                    except (ValueError, TypeError):
+                        continue
+        return None
 
     def _postprocess_fecha(self, fecha_str: str) -> str:
         return normalize_fecha_mes_es(fecha_str)

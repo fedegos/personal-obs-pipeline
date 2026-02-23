@@ -33,4 +33,25 @@ class PublishableTest < ActiveSupport::TestCase
     assert_equal true, payload_captured["en_cuotas"]
     assert_equal "3/6", payload_captured["descripcion_cuota"]
   end
+
+  test "publish_clean_event includes fecha_vencimiento and origen in payload" do
+    tx = transactions(:approved)
+    tx.update!(fecha_vencimiento: Date.new(2026, 1, 31), origen: "parcial")
+
+    payload_captured = nil
+    fake_producer = Object.new
+    fake_producer.define_singleton_method(:produce_async) { |topic:, payload:, key:| payload_captured = JSON.parse(payload) }
+
+    original_producer = Karafka.method(:producer)
+    Karafka.define_singleton_method(:producer) { fake_producer }
+
+    begin
+      tx.publish_clean_event
+    ensure
+      Karafka.define_singleton_method(:producer) { |*args| original_producer.call(*args) }
+    end
+
+    assert_equal "2026-01-31", payload_captured["fecha_vencimiento"]
+    assert_equal "parcial", payload_captured["origen"]
+  end
 end

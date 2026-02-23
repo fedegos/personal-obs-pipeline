@@ -3,8 +3,10 @@ class CategoryRulesController < ApplicationController
 
   # GET /category_rules
   def index
+    @roots = CategoryRule.roots.order(:name)
     @category_rules = CategoryRule.all
     @category_rules = filter_by_sentimiento(@category_rules)
+    @category_rules = filter_by_categoria_raiz(@category_rules)
     @category_rules = @category_rules.order(parent_id: :asc, priority: :desc)
 
     respond_to do |format|
@@ -58,7 +60,8 @@ class CategoryRulesController < ApplicationController
   # PATCH/PUT /category_rules/1
   def update
     if @category_rule.update(category_rule_params)
-      @still_matches_filter = rule_matches_sentimiento_filter?(@category_rule, params[:sentimiento])
+      @still_matches_filter = rule_matches_sentimiento_filter?(@category_rule, params[:sentimiento]) &&
+                             rule_matches_categoria_raiz_filter?(@category_rule, params[:categoria_raiz])
       respond_to do |format|
         format.html { redirect_to @category_rule, notice: "Regla actualizada.", status: :see_other }
         format.turbo_stream
@@ -131,6 +134,18 @@ class CategoryRulesController < ApplicationController
     else
       rule.sentimiento == sentimiento_param && Transaction::SENTIMIENTOS.key?(sentimiento_param)
     end
+  end
+
+  def filter_by_categoria_raiz(scope)
+    return scope if params[:categoria_raiz].blank?
+    ids = CategoryRule.subtree_ids(params[:categoria_raiz])
+    return scope if ids.empty?
+    scope.where(id: ids)
+  end
+
+  def rule_matches_categoria_raiz_filter?(rule, categoria_raiz_param)
+    return true if categoria_raiz_param.blank?
+    CategoryRule.subtree_ids(categoria_raiz_param).include?(rule.id)
   end
 
   def category_rule_params

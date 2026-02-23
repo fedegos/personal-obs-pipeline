@@ -1,6 +1,7 @@
 # app/controllers/transactions_controller.rb
 class TransactionsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [ :approve, :approve_similar, :update ]
+  ITEMS_PER_PAGE = 50
 
   def index
     base = Transaction.where(aprobado: false)
@@ -11,41 +12,21 @@ class TransactionsController < ApplicationController
     base = base.where(fecha: params[:fecha]) if params[:fecha].present?
     base = base.where("monto >= ?", params[:monto_min]) if params[:monto_min].present?
     base = base.where("monto <= ?", params[:monto_max]) if params[:monto_max].present?
-    @pending = case params[:sort]
-    when "faciles_primero"
-      base.to_a.sort_by { |t|
-        r = CategorizerService.guess(t.detalles)
-        if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
-          r[:sub_category].present? ? 0 : 1  # 0 = más fácil (sugerencia completa), 1 = fácil
-        else
-          2  # requiere revisión manual
-        end
-      }
-    when "dificiles_primero"
-      base.to_a.sort_by { |t|
-        r = CategorizerService.guess(t.detalles)
-        score = if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
-          r[:sub_category].present? ? 0 : 1
-        else
-          2
-        end
-        -score  # invierte: difíciles (2) primero
-      }
-    when "monto_asc"
-      base.order(monto: :asc)
-    when "monto_desc"
-      base.order(monto: :desc)
-    else
-      base.order(fecha: :desc)
-    end
-    @pending = @pending.to_a if @pending.is_a?(Array)
+    @filter_params = params.permit(:q, :fecha, :monto_min, :monto_max, :categoria, :sort).to_h.compact_blank
+    @pending = sort_transactions(base, params[:sort])
     if params[:categoria].present?
       @pending = @pending.select { |t|
         r = CategorizerService.guess(t.detalles)
         (r[:category] == params[:categoria]) || (r[:sub_category] == params[:categoria])
       }
     end
-    @pending_count = @pending.respond_to?(:size) ? @pending.size : @pending.count
+
+    @pending_count = @pending.size
+    @page = [ params[:page].to_i, 1 ].max
+    offset = (@page - 1) * ITEMS_PER_PAGE
+    @pending = @pending.slice(offset, ITEMS_PER_PAGE) || []
+    @next_page = (offset + @pending.length) < @pending_count ? @page + 1 : nil
+
     @approved_count = Transaction.where(aprobado: true).count
     @approved_this_week = Transaction.where(aprobado: true).where("updated_at >= ?", 1.week.ago).count
     @total_count = @pending_count + @approved_count
@@ -69,6 +50,11 @@ class TransactionsController < ApplicationController
     @categories_list = @categories_map.keys
     @categories_for_filter = @categories_map.flat_map { |cat, subs| [ cat ] + subs }.uniq.sort
     @first_time_empty = @pending_count == 0 && Transaction.count.zero?
+
+    respond_to do |format|
+      format.html
+      format.turbo_stream
+    end
   end
 
   def update
@@ -170,5 +156,35 @@ class TransactionsController < ApplicationController
 
   def transaction_params
     params.require(:transaction).permit(:categoria, :sub_categoria, :sentimiento)
+  end
+
+  def sort_transactions(base_scope, sort_param)
+    case sort_param
+    when "faciles_primero"
+      base_scope.to_a.sort_by do |t|
+        r = CategorizerService.guess(t.detalles)
+        if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
+          r[:sub_category].present? ? 0 : 1 # 0 = más fácil (sugerencia completa), 1 = fácil
+        else
+          2 # requiere revisión manual
+        end
+      end
+    when "dificiles_primero"
+      base_scope.to_a.sort_by do |t|
+        r = CategorizerService.guess(t.detalles)
+        score = if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
+          r[:sub_category].present? ? 0 : 1
+        else
+          2
+        end
+        -score # invierte: difíciles (2) primero
+      end
+    when "monto_asc"
+      base_scope.order(monto: :asc).to_a
+    when "monto_desc"
+      base_scope.order(monto: :desc).to_a
+    else
+      base_scope.order(fecha: :desc).to_a
+    end
   end
 end
