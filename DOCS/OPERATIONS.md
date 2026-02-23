@@ -4,6 +4,8 @@
 ## 🔀 Flujo Git y CI
 El trabajo se hace en ramas; la integración a `main` es solo vía Pull Request, con el CI en verde (lint y tests de Rails y Python). El workflow está en la raíz del repo: `.github/workflows/ci.yml`. Coolify despliega desde `main`.
 
+> **Despliegue en Coolify:** Si el build falla (exit 255, timeout), consultar [COOLIFY-DEPLOYMENT.md](COOLIFY-DEPLOYMENT.md) para memoria, timeouts y optimizaciones.
+
 ---
 
 ## 🛠 1. Gestión de Infraestructura (Docker)
