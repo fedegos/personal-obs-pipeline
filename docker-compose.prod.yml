@@ -86,9 +86,7 @@ services:
       retries: 5
 
   web:
-    build: 
-      context: ./web-enrichment-app
-      dockerfile: Dockerfile.prod # Necesitaremos crear este archivo
+    image: ${GHCR_WEB_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-web:latest}
     restart: always
     environment:
       RAILS_ENV: production
@@ -105,9 +103,7 @@ services:
         condition: service_healthy
 
   karafka_server:
-    build: 
-      context: ./web-enrichment-app
-      dockerfile: Dockerfile.prod
+    image: ${GHCR_WEB_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-web:latest}
     command: bundle exec karafka server
     restart: always
     environment:
@@ -143,9 +139,7 @@ services:
     command: server /data
 
   ingestion_worker:
-    build:
-      context: ./ingestion-engine
-      dockerfile: Dockerfile.prod
+    image: ${GHCR_INGESTION_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-ingestion:latest}
     restart: always
     # El comando sobreescribe el inicio para crear el JSON antes que el worker
     command: >
