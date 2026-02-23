@@ -83,6 +83,7 @@ flowchart LR
 ## Documentación relacionada
 
 - **[EVENT-REPOSITORY-DESIGN.md](EVENT-REPOSITORY-DESIGN.md)** — Diseño del Event Repository inmutable append-only (versionado, upcasting, índice global).
+- **[COOLIFY-DEPLOYMENT.md](COOLIFY-DEPLOYMENT.md)** — Recomendaciones para despliegue en Coolify/Hetzner (build, RAM, timeouts).
 
 ## Principios de diseño
 

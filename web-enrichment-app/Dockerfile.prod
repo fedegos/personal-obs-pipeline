@@ -4,21 +4,26 @@ FROM ruby:3.4.1-slim as base
 
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias para compilar gemas y assets
+# Instalar dependencias del sistema para compilar gemas nativas (nokogiri, pg, etc.)
+# nodejs/npm: no se necesitan - tailwindcss-ruby trae el CLI embebido
+# git: no se necesita para bundle install en prod
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     build-essential \
     libpq-dev \
-    git \
-    curl \
-    nodejs \
-    npm && \
+    curl && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Reducir paralelismo para evitar OOM en VPS con poca RAM (Coolify/Hetzner)
+# --jobs 2: menos memoria durante compilación de extensiones nativas
+ENV BUNDLE_JOBS=2
+# Limitar workers de make en extensiones nativas (nokogiri, bcrypt, etc.)
+ENV MAKEFLAGS="-j2"
 
 # Instalar dependencias de Ruby
 COPY Gemfile Gemfile.lock ./
 RUN bundle config set --local without 'development test' && \
-    bundle install --jobs 4 --retry 3
+    bundle install --jobs 2 --retry 3
 
 # Copiar el código de la aplicación
 COPY . .
