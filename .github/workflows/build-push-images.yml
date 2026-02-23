@@ -29,7 +29,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./web-enrichment-app
-          file: Dockerfile.prod
+          file: ./web-enrichment-app/Dockerfile.prod
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/personal-obs-pipeline-web:${{ github.sha }}
@@ -57,7 +57,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./ingestion-engine
-          file: Dockerfile.prod
+          file: ./ingestion-engine/Dockerfile.prod
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/personal-obs-pipeline-ingestion:${{ github.sha }}
