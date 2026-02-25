@@ -287,23 +287,25 @@ Recomendación: **Consumer dedicado** que subscribe a los tópicos relevantes y 
 
 ## 10. Fases de implementación
 
-### Fase 1 — Fundamento (MVP)
+### Fase 1 — Fundamento (MVP) ✅
 
-- [ ] Crear tabla `event_store` con schema anterior.
-- [ ] Consumer que subscribe a `domain_events` y persiste en `event_store`.
-- [ ] API mínima para leer por `stream_id` o por `occurred_at`.
+- [x] Crear tabla `event_store` con schema anterior (migración `20260203160000_create_event_store.rb`).
+- [x] Consumer que subscribe a `domain_events` y persiste en `event_store` (`EventStoreConsumer`, topic en `karafka.rb`).
+- [x] API mínima para leer por `stream_id` o por `occurred_at`: `GET /event_store?stream_id=...` o `?from=...&to=...&limit=100` (requiere login).
 
-### Fase 2 — Ampliación
+### Fase 2 — Ampliación ✅
 
-- [ ] Incluir `transacciones_clean`, `file_results` en el consumer.
-- [ ] Implementar versionado (`event_version`) en los payloads actuales (v1).
-- [ ] Registro de schemas (`config/event_schemas.yml` o similar).
+- [x] Incluir `transacciones_clean`, `file_results` en el consumer (`EventStoreConsumer` ramifica por `topic.name`).
+- [x] Versionado: todos los eventos se persisten con `event_version: 1`.
+- [x] Consumer group dedicado `event_store` en Karafka (domain_events, transacciones_clean, file_results).
+- [x] Registro YAML `config/event_schemas.yml` y servicio `EventSchemasRegistry` (schema_for, current_version, registered?). El consumer guarda `metadata.schema` y `metadata.schema_deprecated` cuando el event_type está registrado.
+- [x] Tests TDD: `StoredEventTest`, `EventStoreConsumerTest`, `EventStoreControllerTest`, `EventSchemasRegistryTest`.
 
-### Fase 3 — Versionado y upcasting
+### Fase 3 — Versionado y upcasting ✅
 
-- [ ] Primer cambio de esquema con nueva versión.
-- [ ] Implementar upcaster(s) y hook en el reader.
-- [ ] Tests de upcasting.
+- [x] Primer cambio de esquema con nueva versión (`transaction.approved` v2 en `event_schemas.yml`, campo `etiquetas`).
+- [x] Implementar upcaster(s) y hook en el reader (`EventStore::Upcasters::TransactionApprovedUpcaster`, `UpcasterRegistry`, `ReaderWithUpcast`; controller usa reader en `event_to_json`).
+- [x] Tests de upcasting (`TransactionApprovedUpcasterTest`, `UpcasterRegistryTest`, `ReaderWithUpcastTest`).
 
 ### Fase 4 — Operación
 

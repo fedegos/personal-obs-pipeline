@@ -9,22 +9,36 @@ class KarafkaApp < Karafka::App
   end
 
   routes.draw do
-    # OPCIÓN CORRECTA: El grupo envuelve al tópico
     consumer_group :enrichment_manager_v3 do
       topic :transacciones_raw do
         consumer TransactionsConsumer
         initial_offset "earliest"
       end
 
-      # NUEVO: Consumidor para los resultados de archivos (S3)
-      # Ajusta el nombre del tópico y del consumidor según tu código
       topic :file_results do
         consumer FileResultsConsumer
+        initial_offset "earliest"
+      end
+    end
+
+    # Event Repository: persiste eventos en event_store (DOCS/EVENT-REPOSITORY-DESIGN.md)
+    consumer_group :event_store do
+      topic :domain_events do
+        consumer EventStoreConsumer
+        initial_offset "earliest"
+      end
+
+      topic :transacciones_clean do
+        consumer EventStoreConsumer
+        initial_offset "earliest"
+      end
+
+      topic :file_results do
+        consumer EventStoreConsumer
         initial_offset "earliest"
       end
     end
   end
 end
 
-# Suscripción necesaria para ver logs en consola
 Karafka.monitor.subscribe(Karafka::Instrumentation::LoggerListener.new)

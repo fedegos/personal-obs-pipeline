@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_03_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_03_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_03_140000) do
     t.string "sentimiento"
     t.datetime "updated_at", null: false
     t.index ["parent_id"], name: "index_category_rules_on_parent_id"
+  end
+
+  create_table "event_store", primary_key: "sequence_number", force: :cascade do |t|
+    t.string "aggregate_id", limit: 255, null: false
+    t.string "aggregate_type", limit: 255, null: false
+    t.jsonb "body", null: false
+    t.uuid "causation_id"
+    t.uuid "correlation_id"
+    t.timestamptz "created_at", default: -> { "now()" }, null: false
+    t.string "event_type", limit: 255, null: false
+    t.integer "event_version", default: 1, null: false
+    t.uuid "id", null: false
+    t.jsonb "metadata"
+    t.timestamptz "occurred_at", null: false
+    t.string "stream_id", limit: 512, null: false
+    t.index ["aggregate_type", "aggregate_id"], name: "index_event_store_on_aggregate_type_and_aggregate_id"
+    t.index ["event_type", "occurred_at"], name: "index_event_store_on_event_type_and_occurred_at"
+    t.index ["id"], name: "index_event_store_on_id", unique: true
+    t.index ["occurred_at"], name: "index_event_store_on_occurred_at"
+    t.index ["stream_id", "occurred_at"], name: "index_event_store_on_stream_id_and_occurred_at"
   end
 
   create_table "solid_cable_messages", force: :cascade do |t|

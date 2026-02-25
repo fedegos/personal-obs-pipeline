@@ -42,4 +42,7 @@ Rails.application.routes.draw do
   # Gestión de Archivos
   get "upload", to: "source_files#index", as: "upload"
   post "source_files", to: "source_files#create", as: "source_files"
+
+  # Event Repository (solo lectura): ?stream_id=... o ?from=...&to=...
+  get "event_store", to: "event_store#index", as: "event_store"
 end

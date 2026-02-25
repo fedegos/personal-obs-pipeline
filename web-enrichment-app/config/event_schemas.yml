@@ -1,0 +1,41 @@
+# Event Repository: registro de versiones de esquema por event_type.
+# Ver DOCS/EVENT-REPOSITORY-DESIGN.md. Al cambiar payload, añadir versión y upcaster.
+
+transaction.approved:
+  "1":
+    schema: TransactionApprovedV1
+    deprecated: true
+  "2":
+    schema: TransactionApprovedV2
+    deprecated: false
+
+file.processed:
+  "1":
+    schema: FileProcessedV1
+    deprecated: false
+
+# Domain events (topic domain_events): entity_type.action
+transaction.created:
+  "1": { schema: TransactionCreatedV1, deprecated: false }
+transaction.updated:
+  "1": { schema: TransactionUpdatedV1, deprecated: false }
+transaction.destroyed:
+  "1": { schema: TransactionDestroyedV1, deprecated: false }
+category_rule.created:
+  "1": { schema: CategoryRuleCreatedV1, deprecated: false }
+category_rule.updated:
+  "1": { schema: CategoryRuleUpdatedV1, deprecated: false }
+category_rule.destroyed:
+  "1": { schema: CategoryRuleDestroyedV1, deprecated: false }
+source_file.created:
+  "1": { schema: SourceFileCreatedV1, deprecated: false }
+source_file.updated:
+  "1": { schema: SourceFileUpdatedV1, deprecated: false }
+source_file.destroyed:
+  "1": { schema: SourceFileDestroyedV1, deprecated: false }
+user.created:
+  "1": { schema: UserCreatedV1, deprecated: false }
+user.updated:
+  "1": { schema: UserUpdatedV1, deprecated: false }
+user.destroyed:
+  "1": { schema: UserDestroyedV1, deprecated: false }
