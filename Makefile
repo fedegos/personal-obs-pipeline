@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-grafana restart-ingestion test test-rails test-rails-system test-python test-kafka-persistence test-grafana-dashboards test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile
+.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-grafana restart-ingestion test test-rails test-rails-system test-python test-kafka-persistence test-grafana-dashboards test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile event-store-stats archive-old-events archive-old-events-dry event-store-lag
 
 .DEFAULT_GOAL := help
 
@@ -307,3 +307,18 @@ regenerate-transactions-from-raw: ## Regenerar transactions releyendo transaccio
 	$(MAKE) rebind-karafka-consumer
 	$(MAKE) restart-karafka-worker
 	@echo "✅ Worker reiniciado. Las transacciones se repoblarán al consumir transacciones_raw."
+
+# --- Event Store (Event Repository) ---
+event-store-stats: ## Mostrar estadísticas del Event Store (conteos, rango de fechas)
+	docker compose exec web bin/rails event_store:stats
+
+archive-old-events: ## Archivar eventos > 2 años (mover a event_store_archive). Uso: make archive-old-events [YEARS=2] [DRY_RUN=1]
+	@echo "📦 Archivando eventos antiguos..."
+	docker compose exec web bin/rails event_store:archive YEARS=$(or $(YEARS),2) BATCH=$(or $(BATCH),1000) $(if $(DRY_RUN),DRY_RUN=1,)
+
+archive-old-events-dry: ## Preview de archivo (dry run, no mueve nada)
+	@echo "🔍 Preview de archivo (dry run)..."
+	docker compose exec web bin/rails event_store:archive YEARS=$(or $(YEARS),2) DRY_RUN=1
+
+event-store-lag: ## Verificar lag del consumer group event_store en Kafka
+	docker compose exec redpanda rpk group describe event_store

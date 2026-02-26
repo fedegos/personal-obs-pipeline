@@ -1,7 +1,9 @@
 # 🚀 Runbook: Personal Observability Pipeline (Audit-X)
-*Actualizado: 29 de enero, 2026*
+
+*Actualizado: 3 de febrero, 2026*
 
 ## 🔀 Flujo Git y CI
+
 El trabajo se hace en ramas; la integración a `main` es solo vía Pull Request, con el CI en verde (lint y tests de Rails y Python). El workflow está en la raíz del repo: `.github/workflows/ci.yml`. Coolify despliega desde `main`.
 
 > **Despliegue en Coolify:** Si el build falla (exit 255, timeout), consultar [COOLIFY-DEPLOYMENT.md](COOLIFY-DEPLOYMENT.md) para memoria, timeouts y optimizaciones.
@@ -9,48 +11,63 @@ El trabajo se hace en ramas; la integración a `main` es solo vía Pull Request,
 ---
 
 ## 🛠 1. Gestión de Infraestructura (Docker)
+
 El stack completo corre en contenedores. No es necesario instalar Ruby o Kafka localmente.
 
-*   **Levantar el stack (Recomendado):**
-    ```bash
-    docker compose up -d
-    ```
-*   **Verificar salud de los servicios (Healthchecks):**
-    ```bash
-    docker compose ps
-    ```
-    *Nota: `redpanda` y `db` deben aparecer como `(healthy)` antes de que `web` inicie.*
-*   **Logs específicos para depurar:**
-    ```bash
-    docker compose logs -f web            # Logs de la interfaz Rails
-    docker compose logs -f karafka_worker # Logs del consumidor de Kafka
-    ```
-*   **Apagar y limpiar volúmenes (Reset de DBs):**
-    ```bash
-    docker compose down -v
-    ```
+* **Levantar el stack (Recomendado):**
+
+```bash
+docker compose up -d
+```
+
+* **Verificar salud de los servicios (Healthchecks):**
+
+```bash
+docker compose ps
+```
+
+*Nota: `redpanda` y `db` deben aparecer como `(healthy)` antes de que `web` inicie.*
+
+* **Logs específicos para depurar:**
+
+```bash
+docker compose logs -f web            # Logs de la interfaz Rails
+docker compose logs -f karafka_worker # Logs del consumidor de Kafka
+```
+
+* **Apagar y limpiar volúmenes (Reset de DBs):**
+
+```bash
+docker compose down -v
+```
 
 ### 🌐 Dashboard de Control
+
 - **Audit-X (Rails):** [http://localhost:3000](http://localhost:3000) (Gestión y Aprobación)
 - **Kafka UI:** [http://localhost:8080](http://localhost:8080) (Monitoreo de tópicos)
-- **Eventos Kafka (AsyncAPI):** [asyncapi.yaml](asyncapi.yaml) — Especificación de tópicos y payloads (transacciones_raw, transacciones_clean, file_uploaded, file_results, domain_events).
+- __Eventos Kafka (AsyncAPI):__ [asyncapi.yaml](asyncapi.yaml) — Especificación de tópicos y payloads (transacciones_raw, transacciones_clean, file_uploaded, file_results, domain_events).
 - **Grafana:** [http://localhost:3001](http://localhost:3001) (Visualización final)
 - **InfluxDB:** [http://localhost:8086](http://localhost:8086) (Métricas Raw)
 
 ---
 
 ## 💎 2. Configuración Inicial (Instalación)
+
 Si agregaste gemas nuevas o estás en una instalación limpia:
 
 1. **Sincronizar Gemas:**
-   ```bash
-   docker compose run --rm web bundle install
-   ```
+
+```bash
+docker compose run --rm web bundle install
+```
+
 2. **Preparar Base de Datos:**
-   ```bash
-   docker compose exec web rails db:prepare
-   ```
-   *En producción, `rails db:migrate` crea también las tablas de Solid Cache y Solid Queue (Rack::Attack y Active Job).*
+
+```bash
+docker compose exec web rails db:prepare
+```
+
+*En producción, `rails db:migrate` crea también las tablas de Solid Cache y Solid Queue (Rack::Attack y Active Job).*
 
 ---
 
@@ -58,11 +75,11 @@ Si agregaste gemas nuevas o estás en una instalación limpia:
 
 ### Flujo completo
 
-1. **Usuario sube archivo** en [http://localhost:3000/source_files](http://localhost:3000/source_files): selecciona banco, adjunta Excel/CSV/PDF (o conecta Google Sheets para AMEX).
-2. **Rails (ExcelUploaderService)** guarda el archivo en MinIO y publica en el tópico `file_uploaded`.
-3. **Python (ingestion_worker)** consume `file_uploaded`, descarga de MinIO, ejecuta el extractor según el banco, publica en `transacciones_raw` y en `file_results`.
-4. **Rails (TransactionsConsumer)** consume `transacciones_raw` y persiste en PostgreSQL (pendientes de aprobación).
-5. **Rails (FileResultsConsumer)** consume `file_results` y actualiza el estado del SourceFile (transacciones_count, extractor, mensaje).
+1. __Usuario sube archivo__ en [http://localhost:3000/source_files](http://localhost:3000/source_files): selecciona banco, adjunta Excel/CSV/PDF (o conecta Google Sheets para AMEX).
+2. __Rails (ExcelUploaderService)__ guarda el archivo en MinIO y publica en el tópico `file_uploaded`.
+3. __Python (ingestion_worker)__ consume `file_uploaded`, descarga de MinIO, ejecuta el extractor según el banco, publica en `transacciones_raw` y en `file_results`.
+4. __Rails (TransactionsConsumer)__ consume `transacciones_raw` y persiste en PostgreSQL (pendientes de aprobación).
+5. __Rails (FileResultsConsumer)__ consume `file_results` y actualiza el estado del SourceFile (transacciones_count, extractor, mensaje).
 
 ### Bancos y extractores
 
@@ -93,8 +110,8 @@ En esta fase, los datos están en PostgreSQL pero **no han llegado a InfluxDB** 
 1. Entra a [http://localhost:3000/transactions](http://localhost:3000/transactions).
 2. Revisa las categorías sugeridas por el `CategorizerService`.
 3. Ajusta la categoría, subcategoría o sentimiento si es necesario.
-4. **Edición en línea:** Los cambios se guardan automáticamente (auto-save) mientras la transacción sigue pendiente. El flag `manually_edited` evita que las reglas dinámicas sobrescriban correcciones manuales.
-5. Presiona **"Aprobar"** para publicar en `transacciones_clean`.
+4. __Edición en línea:__ Los cambios se guardan automáticamente (auto-save) mientras la transacción sigue pendiente. El flag `manually_edited` evita que las reglas dinámicas sobrescriban correcciones manuales.
+5. Presiona __"Aprobar"__ para publicar en `transacciones_clean`.
 6. **Aprobar similares:** Si varias transacciones comparten la misma categoría/sentimiento sugerida, puedes aprobarlas en bloque. El modal muestra el listado previo a confirmar.
 
 ### Audit corrections (correcciones en lote)
@@ -105,24 +122,24 @@ En [http://localhost:3000/audit_corrections](http://localhost:3000/audit_correct
 
 ## 📊 5. Visualización (Telegraf + InfluxDB + Grafana)
 
-El servicio **Telegraf** consume `transacciones_clean` y escribe en InfluxDB.
+El servicio __Telegraf__ consume `transacciones_clean` y escribe en InfluxDB.
 
 1. Abre **Grafana** [http://localhost:3001](http://localhost:3001).
 2. Usa el Data Source de InfluxDB (Bucket: `finanzas` o el configurado en `INFLUX_BUCKET`).
 3. En Flux, recuerda el contrato actual:
-   - **Tags:** `event_id`, `moneda`, `red`, `fecha_vencimiento`
+   - __Tags:__ `event_id`, `moneda`, `red`, `fecha_vencimiento`
    - **Fields:** `monto`, `categoria`, `sentimiento`, `origen` (y otros)
    - Para filtrar `categoria`/`sentimiento`/`origen`, primero trae esos fields y aplica `pivot`.
 
 ### Estructura en InfluxDB (telegraf.conf)
 
-- **Tags:** `event_id`, `moneda`, `red`, `fecha_vencimiento` (si está presente).
-- **Fields:** `monto`, `categoria`, `sub_categoria`, `sentimiento`, `detalles`, `numero_tarjeta`, `en_cuotas`, `descripcion_cuota`, `origen`.
+- __Tags:__ `event_id`, `moneda`, `red`, `fecha_vencimiento` (si está presente).
+- __Fields:__ `monto`, `categoria`, `sub_categoria`, `sentimiento`, `detalles`, `numero_tarjeta`, `en_cuotas`, `descripcion_cuota`, `origen`.
 - **Timestamp:** `fecha` de la transacción.
 
 ### Campos `fecha_vencimiento` y `origen`
 
-- **fecha_vencimiento:** Fecha de cierre o vencimiento del resumen (opcional). Útil para cargas parciales de Excel/CSV y para PDFs que incluyen esta fecha.
+- __fecha_vencimiento:__ Fecha de cierre o vencimiento del resumen (opcional). Útil para cargas parciales de Excel/CSV y para PDFs que incluyen esta fecha.
 - **origen:** Indica el tipo de carga: `parcial` (cargas intermedias) o `definitivo` (resúmenes cerrados). Default: `definitivo`. En cargas Excel/CSV/Sheets suele ser `parcial`; en PDF de resumen, `definitivo`.
 
 ### Que tablero usar para cada pregunta
@@ -141,8 +158,9 @@ El servicio **Telegraf** consume `transacciones_clean` y escribe en InfluxDB.
 ### Reglas de categoría (export/import)
 
 En [http://localhost:3000/category_rules](http://localhost:3000/category_rules) puedes:
+
 - **Exportar:** descargar todas las reglas en JSON (jerárquico: raíz → hijos).
-- **Importar:** subir un archivo JSON o pegar el contenido. El servicio es idempotente: unicidad por `name` + nivel (`parent_id`). Si existe una regla con el mismo nombre en el mismo nivel, se actualiza en lugar de duplicar.
+- __Importar:__ subir un archivo JSON o pegar el contenido. El servicio es idempotente: unicidad por `name` + nivel (`parent_id`). Si existe una regla con el mismo nombre en el mismo nivel, se actualiza en lugar de duplicar.
 
 Servicio: `CategoryRulesExportImportService`. Rutas: `GET /category_rules/export`, `POST /category_rules/import`.
 
@@ -164,7 +182,7 @@ Extractores disponibles: Visa CSV, BBVA CSV, AMEX (Google Sheets), BBVA PDF Visa
 | `make backup-grafana` | Grafana (dashboards, datasources, usuarios) | `backups/grafana_YYYYMMDD_HHMMSS.tar.gz` |
 | `make backup-minio` | MinIO (archivos subidos: Excel, PDF) | `backups/minio_YYYYMMDD_HHMMSS.tar.gz` |
 | `make backup-redpanda` | Redpanda/Kafka (logs de tópicos) | `backups/redpanda_YYYYMMDD_HHMMSS.tar.gz` |
-| **`make backup`** | Postgres + InfluxDB + Grafana + MinIO | Varios archivos en `backups/` |
+| __`make backup`__ | Postgres + InfluxDB + Grafana + MinIO | Varios archivos en `backups/` |
 
 La carpeta `backups/` está en `.gitignore`. Para InfluxDB se requieren `INFLUX_ORG` e `INFLUX_TOKEN` en `.env`.
 
@@ -174,8 +192,9 @@ La carpeta `backups/` está en `.gitignore`. Para InfluxDB se requieren `INFLUX_
 - **Kafka (Redpanda):** **Opcional.** Los mensajes en los tópicos se pueden re-alimentar desde Postgres (`recover-transactions-from-clean`) o re-subiendo archivos a MinIO y re-ingiriendo. El backup del volumen (`make backup-redpanda`) solo tiene sentido para **recuperación ante desastres** (restaurar el volumen completo); no es necesario para el día a día. Si prefieres no hacerlo, omítelo y usa `make backup` (que no incluye Redpanda) o ejecuta solo los targets que necesites.
 
 ### Restaurar Postgres (revertir cambios)
-- **Desarrollo:** `make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql` — **sobrescribe** la base de desarrollo. Cierra conexiones activas (p. ej. reinicia `web`) si falla por conexiones.
-- **Test:** `make restore-db-test FILE=backups/backup_test_YYYYMMDD_HHMMSS.sql` — igual para la base de test.
+
+- __Desarrollo:__ `make restore-db FILE=backups/backup_dev_YYYYMMDD_HHMMSS.sql` — __sobrescribe__ la base de desarrollo. Cierra conexiones activas (p. ej. reinicia `web`) si falla por conexiones.
+- __Test:__ `make restore-db-test FILE=backups/backup_test_YYYYMMDD_HHMMSS.sql` — igual para la base de test.
 
 Restaurar InfluxDB/Grafana/MinIO/Redpanda desde un backup requiere procedimientos manuales (ej. `influx restore`, reemplazar contenido del volumen de Grafana/MinIO). Consulta la documentación de cada servicio si lo necesitas.
 
@@ -203,6 +222,7 @@ echo "✅ Backup completado: $BACKUP_NAME"
 Para InfluxDB/Grafana/MinIO, usar los mismos targets que en desarrollo (`make backup-influx`, etc.). Ver [DOCS/DEVOPS-ROADMAP.md](DOCS/DEVOPS-ROADMAP.md) para prioridades.
 
 ### Rollback en Postgres
+
 **No existe "rollback" de datos ya confirmados.** Una vez hecho `COMMIT`, la recuperación se hace **restaurando desde un backup**. Por eso el backup a demanda y automático es la pieza clave.
 
 ---
@@ -213,12 +233,12 @@ Permite repoblar la tabla `transactions` desde los tópicos Kafka sin restaurar 
 
 ### Recuperación desde transacciones_clean (recovery desde eventos)
 
-Rails **no** consume el tópico `transacciones_clean` en tiempo normal (solo Telegraf lo lee para InfluxDB). Para recuperar la base de datos desde los eventos ya aprobados:
+Rails __no__ consume el tópico `transacciones_clean` en tiempo normal (solo Telegraf lo lee para InfluxDB). Para recuperar la base de datos desde los eventos ya aprobados:
 
 - **Cuándo:** Tras pérdida de la tabla `transactions` o para repoblar desde la “fuente de verdad” que son los eventos clean.
 - **Comando:** `make recover-transactions-from-clean`
-- **Qué hace:** Un consumidor one-off (rdkafka) lee desde el inicio del tópico `transacciones_clean` y hace **upsert** por `event_id` en `transactions` (crea o actualiza, siempre con `aprobado: true`). Idempotente.
-- **Limitación:** Los mensajes clean no incluyen `numero_tarjeta`; esos campos quedarán vacíos tras la recuperación. Opcionalmente se puede ejecutar después `make backfill-card-numbers` si los datos siguen en `transacciones_raw`.
+- __Qué hace:__ Un consumidor one-off (rdkafka) lee desde el inicio del tópico `transacciones_clean` y hace __upsert__ por `event_id` en `transactions` (crea o actualiza, siempre con `aprobado: true`). Idempotente.
+- __Limitación:__ Los mensajes clean no incluyen `numero_tarjeta`; esos campos quedarán vacíos tras la recuperación. Opcionalmente se puede ejecutar después `make backfill-card-numbers` si los datos siguen en `transacciones_raw`.
 
 Servicio: `RecoveryFromCleanService`. Rake: `rails data:recover_from_clean`. Tests: `bin/rails test test/services/recovery_from_clean_service_test.rb`.
 
@@ -228,10 +248,11 @@ Relee el tópico `transacciones_raw` con el consumidor Karafka existente (`Trans
 
 - **Cuándo:** Para “rebobinar” el flujo: borrar transacciones y repoblar desde raw (p. ej. tras cambiar reglas de categorización o corregir un bug en el consumer).
 - **Comando:** `make regenerate-transactions-from-raw`
-- **Qué hace:** 1) Borra solo la tabla `transactions` (`data:clean_transactions`). 2) Rebobina el consumer group `enrichment_manager_v3` al inicio del tópico (y de `file_results`). 3) Reinicia el worker Karafka. El worker vuelve a consumir todos los mensajes de `transacciones_raw` y crea de nuevo los registros en `transactions` (pendientes de aprobación).
+- __Qué hace:__ 1) Borra solo la tabla `transactions` (`data:clean_transactions`). 2) Rebobina el consumer group `enrichment_manager_v3` al inicio del tópico (y de `file_results`). 3) Reinicia el worker Karafka. El worker vuelve a consumir todos los mensajes de `transacciones_raw` y crea de nuevo los registros en `transactions` (pendientes de aprobación).
 - **Nota:** No hace falta modificar `TransactionsConsumer`; al borrar antes las transacciones, no hay registros aprobados que se salten.
 
 Targets auxiliares:
+
 - `make clean-transactions-only` — Borra solo `transactions` (no `SourceFile`).
 - `make rebind-karafka-consumer` — Rebobina el consumer group al inicio.
 
@@ -257,16 +278,93 @@ docker compose exec web bin/rails runner "puts 'Con numero_tarjeta: ' + Transact
 
 O usar `make check-card-numbers` para un resumen rápido.
 
-**Notas:** Si Kafka ya purgó los mensajes (retención), no funcionará; habría que re-procesar los archivos originales desde MinIO. Si falla la conexión, verifica `docker compose ps redpanda` y `KAFKA_SERVERS` en `.env`.
+__Notas:__ Si Kafka ya purgó los mensajes (retención), no funcionará; habría que re-procesar los archivos originales desde MinIO. Si falla la conexión, verifica `docker compose ps redpanda` y `KAFKA_SERVERS` en `.env`.
 
 ---
 
 ## 📝 Notas Técnicas y Mantenimiento
 
-1. **Idempotencia:** El `event_id` (hash SHA-256) previene duplicados. Si un gasto ya fue aprobado, el pipeline de Rails lo ignorará si intentas re-ingestarlo.
-2. **Karafka Boot:** Si el worker no arranca, verifica que `app/consumers/application_consumer.rb` exista y que `karafka.rb` use `"TransactionsConsumer"` como string.
-3. **Persistencia:** Los datos residen en volúmenes nombrados de Docker (`postgres_data`, `influxdb_data`). No borrar a menos que se desee un hard-reset.
+1. __Idempotencia:__ El `event_id` (hash SHA-256) previene duplicados. Si un gasto ya fue aprobado, el pipeline de Rails lo ignorará si intentas re-ingestarlo.
+2. __Karafka Boot:__ Si el worker no arranca, verifica que `app/consumers/application_consumer.rb` exista y que `karafka.rb` use `"TransactionsConsumer"` como string.
+3. __Persistencia:__ Los datos residen en volúmenes nombrados de Docker (`postgres_data`, `influxdb_data`). No borrar a menos que se desee un hard-reset.
 4. **Sincronización:** Recuerda: **Escribe código en local, ejecuta en Docker.** Cualquier archivo generado con `rails generate` aparecerá en tu carpeta local gracias a los volúmenes montados.
 
 ---
+
+---
+
+## 🗄️ Event Repository (Event Store)
+
+Audit-X persiste **todos los eventos** del pipeline en una tabla PostgreSQL `event_store` append-only. Esto permite auditoría completa, replay y event-sourcing. Ver [EVENT-REPOSITORY-DESIGN.md](EVENT-REPOSITORY-DESIGN.md) para detalles de arquitectura, envelope y versionado.
+
+### Consultar eventos
+
+```bash
+# Por stream (un agregado)
+curl -s -H "Cookie: $SESSION" "http://localhost:3000/event_store?stream_id=Transaction:abc123"
+
+# Por rango de fecha
+curl -s -H "Cookie: $SESSION" "http://localhost:3000/event_store?from=2026-01-01&to=2026-02-01&limit=50"
+```
+
+### Monitoreo del consumer (EventStoreConsumer)
+
+El consumer `EventStoreConsumer` pertenece al consumer group `event_store` (topics: `domain_events`, `transacciones_clean`, `file_results`). Para verificar lag:
+
+```bash
+docker compose exec redpanda rpk group describe event_store
+```
+
+Si `LAG` crece sostenidamente, el consumer está atrasado. Posibles causas: contenedor `karafka_worker` caído, errores en el consumer, o backpressure de PostgreSQL.
+
+**Alertas recomendadas:** configurar un check periódico (cron, Healthchecks.io, o Grafana Alert) que dispare si `LAG > umbral` (por ejemplo, 1000 mensajes durante 5 minutos).
+
+### Política de retención y archivo
+
+Por defecto, los eventos permanecen en `event_store` indefinidamente. El sistema incluye una tabla `event_store_archive` y un servicio para mover eventos antiguos.
+
+**Comandos disponibles:**
+
+```bash
+# Ver estadísticas del event store
+make event-store-stats
+
+# Preview: ver cuántos eventos se archivarían (dry run, sin mover)
+make archive-old-events-dry YEARS=2
+
+# Archivar eventos > 2 años (mover a event_store_archive)
+make archive-old-events YEARS=2
+
+# Archivar con parámetros personalizados
+make archive-old-events YEARS=3 BATCH=500
+```
+
+El proceso mueve eventos en batches (default 1000) para evitar locks largos. Los eventos archivados se eliminan de `event_store` y se copian a `event_store_archive` con un campo `archived_at`.
+
+**Rake tasks:**
+
+```bash
+# Dentro del contenedor
+rails event_store:archive YEARS=2 BATCH=1000
+rails event_store:archive DRY_RUN=1  # solo preview
+rails event_store:stats              # estadísticas
+```
+
+### Upcasting (migración de esquemas en lectura)
+
+Los eventos se guardan con su versión original (`event_version`). Al leerlos vía API, el sistema aplica **upcasters** para convertir el body a la versión actual sin modificar el evento almacenado.
+
+- Registro de versiones: `config/event_schemas.yml`
+- Upcasters: `app/services/event_store/upcasters/`
+- Registro de upcasters: `config/initializers/event_store_upcasters.rb`
+
+Para añadir una nueva versión de un evento:
+
+1. Agregar la nueva versión en `event_schemas.yml` (marcar la anterior como `deprecated: true`).
+2. Crear el upcaster en `app/services/event_store/upcasters/`.
+3. Registrarlo en `config/initializers/event_store_upcasters.rb`.
+4. Añadir tests en `test/services/event_store/upcasters/`.
+
+---
+
 *Tip: Usa `Ctrl + Shift + V` en VS Code para previsualizar este documento.*
