@@ -295,9 +295,19 @@ __Notas:__ Si Kafka ya purgó los mensajes (retención), no funcionará; habría
 
 ## 🗄️ Event Repository (Event Store)
 
-Audit-X persiste **todos los eventos** del pipeline en una tabla PostgreSQL `event_store` append-only. Esto permite auditoría completa, replay y event-sourcing. Ver [EVENT-REPOSITORY-DESIGN.md](EVENT-REPOSITORY-DESIGN.md) para detalles de arquitectura, envelope y versionado.
+Audit-X persiste __todos los eventos__ del pipeline en una tabla PostgreSQL `event_store` append-only. Esto permite auditoría completa, replay y event-sourcing. Ver [EVENT-REPOSITORY-DESIGN.md](EVENT-REPOSITORY-DESIGN.md) para detalles de arquitectura, envelope y versionado.
 
-### Consultar eventos
+### Visor web de eventos
+
+Accede a [http://localhost:3000/admin/events](http://localhost:3000/admin/events) para:
+
+- **Listar eventos** con filtros por tipo, agregado, stream, fechas y busqueda en body
+- **Ver detalle** de cada evento con metadata y payload (body con upcasting aplicado)
+- **Proyectar snapshots**: reconstruir el estado de un agregado hasta cualquier punto en el tiempo
+- **Timeline de stream**: ver todos los eventos de un agregado en orden cronologico
+- **Estadisticas**: conteos por tipo de evento, agregado, y evolucion mensual
+
+### Consultar eventos (API JSON)
 
 ```bash
 # Por stream (un agregado)
@@ -306,6 +316,21 @@ curl -s -H "Cookie: $SESSION" "http://localhost:3000/event_store?stream_id=Trans
 # Por rango de fecha
 curl -s -H "Cookie: $SESSION" "http://localhost:3000/event_store?from=2026-01-01&to=2026-02-01&limit=50"
 ```
+
+### Backfill retroactivo (poblar desde Kafka)
+
+Si el Event Store esta vacio pero los topicos de Kafka tienen mensajes historicos:
+
+```bash
+# Rebobinar consumer group y reiniciar worker (backfill completo)
+make backfill-event-store
+
+# O paso a paso:
+make rebind-event-store-consumer  # Solo rebobina el offset
+make restart-karafka-worker       # Reinicia el worker para reprocesar
+```
+
+Los duplicados se omiten automaticamente (`RecordNotUnique`).
 
 ### Monitoreo del consumer (EventStoreConsumer)
 
@@ -352,7 +377,7 @@ rails event_store:stats              # estadísticas
 
 ### Upcasting (migración de esquemas en lectura)
 
-Los eventos se guardan con su versión original (`event_version`). Al leerlos vía API, el sistema aplica **upcasters** para convertir el body a la versión actual sin modificar el evento almacenado.
+Los eventos se guardan con su versión original (`event_version`). Al leerlos vía API, el sistema aplica __upcasters__ para convertir el body a la versión actual sin modificar el evento almacenado.
 
 - Registro de versiones: `config/event_schemas.yml`
 - Upcasters: `app/services/event_store/upcasters/`

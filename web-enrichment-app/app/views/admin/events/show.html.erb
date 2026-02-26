@@ -1,0 +1,95 @@
+<div class="events-page-container">
+  <header class="events-header">
+    <div>
+      <h1 class="events-title">Evento #<%= @event.sequence_number %></h1>
+      <p class="events-subtitle"><%= @event.event_type %> - <%= @event.stream_id %></p>
+    </div>
+    <div class="events-header-nav">
+      <% if @prev_event %>
+        <%= link_to admin_event_path(@prev_event.sequence_number), class: "btn-nav" do %>
+          Anterior
+        <% end %>
+      <% end %>
+      <% if @next_event %>
+        <%= link_to admin_event_path(@next_event.sequence_number), class: "btn-nav" do %>
+          Siguiente
+        <% end %>
+      <% end %>
+      <%= link_to "Ver Stream", stream_admin_events_path(stream_id: @event.stream_id), class: "btn-nav btn-stream" %>
+    </div>
+  </header>
+
+  <div class="event-detail-grid">
+    <section class="event-metadata">
+      <h2>Metadata</h2>
+      <dl class="metadata-list">
+        <dt>ID</dt>
+        <dd><code><%= @event[:id] %></code></dd>
+
+        <dt>Tipo de evento</dt>
+        <dd><span class="event-type-badge <%= event_type_class(@event.event_type) %>"><%= @event.event_type %></span></dd>
+
+        <dt>Version</dt>
+        <dd>v<%= @read[:event_version] %> <% if @event.event_version != @read[:event_version] %><span class="upcast-badge">(upcast desde v<%= @event.event_version %>)</span><% end %></dd>
+
+        <dt>Fecha</dt>
+        <dd><%= @event.occurred_at.strftime("%Y-%m-%d %H:%M:%S %Z") %></dd>
+
+        <dt>Agregado</dt>
+        <dd><%= @event.aggregate_type %>:<%= @event.aggregate_id %></dd>
+
+        <dt>Stream ID</dt>
+        <dd><%= link_to @event.stream_id, stream_admin_events_path(stream_id: @event.stream_id) %></dd>
+
+        <% if @event.causation_id.present? %>
+          <dt>Causation ID</dt>
+          <dd><code><%= @event.causation_id %></code></dd>
+        <% end %>
+
+        <% if @event.correlation_id.present? %>
+          <dt>Correlation ID</dt>
+          <dd><code><%= @event.correlation_id %></code></dd>
+        <% end %>
+
+        <dt>Sequence Number</dt>
+        <dd><%= @event.sequence_number %></dd>
+      </dl>
+    </section>
+
+    <section class="event-body">
+      <h2>Body (Payload)</h2>
+      <pre class="json-viewer"><code><%= JSON.pretty_generate(@read[:body]) %></code></pre>
+    </section>
+
+    <% if @event.metadata.present? && @event.metadata.any? %>
+      <section class="event-extra-metadata">
+        <h2>Metadata adicional</h2>
+        <pre class="json-viewer"><code><%= JSON.pretty_generate(@event.metadata) %></code></pre>
+      </section>
+    <% end %>
+
+    <section class="event-snapshot-section">
+      <h2>Snapshot del agregado</h2>
+      <p class="snapshot-info">Estado del agregado hasta este evento (sequence_number: <%= @event.sequence_number %>)</p>
+      <%= turbo_frame_tag "snapshot_panel" do %>
+        <%= link_to "Cargar Snapshot", snapshot_admin_event_path(@event.sequence_number), 
+            data: { turbo_frame: "snapshot_panel" },
+            class: "btn-load-snapshot" %>
+      <% end %>
+    </section>
+  </div>
+
+  <section class="event-stream-timeline">
+    <h2>Timeline del Stream (<%= @stream_events.size %> eventos recientes)</h2>
+    <ul class="timeline-list">
+      <% @stream_events.each do |ev| %>
+        <li class="timeline-item <%= 'current' if ev.sequence_number == @event.sequence_number %>">
+          <%= link_to admin_event_path(ev.sequence_number) do %>
+            <span class="timeline-time"><%= ev.occurred_at.strftime("%H:%M:%S") %></span>
+            <span class="timeline-type"><%= ev.event_type %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+</div>

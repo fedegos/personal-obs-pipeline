@@ -1,0 +1,22 @@
+<tr class="event-row" data-sequence="<%= event.sequence_number %>">
+  <td class="col-time">
+    <span class="event-time"><%= event.occurred_at.strftime("%Y-%m-%d %H:%M:%S") %></span>
+  </td>
+  <td class="col-type">
+    <span class="event-type-badge <%= event_type_class(event.event_type) %>">
+      <%= event.event_type %>
+    </span>
+    <span class="event-version">v<%= event.event_version %></span>
+  </td>
+  <td class="col-aggregate">
+    <span class="aggregate-type"><%= event.aggregate_type %></span>
+    <span class="aggregate-id"><%= truncate(event.aggregate_id, length: 20) %></span>
+  </td>
+  <td class="col-stream">
+    <%= link_to event.stream_id, stream_admin_events_path(stream_id: event.stream_id), class: "stream-link" %>
+  </td>
+  <td class="col-actions">
+    <%= link_to "Ver", admin_event_path(event.sequence_number), class: "btn-action btn-view" %>
+    <%= link_to "Snapshot", snapshot_admin_event_path(event.sequence_number), class: "btn-action btn-snapshot" %>
+  </td>
+</tr>

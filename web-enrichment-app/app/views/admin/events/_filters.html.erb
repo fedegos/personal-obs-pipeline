@@ -1,0 +1,58 @@
+<%= form_with url: admin_events_path, method: :get, local: true, class: "events-filters-form", data: { turbo_frame: "_top" } do |f| %>
+  <div class="events-filters-row">
+    <div class="filter-group">
+      <label for="event_type">Tipo de evento</label>
+      <%= f.select :event_type,
+          options_for_select([["Todos", ""]] + @event_types.map { |t| [t, t] }, params[:event_type]),
+          {},
+          { class: "filter-select", id: "event_type" } %>
+    </div>
+
+    <div class="filter-group">
+      <label for="aggregate_type">Tipo de agregado</label>
+      <%= f.select :aggregate_type,
+          options_for_select([["Todos", ""]] + @aggregate_types.map { |t| [t, t] }, params[:aggregate_type]),
+          {},
+          { class: "filter-select", id: "aggregate_type" } %>
+    </div>
+
+    <div class="filter-group">
+      <label for="stream_id">Stream ID</label>
+      <%= f.text_field :stream_id,
+          value: params[:stream_id],
+          placeholder: "Transaction:abc123",
+          class: "filter-input",
+          id: "stream_id" %>
+    </div>
+
+    <div class="filter-group">
+      <label for="from">Desde</label>
+      <%= f.datetime_local_field :from,
+          value: params[:from],
+          class: "filter-input",
+          id: "from" %>
+    </div>
+
+    <div class="filter-group">
+      <label for="to">Hasta</label>
+      <%= f.datetime_local_field :to,
+          value: params[:to],
+          class: "filter-input",
+          id: "to" %>
+    </div>
+
+    <div class="filter-group filter-group-search">
+      <label for="q">Buscar en body</label>
+      <%= f.text_field :q,
+          value: params[:q],
+          placeholder: "texto en payload...",
+          class: "filter-input",
+          id: "q" %>
+    </div>
+
+    <div class="filter-actions">
+      <%= f.submit "Filtrar", class: "btn-filter" %>
+      <%= link_to "Limpiar", admin_events_path, class: "btn-clear" %>
+    </div>
+  </div>
+<% end %>

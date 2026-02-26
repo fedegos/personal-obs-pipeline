@@ -5,7 +5,7 @@ ifneq ("$(wildcard .env)","")
     export $(shell sed 's/=.*//' .env)
 endif
 
-.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-grafana restart-ingestion test test-rails test-rails-system test-python test-kafka-persistence test-grafana-dashboards test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile event-store-stats archive-old-events archive-old-events-dry event-store-lag
+.PHONY: clean-db clean-influx clean-kafka clean-category-rules reset-history help ci ci-rails-lint ci-rails-rubocop ci-rails-test ci-rails-system-test ci-python-lint ci-python-test logs logs-web build build-web build-ingestion backup-db backup-db-test backup-influx backup-grafana backup-minio backup-redpanda backup restore-db restore-db-test validate-asyncapi recover-transactions-from-clean clean-transactions-only regenerate-transactions-from-raw fix fix-rails fix-python restart-all restart-web restart-grafana restart-ingestion test test-rails test-rails-system test-python test-kafka-persistence test-grafana-dashboards test-all test-coverage test-rails-coverage test-python-coverage test-all-coverage test-rails-profile test-profile event-store-stats archive-old-events archive-old-events-dry event-store-lag rebind-event-store-consumer backfill-event-store
 
 .DEFAULT_GOAL := help
 
@@ -322,3 +322,13 @@ archive-old-events-dry: ## Preview de archivo (dry run, no mueve nada)
 
 event-store-lag: ## Verificar lag del consumer group event_store en Kafka
 	docker compose exec redpanda rpk group describe event_store
+
+rebind-event-store-consumer: ## Rebobinar consumer group event_store al inicio (backfill de eventos desde Kafka)
+	@echo "⏪ Rebobinando consumer group 'event_store' al inicio..."
+	docker compose exec redpanda rpk group seek event_store --to start
+	@echo "✅ Consumer group rebobinado. Reinicia karafka_worker para reprocesar:"
+	@echo "   make restart-karafka-worker"
+	@echo "ℹ️  Los duplicados se omiten automáticamente (RecordNotUnique)."
+
+backfill-event-store: rebind-event-store-consumer restart-karafka-worker ## Backfill completo: rebobinar + reiniciar worker
+	@echo "🔄 Backfill iniciado. El worker está reprocesando eventos desde el inicio de los tópicos."
