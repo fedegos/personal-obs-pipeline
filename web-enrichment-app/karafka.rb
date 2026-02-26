@@ -33,6 +33,16 @@ class KarafkaApp < Karafka::App
         initial_offset "earliest"
       end
 
+      topic :transacciones_raw do
+        consumer EventStoreConsumer
+        initial_offset "earliest"
+      end
+
+      topic :file_uploaded do
+        consumer EventStoreConsumer
+        initial_offset "earliest"
+      end
+
       topic :file_results do
         consumer EventStoreConsumer
         initial_offset "earliest"

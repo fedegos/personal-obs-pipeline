@@ -21,27 +21,29 @@ class EventStoreConsumer < ApplicationConsumer
     raw = message.payload
     data = raw.is_a?(String) ? JSON.parse(raw) : raw
     topic_name = topic.name.to_s
+    kafka_timestamp = message.timestamp # Momento en que el mensaje fue producido a Kafka
 
     case topic_name
-    when "domain_events"    then envelope_from_domain_event(data)
-    when "transacciones_clean" then envelope_from_transaccion_clean(data)
-    when "file_results"    then envelope_from_file_result(data)
+    when "domain_events"       then envelope_from_domain_event(data, kafka_timestamp)
+    when "transacciones_clean" then envelope_from_transaccion_clean(data, kafka_timestamp)
+    when "transacciones_raw"   then envelope_from_transaccion_raw(data, kafka_timestamp)
+    when "file_uploaded"       then envelope_from_file_uploaded(data, kafka_timestamp)
+    when "file_results"        then envelope_from_file_result(data, kafka_timestamp)
     else
       Karafka.logger.warn "EventStoreConsumer: unknown topic #{topic_name}"
       nil
     end
   end
 
-  def envelope_from_domain_event(data)
-    return nil unless data["event_type"] && data["entity_type"] && data["entity_id"] && data["timestamp"]
+  def envelope_from_domain_event(data, kafka_timestamp)
+    return nil unless data["event_type"] && data["entity_type"] && data["entity_id"]
 
-    occurred_at = Time.zone.parse(data["timestamp"])
     stream_id = "#{data['entity_type']}:#{data['entity_id']}"
 
     {
       event_type: data["event_type"],
       event_version: 1,
-      occurred_at: occurred_at,
+      occurred_at: kafka_timestamp,
       aggregate_type: data["entity_type"],
       aggregate_id: data["entity_id"].to_s,
       stream_id: stream_id,
@@ -50,13 +52,13 @@ class EventStoreConsumer < ApplicationConsumer
     }
   end
 
-  def envelope_from_transaccion_clean(data)
+  def envelope_from_transaccion_clean(data, kafka_timestamp)
     return nil unless data["event_id"] && data["fecha"]
 
     {
       event_type: "transaction.approved",
       event_version: 1,
-      occurred_at: Time.zone.parse(data["fecha"].to_s),
+      occurred_at: kafka_timestamp,
       aggregate_type: "Transaction",
       aggregate_id: data["event_id"].to_s,
       stream_id: "Transaction:#{data['event_id']}",
@@ -65,14 +67,45 @@ class EventStoreConsumer < ApplicationConsumer
     }
   end
 
-  def envelope_from_file_result(data)
+  def envelope_from_transaccion_raw(data, kafka_timestamp)
+    return nil unless data["event_id"] && data["fecha_transaccion"]
+
+    {
+      event_type: "transaction.ingested",
+      event_version: 1,
+      occurred_at: kafka_timestamp,
+      aggregate_type: "Transaction",
+      aggregate_id: data["event_id"].to_s,
+      stream_id: "Transaction:#{data['event_id']}",
+      metadata: {},
+      body: data
+    }
+  end
+
+  def envelope_from_file_uploaded(data, kafka_timestamp)
+    metadata = data["metadata"] || {}
+    source_file_id = metadata["source_file_id"]
+    return nil unless source_file_id
+
+    {
+      event_type: "file.uploaded",
+      event_version: 1,
+      occurred_at: kafka_timestamp,
+      aggregate_type: "SourceFile",
+      aggregate_id: source_file_id.to_s,
+      stream_id: "SourceFile:#{source_file_id}",
+      metadata: {},
+      body: data
+    }
+  end
+
+  def envelope_from_file_result(data, kafka_timestamp)
     return nil unless data["source_file_id"] && data["status"]
 
-    # file_results no trae timestamp; usamos ahora
     {
       event_type: "file.processed",
       event_version: 1,
-      occurred_at: Time.current,
+      occurred_at: kafka_timestamp,
       aggregate_type: "SourceFile",
       aggregate_id: data["source_file_id"].to_s,
       stream_id: "SourceFile:#{data['source_file_id']}",
