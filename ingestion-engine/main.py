@@ -75,7 +75,7 @@ def process_ingestion(data):
             df["event_id"] = df.apply(generate_event_id, axis=1)
 
             # origen: definitivo para PDF, parcial para Excel/CSV/Sheets
-            pdf_banks = {"bbva_pdf_visa", "bapro_pdf_visa", "bapro_pdf_mastercard", "amex_pdf"}
+            pdf_banks = {"bbva_pdf_visa", "bbva_pdf_mastercard", "bapro_pdf_visa", "bapro_pdf_mastercard", "amex_pdf"}
             origen = "definitivo" if bank_name in pdf_banks else "parcial"
             df["origen"] = origen
 

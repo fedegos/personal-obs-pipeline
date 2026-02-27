@@ -49,7 +49,9 @@
   width: 70px;
 }
 
-.transactions-filter-cat .transactions-sort-select {
+.transactions-filter-cat .transactions-sort-select,
+.transactions-filter-tarjeta .transactions-sort-select,
+.transactions-filter-red .transactions-sort-select {
   min-width: 120px;
 }
 

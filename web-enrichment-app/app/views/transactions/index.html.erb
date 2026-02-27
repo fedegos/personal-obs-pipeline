@@ -39,6 +39,22 @@
                 { class: "transactions-sort-select", data: { action: "change->search#submit" } } %>
           </div>
         <% end %>
+        <% if @tarjetas_for_filter.any? %>
+          <div class="transactions-filter-tarjeta">
+            <%= f.select :tarjeta,
+                options_for_select([ ["Todas las tarjetas", ""] ] + @tarjetas_for_filter.map { |t| [ "****#{t}", t ] }, params[:tarjeta]),
+                {},
+                { class: "transactions-sort-select", data: { action: "change->search#submit" } } %>
+          </div>
+        <% end %>
+        <% if @redes_for_filter.any? %>
+          <div class="transactions-filter-red">
+            <%= f.select :red,
+                options_for_select([ ["Todas las redes", ""] ] + @redes_for_filter.map { |r| [ r, r ] }, params[:red]),
+                {},
+                { class: "transactions-sort-select", data: { action: "change->search#submit" } } %>
+          </div>
+        <% end %>
         <% if @pending.any? %>
           <div class="transactions-sort">
             <label for="sort-select" class="transactions-sort-label">Orden:</label>
