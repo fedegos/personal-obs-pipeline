@@ -53,4 +53,44 @@ class CategoryRulesTest < ApplicationSystemTestCase
     # Export triggers download; page may stay or redirect
     assert_text "Motor de Reglas"
   end
+
+  test "adding pattern to rule updates transaction suggestions" do
+    # Crear una transacción con un detalle único que no matchea ninguna regla
+    unique_detail = "ZZUNIQUE_DETAIL_#{SecureRandom.hex(4)}"
+    transaction = Transaction.create!(
+      event_id: SecureRandom.uuid,
+      fecha: Date.today,
+      monto: 100,
+      detalles: unique_detail,
+      moneda: "pesos",
+      aprobado: false
+    )
+
+    # Verificar que inicialmente no tiene categoría (Varios)
+    result_before = CategorizerService.guess(unique_detail)
+    assert_equal "Varios", result_before[:category], "Antes de modificar la regla, debe ser Varios"
+
+    # Ir a transacciones y verificar que muestra "Varios" o sin categoría
+    visit transactions_path
+    assert_text unique_detail
+
+    # Ahora modificar una regla existente para que matchee este detalle
+    @rule.update!(pattern: "#{@rule.pattern}|#{unique_detail}")
+
+    # Verificar que el servicio ahora devuelve la categoría correcta
+    result_after = CategorizerService.guess(unique_detail)
+    assert_equal @rule.name, result_after[:category], "Después de modificar la regla, debe matchear"
+
+    # Refrescar la página de transacciones
+    visit transactions_path
+
+    # La transacción debe mostrar la nueva categoría sugerida (UI muestra en mayúsculas)
+    within("#transaction_#{transaction.id}") do
+      assert_text @rule.name.upcase
+    end
+
+    # Limpiar
+    transaction.destroy
+    @rule.update!(pattern: @rule.pattern.sub("|#{unique_detail}", ""))
+  end
 end

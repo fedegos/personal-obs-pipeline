@@ -521,7 +521,7 @@ class TestBaproMcPdfRegression:
 
 @pytest.mark.regression
 class TestBbvaPdfRegression:
-    """Regresión: extractor BBVA sobre PDFs reales."""
+    """Regresión: extractor BBVA Visa sobre PDFs reales."""
 
     def test_bbva_sample_returns_valid_dataframe(self):
         import os
@@ -543,5 +543,60 @@ class TestBbvaPdfRegression:
         if len(df) > 0:
             assert (df["monto"] > 0).all()
             assert pd.api.types.is_datetime64_any_dtype(df["fecha_transaccion"])
+            if "fecha_vencimiento" in df.columns and df["fecha_vencimiento"].notna().any():
+                assert len(df[df["fecha_vencimiento"].notna()]) > 0
+
+
+class TestBbvaMcPdfExtractor:
+    """BBVA Mastercard PDF extractor: hereda de BBVA Visa."""
+
+    def test_get_extractor_bbva_pdf_mastercard_returns_callable(self):
+        fn = get_extractor("bbva_pdf_mastercard")
+        assert callable(fn)
+
+    def test_extract_bbva_pdf_mastercard_returns_dataframe_with_required_columns(self):
+        extract = get_extractor("bbva_pdf_mastercard")
+        df = extract(BBVA_PDF_MINIMAL)
+        assert isinstance(df, pd.DataFrame)
+        for col in ["fecha_transaccion", "monto", "detalles"]:
+            assert col in df.columns, f"missing column {col}"
+
+    def test_extract_bbva_pdf_mastercard_network_is_mastercard(self):
+        extract = get_extractor("bbva_pdf_mastercard")
+        df = extract(BBVA_PDF_MINIMAL)
+        assert isinstance(df, pd.DataFrame)
+        assert "red" in df.columns
+
+
+@pytest.mark.regression
+class TestBbvaMcPdfRegression:
+    """Regresión: extractor BBVA Mastercard sobre PDFs reales."""
+
+    def test_bbva_mc_sample_returns_valid_dataframe(self):
+        import os
+
+        base = os.path.join(os.path.dirname(__file__), "..", "samples", "bbva_mc")
+        files = [f for f in os.listdir(base) if f.endswith(".pdf")] if os.path.isdir(base) else []
+        if not files:
+            pytest.skip("samples/bbva_mc/ no disponible")
+        # Usar un archivo que sabemos tiene transacciones
+        sample_file = "Resumen_BBVA_MC_202512.pdf"
+        if sample_file not in files:
+            sample_file = files[0]
+        path = os.path.join(base, sample_file)
+
+        with open(path, "rb") as f:
+            content = f.read()
+        extract = get_extractor("bbva_pdf_mastercard")
+        df = extract(content)
+        assert isinstance(df, pd.DataFrame)
+        assert "fecha_transaccion" in df.columns
+        assert "monto" in df.columns
+        assert "detalles" in df.columns
+        assert "red" in df.columns
+        if len(df) > 0:
+            assert (df["monto"] > 0).all()
+            assert pd.api.types.is_datetime64_any_dtype(df["fecha_transaccion"])
+            assert (df["red"] == "Mastercard").all()
             if "fecha_vencimiento" in df.columns and df["fecha_vencimiento"].notna().any():
                 assert len(df[df["fecha_vencimiento"].notna()]) > 0

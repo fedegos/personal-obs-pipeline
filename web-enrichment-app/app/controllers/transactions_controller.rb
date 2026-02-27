@@ -12,7 +12,9 @@ class TransactionsController < ApplicationController
     base = base.where(fecha: params[:fecha]) if params[:fecha].present?
     base = base.where("monto >= ?", params[:monto_min]) if params[:monto_min].present?
     base = base.where("monto <= ?", params[:monto_max]) if params[:monto_max].present?
-    @filter_params = params.permit(:q, :fecha, :monto_min, :monto_max, :categoria, :sort).to_h.compact_blank
+    base = base.where(numero_tarjeta: params[:tarjeta]) if params[:tarjeta].present?
+    base = base.where(red: params[:red]) if params[:red].present?
+    @filter_params = params.permit(:q, :fecha, :monto_min, :monto_max, :categoria, :tarjeta, :red, :sort).to_h.compact_blank
     @pending = sort_transactions(base, params[:sort])
     if params[:categoria].present?
       @pending = @pending.select { |t|
@@ -49,6 +51,8 @@ class TransactionsController < ApplicationController
 
     @categories_list = @categories_map.keys
     @categories_for_filter = @categories_map.flat_map { |cat, subs| [ cat ] + subs }.uniq.sort
+    @tarjetas_for_filter = Transaction.where(aprobado: false).where.not(numero_tarjeta: [ nil, "" ]).distinct.pluck(:numero_tarjeta).sort
+    @redes_for_filter = Transaction.where(aprobado: false).where.not(red: [ nil, "" ]).distinct.pluck(:red).sort
     @first_time_empty = @pending_count == 0 && Transaction.count.zero?
 
     respond_to do |format|
