@@ -83,7 +83,7 @@ class CategoryRulesTest < ApplicationSystemTestCase
 
     # Refrescar la página de transacciones
     visit transactions_path
-    
+
     # La transacción debe mostrar la nueva categoría sugerida (UI muestra en mayúsculas)
     within("#transaction_#{transaction.id}") do
       assert_text @rule.name.upcase
