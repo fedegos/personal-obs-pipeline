@@ -87,6 +87,7 @@ services:
 
   web:
     image: ${GHCR_WEB_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-web:latest}
+    pull_policy: always
     restart: always
     environment:
       RAILS_ENV: production
@@ -104,6 +105,7 @@ services:
 
   karafka_server:
     image: ${GHCR_WEB_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-web:latest}
+    pull_policy: always
     command: bundle exec karafka server
     restart: always
     environment:
@@ -140,6 +142,7 @@ services:
 
   ingestion_worker:
     image: ${GHCR_INGESTION_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-ingestion:latest}
+    pull_policy: always
     restart: always
     # El comando sobreescribe el inicio para crear el JSON antes que el worker
     command: >
