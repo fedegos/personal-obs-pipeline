@@ -1,6 +1,5 @@
 # app/controllers/transactions_controller.rb
 class TransactionsController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [ :approve, :approve_similar, :update ]
   ITEMS_PER_PAGE = 50
 
   def index
@@ -36,7 +35,8 @@ class TransactionsController < ApplicationController
     # Replicar motor de reglas en memoria (categoría, subcategoría, sentimiento) sin persistir
     @suggested = @pending.each_with_object({}) do |t, h|
       result = CategorizerService.guess(t.detalles)
-      sent = result[:sentimiento].present? && Transaction::SENTIMIENTOS.key?(result[:sentimiento]) ? result[:sentimiento] : SentimentService.analyze(t.detalles)
+      sent = result[:sentimiento].presence
+      sent = "Deseo" unless sent.present? && Transaction::SENTIMIENTOS.key?(sent)
       h[t.id] = {
         category: result[:category],
         sub_category: result[:sub_category],

@@ -1,217 +1,200 @@
-# 💰 Audit-X: Centro de Operaciones 2026
+# Audit-X: Personal Finance Observability Pipeline
 
-Utiliza este archivo como tu panel de control.
+[![CI](https://github.com/fedegos/personal-obs-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/fedegos/personal-obs-pipeline/actions/workflows/ci.yml)
+![Ruby](https://img.shields.io/badge/Ruby-3.4-red)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Rails](https://img.shields.io/badge/Rails-8.1-red)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
 
-## Contexto
+## What is Audit-X?
 
-__Audit-X__ es un pipeline de observabilidad financiera personal: ingesta de archivos bancarios (Excel, CSV, PDF) → Kafka → enriquecimiento y curaduría en Rails → InfluxDB → Grafana. Stack: Docker Compose (Postgres, Redpanda/Kafka, InfluxDB, Grafana, MinIO, Rails, Karafka, ingestion_worker Python, Telegraf). Docs clave: [DOCS/OPERATIONS.md](DOCS/OPERATIONS.md) (runbook), [DOCS/ARCHITECTURE.md](DOCS/ARCHITECTURE.md) (diagrama y flujo), [DOCS/asyncapi.yaml](DOCS/asyncapi.yaml) (eventos Kafka).
+Audit-X is a **personal finance observability system** that transforms your bank statements into actionable insights. Instead of manually tracking expenses in spreadsheets or relying on bank apps with limited analytics, Audit-X gives you complete control over your financial data with powerful visualization and analysis tools.
 
-## Flujo de desarrollo y CI
+### The Problem
 
-El trabajo se hace en ramas (p. ej. `feature/nombre` o `develop`). Los cambios se integran a `main` solo vía **Pull Request**, con el **CI en verde** (lint y tests de Rails y Python en la raíz del repo, `.github/workflows/ci.yml`). Coolify despliega desde `main`; si algo falla en producción, se puede revertir el merge y volver a desplegar. Si tienes la extensión **Runme** instalada en VS Code, verás botones de "Run" en cada bloque.
+Managing personal finances across multiple banks and credit cards is tedious:
+- Bank apps show transactions but offer poor categorization and no cross-bank analysis
+- Spreadsheets require manual data entry and become unmaintainable
+- You can't easily answer questions like "How much did I spend on subscriptions across all cards?" or "What's my spending trend by category over the past 6 months?"
+- There's no audit trail of when transactions were reviewed or modified
 
-**Tests locales:** `make test` (todo), `make test-rails`, `make test-rails-system`, `make test-python`. **Build:** `make build` (web + ingestion) o `make build-web` / `make build-ingestion`. Ver [DOCS/CI-REFERENCIA.md](DOCS/CI-REFERENCIA.md).
+### The Solution
 
-## 🚀 Gestión de Infraestructura
+Audit-X provides an **event-driven pipeline** that:
+1. **Extracts** transactions from PDF/Excel bank statements automatically
+2. **Categorizes** expenses using customizable regex-based rules
+3. **Tracks sentiment** (Necessary vs Desire) to understand spending behavior
+4. **Requires manual approval** before data enters your metrics — you stay in control
+5. **Visualizes** trends across time, categories, payment methods, and more in Grafana dashboards
+6. **Maintains an immutable event store** for full auditability and replay capability
 
-Levanta o detiene el pipeline completo de servicios (Docker).
+### Key Features
 
-```sh {"name":"up-all"}
-make up
+- **Multi-bank support**: BBVA, Banco Provincia, American Express, and more
+- **Smart categorization**: Rules engine with regex patterns, priorities, and inheritance
+- **Human-in-the-loop**: Every transaction requires approval before entering metrics
+- **Time-series analytics**: Track spending patterns over any time range
+- **Event sourcing**: Full history of all changes, with replay and projection capabilities
+- **Self-hosted**: Your financial data stays on your infrastructure
+
+### Why Not Just Use...?
+
+| Alternative | Limitation | Audit-X Advantage |
+|-------------|------------|-------------------|
+| **YNAB / Mint** | Requires bank credentials or API access | Works with exported statements — no credential sharing |
+| **Excel / Google Sheets** | Manual data entry, no automation | Automatic PDF/Excel extraction |
+| **Bank Apps** | Single bank view, limited categorization | Cross-bank analysis with custom rules |
+| **Firefly III** | No time-series analytics, no approval workflow | InfluxDB + Grafana for deep analysis, human-in-the-loop |
+
+### Use Cases
+
+Audit-X helps you answer questions like:
+
+- 📊 "How much did I spend on **delivery** this year vs last year?"
+- 📈 "What's my **monthly trend** for each spending category?"
+- 🎯 "What percentage of my expenses are **desires** vs **necessities**?"
+- 💳 "Which **credit card** am I using most for subscriptions?"
+- 🔍 "When did I **approve** that transaction and with what category?"
+
+## Screenshots
+
+> 📸 *Coming soon: Screenshots of the transaction approval UI and Grafana dashboards*
+
+<!-- 
+TODO: Add screenshots
+![Transaction List](docs/images/transactions.png)
+![Grafana Dashboard](docs/images/grafana.png)
+-->
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph UI [User Interface]
+        A[User]
+    end
+
+    subgraph Rails [Rails Web]
+        B[Upload Files]
+        C[Review Transactions]
+        D[Approve / Audit]
+    end
+
+    subgraph Storage [Storage]
+        E[(MinIO/S3)]
+    end
+
+    subgraph Kafka [Kafka/Redpanda]
+        F[file_uploaded]
+        G[transacciones_raw]
+        H[transacciones_clean]
+    end
+
+    subgraph Python [Ingestion Engine]
+        J[PDF/Excel Extractors]
+    end
+
+    subgraph Metrics [Metrics]
+        L[Telegraf]
+        M[(InfluxDB)]
+        N[Grafana]
+    end
+
+    A -->|Upload PDF/Excel| B
+    B -->|Store file| E
+    B -->|Publish| F
+    F -->|Consume| J
+    J -->|Extract & publish| G
+    G -->|Persist| C
+    A -->|Review & categorize| C
+    C -->|Approve| D
+    D -->|Publish| H
+    H -->|Consume| L
+    L -->|Write| M
+    M -->|Visualize| N
 ```
 
-```sh {"name":"down-all"}
-make down-volumes
+## Tech Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Web UI | Ruby on Rails 8.1 | Transaction management, category rules, approval workflow |
+| Message Broker | Redpanda (Kafka-compatible) | Event-driven communication between services |
+| Ingestion | Python 3.11 | PDF/Excel extraction (pdfplumber, pandas) |
+| Time-series DB | InfluxDB 2.7 | Financial metrics storage |
+| Visualization | Grafana | Dashboards and analytics |
+| Object Storage | MinIO | S3-compatible file storage |
+| Database | PostgreSQL 15 | Transactional data |
+
+## Supported Banks
+
+| Bank | Format | Network | Fields Extracted | Notes |
+|------|--------|---------|------------------|-------|
+| BBVA Argentina | PDF | Visa | Date, amount, description, installments | Monthly statement |
+| BBVA Argentina | PDF | Mastercard | Date, amount, description, installments | Monthly statement |
+| Banco Provincia | PDF | Visa | Date, amount, description | Monthly statement |
+| Banco Provincia | PDF | Mastercard | Date, amount, description | Monthly statement |
+| American Express | PDF | Amex | Date, amount, description | Monthly statement |
+| American Express | Google Sheets | Amex | Date, amount, description | Real-time export |
+| Generic | Excel/CSV | Any | Configurable columns | Custom mapping |
+
+> 💡 **Adding a new bank?** See [CONTRIBUTING.md](CONTRIBUTING.md) for the extractor development guide.
+
+## Quick Start
+
+```bash
+# 1. Clone and configure
+git clone https://github.com/fedegos/personal-obs-pipeline.git
+cd personal-obs-pipeline
+cp .env.example .env
+# Edit .env with your credentials
+
+# 2. Start all services
+docker compose up -d
+
+# 3. Access the UI
+open http://localhost:3000
 ```
 
-## 📊 Observabilidad de Datos
+## Documentation
 
-Comandos para verificar la salud de los flujos de información en tiempo real.
+- [Operations Runbook](DOCS/OPERATIONS.md) - Daily operations, troubleshooting, Makefile commands
+- [Architecture](DOCS/ARCHITECTURE.md) - System design and data flow
+- [AsyncAPI Spec](DOCS/asyncapi.yaml) - Kafka topics and event schemas
+- [Event Repository](DOCS/EVENT-REPOSITORY-DESIGN.md) - Immutable event store design
 
-**Estado de Redpanda (Kafka):**
+## Development
 
-```sh {"name":"status-kafka"}
-make inspect-kafka
+```bash
+# Run all tests
+make test
+
+# Run only Rails tests
+make test-rails
+
+# Run only Python tests
+make test-python
+
+# Lint and security checks
+make ci
 ```
 
-**Verificación de Ingesta en InfluxDB:**
+## Roadmap
 
-```sh {"name":"status-influx"}
-make inspect-influx
-```
+- [ ] **More banks**: Santander, Galicia, ICBC extractors
+- [ ] **Mobile app**: React Native companion for quick approvals
+- [ ] **Budget alerts**: Telegram/Slack notifications when category exceeds threshold
+- [ ] **Receipt OCR**: Extract data from receipt photos
+- [ ] **Multi-currency**: Support USD transactions with historical conversion
+- [ ] **Shared expenses**: Split transactions between family members
 
-## ⏪ Reprocesamiento y Reset
+## Contributing
 
-Utiliza estos comandos cuando modifiques las reglas de categorización o el parser de Telegraf.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Adding new bank extractors
+- Improving categorization rules
+- Enhancing Grafana dashboards
 
-```sh {"name":"reprocess-all"}
-make reprocess-all
-```
+## License
 
-```sh {"name":"reset-total"}
-make reset-history
-```
-
-## 🛠️ Herramientas de Desarrollo
-
-Acceso directo a la consola de Rails y backups de la inteligencia del sistema.
-
-```sh {"name":"rails-console"}
-make shell-web
-```
-
-```sh {"name":"backup-rules"}
-make backup-rules
-```
-
-### Listar detalles únicos de transacciones
-
-Pluck de todos los detalles únicos (aprobadas o no) en la BD. Útil para auditar textos de transacciones o generar reglas de categorización.
-
-```sh {"name":"pluck-details"}
-docker compose exec -T web bin/rails runner "
-Transaction.distinct.pluck(:detalles).sort.each { |d| puts d }
-puts '---'
-puts \"Total de detalles únicos: #{Transaction.distinct.count(:detalles)}\"
-"
-```
-
----
-
-## 👤 Gestión de Usuarios
-
-Utiliza este bloque para dar de alta nuevos usuarios de forma segura. Al hacer clic en **Run**, el sistema te solicitará el Email y el Password.
-
-```sh {"name":"create-user","promptEnv":"true"}
-# Runme solicitará estas variables automáticamente
-export EMAIL_USER
-export PASSWORD_USER
-
-docker compose exec -T web bin/rails runner "
-user = User.new(email: '$EMAIL_USER', password: '$PASSWORD_USER', password_confirmation: '$PASSWORD_USER')
-if user.save
-  puts '✅ Usuario creado exitosamente: ' + user.email
-else
-  puts '❌ Error al crear usuario: ' + user.errors.full_messages.join(', ')
-end"
-```
-
-### Verificar usuarios actuales
-
-```sh {"name":"list-users"}
-
-docker compose exec -T web bin/rails runner "User.all.each { |u| puts u.email }"
-```
-
-## 🌅 Morning Checkup (Diagnóstico Diario)
-
-Ejecuta estos tres bloques cada mañana para asegurar que el pipeline de datos está saludable antes de empezar a trabajar.
-
-### 1. Estado de los Contenedores
-
-Verifica que los 10 servicios (Redpanda, Influx, Rails, etc.) estén en estado `running` y sin reinicios constantes.
-
-```sh {"name":"check-containers"}
-# Colorea en verde 'running' o 'healthy' y en rojo 'exit' o 'unhealthy'
-docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}" | \
-grep -E --color=always "running|healthy|Status|$"
-```
-
-### 2. Flujo de Mensajes en Kafka
-
-__Especificación de eventos (AsyncAPI):__ Los tópicos, payloads y productores/consumidores están documentados en [DOCS/asyncapi.yaml](DOCS/asyncapi.yaml) (transacciones_raw, transacciones_clean, file_uploaded, file_results, domain_events). Los payloads incluyen `fecha_vencimiento` (opcional) y `origen` (parcial/definitivo). Ver [DOCS/FECHA-VENCIMIENTO.md](DOCS/FECHA-VENCIMIENTO.md). Validar el spec: `make validate-asyncapi` o [AsyncAPI Studio](https://studio.asyncapi.com/).
-
-Este comando verifica si hay "Lag" en Telegraf. Si el **LAG** es 0, significa que todos los gastos procesados en Rails ya llegaron a la base de datos.
-
-```sh {"name":"check-kafka-lag"}
-docker compose exec redpanda rpk group describe telegraf_metrics_group_v4 | grep -E "TOPIC|transacciones_clean"
-```
-
-### 3. Latido de Datos en InfluxDB
-
-Verifica que hayamos recibido transacciones en el último mes. Si la tabla está vacía, el problema podría estar en el parser de Telegraf o en el worker de Rails.
-
-```sh {"name":"check-influx-heartbeat"}
-docker compose exec influxdb influx query \
-  'from(bucket: "'$INFLUX_BUCKET'") 
-   |> range(start: -1mo) 
-   |> filter(fn: (r) => r._measurement == "kafka_consumer")
-   |> count()' \
-  --org "$INFLUX_ORG" --token "$INFLUX_TOKEN"
-```
-
-### 4. 🌅 Morning Checkup Pro
-
-Verifica los contenedores y el lag de Kafka.
-
-```sh {"name":"morning-checkup-pro"}
-# Definición de colores 2026
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-echo "🔍 Verificando Contenedores..."
-if docker compose ps | grep -q "unhealthy"; then
-    echo -e "${RED}❌ ALERTA: Hay servicios con problemas de salud${NC}"
-else
-    echo -e "${GREEN}✅ Todos los servicios están saludables${NC}"
-fi
-
-echo -e "\n🔍 Verificando Lag de Kafka..."
-LAG=$(docker compose exec redpanda rpk group describe telegraf_metrics_group_v4 | grep "transacciones_clean" | awk '{print $6}')
-if [ "$LAG" -eq "0" ]; then
-    echo -e "${GREEN}✅ Kafka sincronizado (Lag: 0)${NC}"
-else
-    echo -e "${RED}⚠️  Atención: Hay un lag de $LAG mensajes${NC}"
-fi
-```
-
-**Tip de 2026:** Puedes mantener este archivo abierto en una pestaña lateral de VS Code (modo Runme Dashboard) para operar el sistema sin salir de tu editor de código.
-
-### 📋 Volcar vistas (Audit de Clases)
-
-Este comando recorre tus vistas y copia todo al portapapeles de Windows desde WSL.
-
-```bash {"label":"dump-views"}
-find web-enrichment-app/app/views -type f -name "*.erb" -print0 | xargs -0 -I {} sh -c 'echo "--- FILE: {} ---"; cat {}; echo -e "\n"' | clip.exe
-```
-
-### 🔍 Buscador de Clases Huérfanas
-
-Si querés chequear una clase específica rápido:
-
-```bash {"label":"check-class"}
-# Reemplaza 'badge-category' por la clase que sospeches huérfana
-grep -r "badge" web-enrichment-app/app/views
-```
-
-### 📂 Generar Dump Unificado de Vistas
-
-Este comando crea un archivo llamado `vistas_audit_x.txt` con todo el contenido de `app/views`.
-Una vez ejecutado, podés adjuntar ese archivo al chat.
-
-```bash {"label":"generate-view-dump"}
-Este comando asegura que la carpeta de destino exista y guarda todo el contenido en la ruta especificada.
-
-```bash {"label": "generate-view-dump"}
-# 1. Definimos la ruta completa
-OUTPUT_FILE="data/dumps/vistas_audit_x.txt"
-
-# 2. Aseguramos que el directorio exista
-mkdir -p "$(dirname "$OUTPUT_FILE")"
-
-# 3. Limpiamos el archivo si ya existe
-> "$OUTPUT_FILE"
-
-# 4. Buscamos y concatenamos usando la variable de salida
-# Ajusta 'web-enrichment-app/app/views' si tu shell ya está dentro de esa carpeta
-find web-enrichment-app/app/views -type f -name "*.erb" -print0 | xargs -0 -I {} sh -c 'echo "--- FILE: {} ---" >> "'"$OUTPUT_FILE"'"; cat "{}" >> "'"$OUTPUT_FILE"'"; echo -e "\n\n" >> "'"$OUTPUT_FILE"'"'
-
-echo "✅ Proceso completado."
-echo "📍 Archivo generado en: $OUTPUT_FILE"
-echo "📏 Tamaño del archivo: $(du -h "$OUTPUT_FILE" | cut -f1)"
-```
-
-```text
-
-```
+Private project - All rights reserved.
