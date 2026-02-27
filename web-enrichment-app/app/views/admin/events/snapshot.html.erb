@@ -1,0 +1,13 @@
+<%= turbo_frame_tag "snapshot_panel" do %>
+  <div class="snapshot-panel">
+    <h3>Snapshot proyectado</h3>
+    <p class="snapshot-meta">
+      Stream: <code><%= @event.stream_id %></code><br>
+      Hasta evento: #<%= @event.sequence_number %> (<%= @event.occurred_at.strftime("%Y-%m-%d %H:%M:%S") %>)
+    </p>
+    <% if @snapshot["_deleted"] %>
+      <div class="snapshot-deleted-badge">Agregado eliminado</div>
+    <% end %>
+    <pre class="json-viewer"><code><%= JSON.pretty_generate(@snapshot) %></code></pre>
+  </div>
+<% end %>

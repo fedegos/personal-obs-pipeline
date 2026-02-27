@@ -19,7 +19,7 @@ Siguiendo mejores prácticas: **versionado de esquemas**, **upcasting en lectura
 
 Cada evento persiste con una envoltura que separa metadatos del contenido:
 
-```
+```ini
 ┌─────────────────────────────────────────────────────────────────────┐
 │ ENVELOPE (metadata fija, indexada)                                  │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -68,13 +68,13 @@ Cada evento persiste con una envoltura que separa metadatos del contenido:
 
 ### Estrategia
 
-- **event_version** = versión del *payload* para ese `event_type`.
+- __event_version__ = versión del _payload_ para ese `event_type`.
 - Al cambiar el esquema del payload, se incrementa la versión.
 - Los eventos antiguos permanecen intactos (inmutabilidad).
 
 ### Convención de versionado
 
-```
+```ini
 event_type: "transaction.approved"
 event_version: 1  → payload v1 (categoria, sentimiento, ...)
 event_version: 2  → payload v2 (nuevo campo "etiquetas", etc.)
@@ -104,13 +104,13 @@ transaction.approved:
 
 ### Flujo
 
-```
+```ini
 Lectura: body (v1) → Upcaster → body (v2) → Aplicación
 ```
 
 ### Implementación
 
-- Un **Upcaster** por cada par `(event_type, from_version → to_version)`.
+- Un __Upcaster__ por cada par `(event_type, from_version → to_version)`.
 - Al leer eventos, si `event_version < current_version`, se aplica la cadena de upcasters.
 
 ```ruby
@@ -152,9 +152,9 @@ Para consultas eficientes se necesita un índice global. Opciones:
 
 Para garantizar orden total entre eventos:
 
-- **Opción A:** `sequence_number` BIGSERIAL (auto-increment en INSERT).
+- __Opción A:__ `sequence_number` BIGSERIAL (auto-increment en INSERT).
 - **Opción B:** `id` UUID v7 (ordenable por tiempo).
-- **Opción C:** `occurred_at + id` para desempate.
+- __Opción C:__ `occurred_at + id` para desempate.
 
 Recomendación: `sequence_number` por simplicidad y rendimiento en PostgreSQL.
 
@@ -249,17 +249,17 @@ CREATE UNIQUE INDEX idx_events_id ON event_store (id);
 
 ### Estrategia de captura
 
-1. **Consumer dedicado** — Un proceso (Rails o worker) consume todos los tópicos y escribe en `event_store`.
+1. __Consumer dedicado__ — Un proceso (Rails o worker) consume todos los tópicos y escribe en `event_store`.
 2. **Dual-write** — Donde se publica, también se escribe en el store (más acoplamiento, menor latencia).
 3. **CDC desde Kafka** — Kafka como source of truth; un connector escribe en PostgreSQL (si se usa Kafka Connect).
 
-Recomendación: **Consumer dedicado** que subscribe a los tópicos relevantes y persiste en `event_store`. Mantiene el store como capa de persistencia separada y desacoplada.
+Recomendación: __Consumer dedicado__ que subscribe a los tópicos relevantes y persiste en `event_store`. Mantiene el store como capa de persistencia separada y desacoplada.
 
 ---
 
 ## 9. Integración con arquitectura actual
 
-```
+```ini
                     ┌──────────────────┐
                     │  Event Repository│
                     │  (PostgreSQL     │
@@ -279,7 +279,7 @@ Recomendación: **Consumer dedicado** que subscribe a los tópicos relevantes y 
     └─────────┘        └───────────┘       └───────────┘
 ```
 
-- El **EventStoreConsumer** consume `domain_events`, `transacciones_clean`, `file_results`, `transacciones_raw` (opcional) y `file_uploaded` (opcional).
+- El __EventStoreConsumer__ consume `domain_events`, `transacciones_clean`, `file_results`, `transacciones_raw` (opcional) y `file_uploaded` (opcional).
 - Normaliza cada mensaje al envelope estándar.
 - Inserta en `event_store` (append-only).
 
@@ -287,29 +287,31 @@ Recomendación: **Consumer dedicado** que subscribe a los tópicos relevantes y 
 
 ## 10. Fases de implementación
 
-### Fase 1 — Fundamento (MVP)
+### Fase 1 — Fundamento (MVP) ✅
 
-- [ ] Crear tabla `event_store` con schema anterior.
-- [ ] Consumer que subscribe a `domain_events` y persiste en `event_store`.
-- [ ] API mínima para leer por `stream_id` o por `occurred_at`.
+- [x] Crear tabla `event_store` con schema anterior (migración `20260203160000_create_event_store.rb`).
+- [x] Consumer que subscribe a `domain_events` y persiste en `event_store` (`EventStoreConsumer`, topic en `karafka.rb`).
+- [x] API mínima para leer por `stream_id` o por `occurred_at`: `GET /event_store?stream_id=...` o `?from=...&to=...&limit=100` (requiere login).
 
-### Fase 2 — Ampliación
+### Fase 2 — Ampliación ✅
 
-- [ ] Incluir `transacciones_clean`, `file_results` en el consumer.
-- [ ] Implementar versionado (`event_version`) en los payloads actuales (v1).
-- [ ] Registro de schemas (`config/event_schemas.yml` o similar).
+- [x] Incluir `transacciones_clean`, `file_results` en el consumer (`EventStoreConsumer` ramifica por `topic.name`).
+- [x] Versionado: todos los eventos se persisten con `event_version: 1`.
+- [x] Consumer group dedicado `event_store` en Karafka (domain_events, transacciones_clean, file_results).
+- [x] Registro YAML `config/event_schemas.yml` y servicio `EventSchemasRegistry` (schema_for, current_version, registered?). El consumer guarda `metadata.schema` y `metadata.schema_deprecated` cuando el event_type está registrado.
+- [x] Tests TDD: `StoredEventTest`, `EventStoreConsumerTest`, `EventStoreControllerTest`, `EventSchemasRegistryTest`.
 
-### Fase 3 — Versionado y upcasting
+### Fase 3 — Versionado y upcasting ✅
 
-- [ ] Primer cambio de esquema con nueva versión.
-- [ ] Implementar upcaster(s) y hook en el reader.
-- [ ] Tests de upcasting.
+- [x] Primer cambio de esquema con nueva versión (`transaction.approved` v2 en `event_schemas.yml`, campo `etiquetas`).
+- [x] Implementar upcaster(s) y hook en el reader (`EventStore::Upcasters::TransactionApprovedUpcaster`, `UpcasterRegistry`, `ReaderWithUpcast`; controller usa reader en `event_to_json`).
+- [x] Tests de upcasting (`TransactionApprovedUpcasterTest`, `UpcasterRegistryTest`, `ReaderWithUpcastTest`).
 
-### Fase 4 — Operación
+### Fase 4 — Operación ✅
 
-- [ ] Política de retención/archivo.
-- [ ] Monitoring y alertas sobre lag del consumer.
-- [ ] Documentación de runbook.
+- [x] Política de retención/archivo (`EventStore::ArchiverService`, tabla `event_store_archive`, rake `event_store:archive`, target `make archive-old-events`).
+- [x] Monitoring de lag del consumer (`make event-store-lag` → `rpk group describe event_store`).
+- [x] Documentación de runbook (sección "Event Repository" en OPERATIONS.md).
 
 ---
 

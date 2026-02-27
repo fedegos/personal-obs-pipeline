@@ -1,0 +1,96 @@
+<div class="events-page-container">
+  <header class="events-header">
+    <div>
+      <h1 class="events-title">Estadisticas del Event Store</h1>
+      <p class="events-subtitle">Metricas y distribucion de eventos</p>
+    </div>
+    <div class="events-header-nav">
+      <%= link_to "Volver al listado", admin_events_path, class: "btn-nav" %>
+    </div>
+  </header>
+
+  <div class="stats-grid">
+    <section class="stats-card stats-summary">
+      <h2>Resumen</h2>
+      <dl class="stats-list">
+        <dt>Total eventos activos</dt>
+        <dd><%= number_with_delimiter(@total_count) %></dd>
+
+        <dt>Eventos archivados</dt>
+        <dd><%= number_with_delimiter(@archived_count) %></dd>
+
+        <dt>Evento mas antiguo</dt>
+        <dd><%= @oldest&.occurred_at&.strftime("%Y-%m-%d %H:%M") || "N/A" %></dd>
+
+        <dt>Evento mas reciente</dt>
+        <dd><%= @newest&.occurred_at&.strftime("%Y-%m-%d %H:%M") || "N/A" %></dd>
+      </dl>
+    </section>
+
+    <section class="stats-card">
+      <h2>Por tipo de evento</h2>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @by_event_type.each do |event_type, count| %>
+            <tr>
+              <td>
+                <span class="event-type-badge <%= event_type_class(event_type) %>"><%= event_type %></span>
+              </td>
+              <td><%= number_with_delimiter(count) %></td>
+              <td><%= (@total_count > 0 ? (count.to_f / @total_count * 100).round(1) : 0) %>%</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="stats-card">
+      <h2>Por tipo de agregado</h2>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Agregado</th>
+            <th>Cantidad</th>
+            <th>%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @by_aggregate_type.each do |agg_type, count| %>
+            <tr>
+              <td><%= agg_type %></td>
+              <td><%= number_with_delimiter(count) %></td>
+              <td><%= (@total_count > 0 ? (count.to_f / @total_count * 100).round(1) : 0) %>%</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="stats-card stats-timeline">
+      <h2>Eventos por mes (ultimos 12)</h2>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @by_month.each do |month, count| %>
+            <tr>
+              <td><%= month&.strftime("%Y-%m") || "N/A" %></td>
+              <td><%= number_with_delimiter(count) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>

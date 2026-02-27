@@ -29,6 +29,9 @@
     <%= link_to upload_path, class: "nav-link #{'active' if controller_name == 'source_files'}" do %>
       <span class="nav-icon">📤</span> Ingesta de Datos
     <% end %>
+    <%= link_to admin_events_path, class: "nav-link #{'active' if controller_name == 'events'}" do %>
+      <span class="nav-icon">📜</span> Event Store
+    <% end %>
   </div>
 
   <%= render "layouts/sidebar_user_profile" %>

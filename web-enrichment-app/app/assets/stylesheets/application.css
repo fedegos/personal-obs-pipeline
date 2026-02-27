@@ -26,6 +26,7 @@
 @import url("audit_corrections.css");
 @import url("category_rules.css");
 @import url("source_files.css");
+@import url("events_viewer.css");
 
 /* Páginas y utilidades */
 @import url("pages.css");

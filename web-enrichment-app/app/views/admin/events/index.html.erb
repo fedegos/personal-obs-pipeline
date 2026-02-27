@@ -1,0 +1,56 @@
+<div class="events-page-container">
+  <header class="events-header">
+    <div>
+      <h1 class="events-title">Event Store</h1>
+      <p class="events-subtitle">Historial completo de eventos del sistema</p>
+    </div>
+    <div class="events-header-stats">
+      <div class="stat-badge">
+        <span class="stat-value"><%= number_with_delimiter(@stats[:total]) %></span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-value"><%= number_with_delimiter(@stats[:today]) %></span>
+        <span class="stat-label">Hoy</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-value"><%= number_with_delimiter(@stats[:this_week]) %></span>
+        <span class="stat-label">Esta semana</span>
+      </div>
+      <%= link_to stats_admin_events_path, class: "btn-stats-link" do %>
+        Ver estadisticas
+      <% end %>
+    </div>
+  </header>
+
+  <%= render "filters" %>
+
+  <div class="events-table-container">
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th class="col-time">Fecha/Hora</th>
+          <th class="col-type">Tipo</th>
+          <th class="col-aggregate">Agregado</th>
+          <th class="col-stream">Stream</th>
+          <th class="col-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @events.each do |event| %>
+          <%= render "event_row", event: event %>
+        <% end %>
+      </tbody>
+    </table>
+
+    <% if @events.empty? %>
+      <div class="events-empty-state">
+        <p>No se encontraron eventos con los filtros seleccionados.</p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="events-pagination">
+    <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
+  </div>
+</div>

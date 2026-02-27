@@ -1,0 +1,52 @@
+<div class="events-page-container">
+  <header class="events-header">
+    <div>
+      <h1 class="events-title">Stream: <%= @stream_id %></h1>
+      <p class="events-subtitle"><%= @events.size %> eventos en este stream</p>
+    </div>
+    <div class="events-header-nav">
+      <%= link_to "Volver al listado", admin_events_path, class: "btn-nav" %>
+    </div>
+  </header>
+
+  <div class="stream-layout">
+    <section class="stream-current-state">
+      <h2>Estado actual del agregado</h2>
+      <% if @current_snapshot["_deleted"] %>
+        <div class="snapshot-deleted-badge">Agregado eliminado</div>
+      <% end %>
+      <pre class="json-viewer"><code><%= JSON.pretty_generate(@current_snapshot) %></code></pre>
+    </section>
+
+    <section class="stream-events-list">
+      <h2>Historial de eventos</h2>
+      <table class="events-table">
+        <thead>
+          <tr>
+            <th class="col-seq">#</th>
+            <th class="col-time">Fecha/Hora</th>
+            <th class="col-type">Tipo</th>
+            <th class="col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @events.each do |event| %>
+            <tr class="event-row">
+              <td class="col-seq"><%= event.sequence_number %></td>
+              <td class="col-time"><%= event.occurred_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
+              <td class="col-type">
+                <span class="event-type-badge <%= event_type_class(event.event_type) %>">
+                  <%= event.event_type %>
+                </span>
+              </td>
+              <td class="col-actions">
+                <%= link_to "Ver", admin_event_path(event.sequence_number), class: "btn-action btn-view" %>
+                <%= link_to "Snapshot", snapshot_admin_event_path(event.sequence_number), class: "btn-action btn-snapshot" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>
