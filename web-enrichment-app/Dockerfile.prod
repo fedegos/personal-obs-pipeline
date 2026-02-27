@@ -25,10 +25,6 @@ COPY Gemfile Gemfile.lock ./
 RUN bundle config set --local without 'development test' && \
     bundle install --jobs 2 --retry 3
 
-# Invalidar cache cuando cambia el commit (asegura código fresco)
-ARG COMMIT_SHA=unknown
-RUN echo "Building from commit: $COMMIT_SHA"
-
 # Copiar el código de la aplicación
 COPY . .
 
@@ -70,4 +66,4 @@ RUN useradd rails --create-home --shell /bin/bash && \
 USER rails:rails
 
 EXPOSE 3000
-CMD ["sh", "-c", "bundle exec rails db:prepare && bundle exec rails server -b 0.0.0.0"]
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
