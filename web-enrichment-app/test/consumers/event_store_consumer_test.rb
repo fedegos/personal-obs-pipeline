@@ -6,7 +6,8 @@ require "ostruct"
 class EventStoreConsumerTest < ActiveSupport::TestCase
   def build_consumer(topic_name, messages_payloads)
     topic = OpenStruct.new(name: topic_name)
-    messages = messages_payloads.map { |p| OpenStruct.new(payload: p.is_a?(String) ? p : p.to_json) }
+    kafka_timestamp = Time.current
+    messages = messages_payloads.map { |p| OpenStruct.new(payload: p.is_a?(String) ? p : p.to_json, timestamp: kafka_timestamp) }
     consumer = EventStoreConsumer.allocate
     consumer.define_singleton_method(:topic) { topic }
     consumer.define_singleton_method(:messages) { messages }
@@ -38,7 +39,7 @@ class EventStoreConsumerTest < ActiveSupport::TestCase
   end
 
   test "consume domain_events skips message when required fields missing" do
-    consumer = build_consumer("domain_events", [ { "event_type" => "x", "entity_id" => "1" } ]) # no entity_type, timestamp
+    consumer = build_consumer("domain_events", [ { "event_type" => "x", "entity_id" => "1" } ]) # no entity_type
     assert_no_difference "StoredEvent.count" do
       consumer.consume
     end
