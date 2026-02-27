@@ -25,6 +25,10 @@ COPY Gemfile Gemfile.lock ./
 RUN bundle config set --local without 'development test' && \
     bundle install --jobs 2 --retry 3
 
+# Invalidar cache cuando cambia el commit (asegura código fresco)
+ARG COMMIT_SHA=unknown
+RUN echo "Building from commit: $COMMIT_SHA"
+
 # Copiar el código de la aplicación
 COPY . .
 
