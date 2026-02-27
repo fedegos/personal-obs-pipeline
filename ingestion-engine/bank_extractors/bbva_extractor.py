@@ -2,20 +2,13 @@ import io
 
 import pandas as pd
 
+from utils.cleaning import limpiar_moneda
 from utils.data_standardizer import apply_standard_format
+from utils.logging_config import get_logger
 
 from . import register_extractor
 
-
-def limpiar_moneda(columna: pd.Series, **kwargs) -> pd.Series:
-    """Convierte strings de moneda (ej: '$6.446,30') a float64."""
-    return (
-        columna.astype(str)
-        .str.replace(r"[^\d,.-]", "", regex=True)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
-        .pipe(pd.to_numeric, errors="coerce")
-    )
+logger = get_logger(__name__)
 
 
 @register_extractor("bbva")
@@ -46,7 +39,7 @@ def extract_bbva(file_content: bytes, **kwargs) -> pd.DataFrame:
             monto=lambda x: limpiar_moneda(x["Monto"]),
         ).rename(columns={"Movimientos": "detalles", "Cuota": "descripcion_cuota"})
 
-        print(df.columns)
+        logger.debug("Columnas cargadas: %s", df.columns.tolist())
 
         # 3. Limpieza de columnas y filas
         columnas_finales = [
@@ -71,5 +64,5 @@ def extract_bbva(file_content: bytes, **kwargs) -> pd.DataFrame:
         return apply_standard_format(df)
 
     except Exception as e:
-        print("❌ Error procesando archivo Visa.")
-        raise e
+        logger.exception("Error procesando archivo BBVA: %s", e)
+        raise

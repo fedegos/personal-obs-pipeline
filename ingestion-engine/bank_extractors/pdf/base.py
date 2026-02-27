@@ -16,13 +16,15 @@ Cómo extender con un nuevo banco:
 """
 
 import io
-import traceback
 from abc import ABC, abstractmethod
 
 import pandas as pd
 import pdfplumber
 
 from utils.data_standardizer import apply_standard_format
+from utils.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 REQUIRED_COLUMNS = [
     "fecha_transaccion",
@@ -110,18 +112,20 @@ class PdfExtractorBase(ABC):
         """
         empty = self._empty_df()
         if not file_content or len(file_content) < self.min_file_bytes:
-            print(
-                f"⚠️ {self.extractor_id}: archivo vacío o demasiado pequeño "
-                f"({len(file_content) if file_content else 0} bytes)"
+            logger.warning(
+                "%s: archivo vacío o demasiado pequeño (%d bytes)",
+                self.extractor_id,
+                len(file_content) if file_content else 0,
             )
             return empty
 
         try:
             text = self._extract_text_from_pdf(file_content)
             if not text or len(text.strip()) < self.min_text_chars:
-                print(
-                    f"⚠️ {self.extractor_id}: no se pudo extraer texto del PDF "
-                    f"({len(text) if text else 0} caracteres)."
+                logger.warning(
+                    "%s: no se pudo extraer texto del PDF (%d caracteres)",
+                    self.extractor_id,
+                    len(text) if text else 0,
                 )
                 return empty
 
@@ -132,9 +136,10 @@ class PdfExtractorBase(ABC):
                     r["fecha_vencimiento"] = fecha_venc
             if not rows:
                 sample = text[:500].replace("\n", " ")
-                print(
-                    f"⚠️ {self.extractor_id}: 0 transacciones encontradas. "
-                    f"Muestra: {sample[:200]}..."
+                logger.warning(
+                    "%s: 0 transacciones encontradas. Muestra: %s...",
+                    self.extractor_id,
+                    sample[:200],
                 )
                 return empty
 
@@ -145,10 +150,9 @@ class PdfExtractorBase(ABC):
                 postprocess_fecha=getattr(self, "_postprocess_fecha", None),
             )
             if df.empty:
-                print(f"⚠️ {self.extractor_id}: todas las filas filtradas (monto=0 o NaN)")
+                logger.warning("%s: todas las filas filtradas (monto=0 o NaN)", self.extractor_id)
                 return empty
             return apply_standard_format(df)
         except Exception as e:
-            print(f"❌ {self.extractor_id} error: {e}")
-            traceback.print_exc()
+            logger.exception("%s error: %s", self.extractor_id, e)
             return empty

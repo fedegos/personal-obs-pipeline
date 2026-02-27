@@ -1,4 +1,6 @@
 class AuditCorrectionsController < ApplicationController
+  include CategoriesDataConcern
+
   def index
     @transactions = Transaction.aprobadas
 
@@ -100,15 +102,6 @@ class AuditCorrectionsController < ApplicationController
     end
     scope = scope.where(fecha: params[:fecha]) if params[:fecha].present?
     scope.order(fecha: :desc).limit(500)
-  end
-
-  # Centralizamos la lógica de categorías para no repetir código
-  def prepare_categories_data
-    # Replicamos la lógica exacta de TransactionsController
-    @categories_map = CategoryRule.roots.includes(:children).each_with_object({}) do |root, hash|
-      hash[root.name] = root.children.pluck(:name)
-    end
-    @categories_list = @categories_map.keys
   end
 
   def transaction_params

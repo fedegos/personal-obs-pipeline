@@ -16,7 +16,8 @@ class Transaction < ApplicationRecord
 
   # Validaciones para asegurar integridad antes de enviar a InfluxDB
   validates :event_id, presence: true, uniqueness: true
-  validates :monto, :fecha, :detalles, presence: true
+  validates :monto, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :fecha, :detalles, presence: true
   validates :origen, inclusion: { in: ORIGEN_VALIDOS }, allow_nil: false
 
   # Scopes útiles para tu controlador

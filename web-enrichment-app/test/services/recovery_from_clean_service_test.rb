@@ -6,7 +6,7 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
   PAYLOAD_CLEAN = {
     "event_id" => "evt-recovery-test-001",
     "fecha" => "2025-01-15T12:00:00Z",
-    "monto" => -1500.50,
+    "monto" => 1500.50,
     "moneda" => "ARS",
     "detalles" => "Supermercado Test",
     "categoria" => "Alimentos",
@@ -15,7 +15,8 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
     "red" => "Visa",
     "numero_tarjeta" => "XXXX 3689",
     "en_cuotas" => true,
-    "descripcion_cuota" => "3/6"
+    "descripcion_cuota" => "3/6",
+    "origen" => "definitivo"
   }.freeze
 
   test "apply_clean_message creates new Transaction with correct attributes and aprobado true" do
@@ -33,7 +34,7 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
     assert_equal PAYLOAD_CLEAN["en_cuotas"], transaction.en_cuotas?
     assert_equal PAYLOAD_CLEAN["descripcion_cuota"], transaction.descripcion_cuota
     assert transaction.aprobado?
-    assert_in_delta(-1500.50, transaction.monto.to_f, 0.01)
+    assert_in_delta(1500.50, transaction.monto.to_f, 0.01)
     assert transaction.fecha.present?
   end
 
@@ -41,9 +42,10 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
     existing = Transaction.create!(
       event_id: PAYLOAD_CLEAN["event_id"],
       fecha: 1.year.ago,
-      monto: -100,
+      monto: 100,
       detalles: "Viejo",
-      aprobado: false
+      aprobado: false,
+      origen: "definitivo"
     )
 
     transaction = RecoveryFromCleanService.apply_clean_message(PAYLOAD_CLEAN)
@@ -70,14 +72,14 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
   end
 
   test "apply_clean_message handles Time object for fecha" do
-    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-time-fecha", "fecha" => Time.zone.now)
+    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-time-fecha", "fecha" => Time.zone.now, "origen" => "definitivo")
     transaction = RecoveryFromCleanService.apply_clean_message(payload)
     assert transaction.persisted?
     assert transaction.fecha.present?
   end
 
   test "apply_clean_message handles en_cuotas nil" do
-    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-nil-cuotas", "en_cuotas" => nil)
+    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-nil-cuotas", "en_cuotas" => nil, "origen" => "definitivo")
     transaction = RecoveryFromCleanService.apply_clean_message(payload)
     assert transaction.persisted?
     assert_equal false, transaction.en_cuotas?
@@ -96,7 +98,7 @@ class RecoveryFromCleanServiceTest < ActiveSupport::TestCase
   end
 
   test "apply_clean_message defaults origen to definitivo when missing" do
-    payload = PAYLOAD_CLEAN.merge("event_id" => "evt-origen-default")
+    payload = PAYLOAD_CLEAN.except("origen").merge("event_id" => "evt-origen-default")
     transaction = RecoveryFromCleanService.apply_clean_message(payload)
     assert transaction.persisted?
     assert_equal "definitivo", transaction.origen

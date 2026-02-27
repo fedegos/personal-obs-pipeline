@@ -23,10 +23,13 @@ class CategoryRule < ApplicationRecord
     ids.uniq
   end
 
+  MAX_RECURSION_DEPTH = 10
+
   # ID de la categoría raíz a la que pertenece esta regla
-  def root_ancestor_id
+  def root_ancestor_id(depth = 0)
+    raise "Max recursion depth exceeded for CategoryRule#root_ancestor_id" if depth > MAX_RECURSION_DEPTH
     return id if parent_id.nil?
-    parent.root_ancestor_id
+    parent.root_ancestor_id(depth + 1)
   end
 
   # Limpia el caché del servicio cada vez que cambias una regla

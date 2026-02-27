@@ -47,18 +47,29 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
-    # Puerto 8086 ELIMINADO de la exposición pública
     volumes:
       - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   grafana:
     image: grafana/grafana:11.4.0
     restart: always
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false # Seguridad extra
+      - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # --- APLICACIÓN WEB-ENRICHMENT ---
   db:
@@ -102,6 +113,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/up || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
 
   karafka_server:
     image: ${GHCR_WEB_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-web:latest}
@@ -130,21 +147,25 @@ services:
       start_period: 15s
 
   s3-server:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-02-15T14-05-13Z
     restart: always
-    # Puerto 9001 console ELIMINADO. Solo API interna.
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
     volumes:
       - minio_data:/data
     command: server /data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   ingestion_worker:
     image: ${GHCR_INGESTION_IMAGE:-ghcr.io/fgosman/personal-obs-pipeline-ingestion:latest}
     pull_policy: always
     restart: always
-    # El comando sobreescribe el inicio para crear el JSON antes que el worker
     command: >
       sh -c "echo \"$GOOGLE_JSON_CONTENT\" | tr -d '[:space:]' | base64 -d > /tmp/credentials.json && python main.py"
     environment:
@@ -153,23 +174,40 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - BUCKET_NAME=transacciones-audit-x
-      # Esta variable la busca automáticamente la librería de Google en Python
       - GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
-      # El contenido que pegarás en Coolify
-      - GOOGLE_JSON_CONTENT=${GOOGLE_JSON_CONTENT}      
+      - GOOGLE_JSON_CONTENT=${GOOGLE_JSON_CONTENT}
     depends_on:
-      - redpanda
-      - s3-server
+      redpanda:
+        condition: service_healthy
+      s3-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'python main.py' > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   telegraf:
     image: telegraf:1.30-alpine
     restart: always
     environment:
       - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
     volumes:
-      # Montamos el archivo específico directamente desde la raíz del repo
       - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
-    # No hace falta el command personalizado si el archivo está en la ruta estándar
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f telegraf > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
 volumes:
   minio_data:

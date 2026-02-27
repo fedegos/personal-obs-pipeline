@@ -1,56 +1,22 @@
 # app/controllers/transactions_controller.rb
 class TransactionsController < ApplicationController
-  ITEMS_PER_PAGE = 50
+  include CategoriesDataConcern
 
   def index
-    base = Transaction.where(aprobado: false)
-    if params[:q].present?
-      escaped = params[:q].to_s.gsub(/[%_\\]/) { |c| "\\#{c}" }
-      base = base.where("detalles ILIKE ?", "%#{escaped}%")
-    end
-    base = base.where(fecha: params[:fecha]) if params[:fecha].present?
-    base = base.where("monto >= ?", params[:monto_min]) if params[:monto_min].present?
-    base = base.where("monto <= ?", params[:monto_max]) if params[:monto_max].present?
-    base = base.where(numero_tarjeta: params[:tarjeta]) if params[:tarjeta].present?
-    base = base.where(red: params[:red]) if params[:red].present?
     @filter_params = params.permit(:q, :fecha, :monto_min, :monto_max, :categoria, :tarjeta, :red, :sort).to_h.compact_blank
-    @pending = sort_transactions(base, params[:sort])
-    if params[:categoria].present?
-      @pending = @pending.select { |t|
-        r = CategorizerService.guess(t.detalles)
-        (r[:category] == params[:categoria]) || (r[:sub_category] == params[:categoria])
-      }
-    end
+    service = TransactionFilterService.new(params).call
 
-    @pending_count = @pending.size
-    @page = [ params[:page].to_i, 1 ].max
-    offset = (@page - 1) * ITEMS_PER_PAGE
-    @pending = @pending.slice(offset, ITEMS_PER_PAGE) || []
-    @next_page = (offset + @pending.length) < @pending_count ? @page + 1 : nil
+    @pending = service.transactions
+    @pending_count = service.total_count
+    @page = service.page
+    @next_page = service.next_page
+    @suggested = service.suggested
 
     @approved_count = Transaction.where(aprobado: true).count
     @approved_this_week = Transaction.where(aprobado: true).where("updated_at >= ?", 1.week.ago).count
     @total_count = @pending_count + @approved_count
 
-    # Replicar motor de reglas en memoria (categoría, subcategoría, sentimiento) sin persistir
-    @suggested = @pending.each_with_object({}) do |t, h|
-      result = CategorizerService.guess(t.detalles)
-      sent = result[:sentimiento].presence
-      sent = "Deseo" unless sent.present? && Transaction::SENTIMIENTOS.key?(sent)
-      h[t.id] = {
-        category: result[:category],
-        sub_category: result[:sub_category],
-        sentimiento: sent
-      }
-    end
-
-    # Creamos un hash: { "Supermercado" => ["Coto", "Dia"], "Hogar" => ["Luz", "Agua"] }
-    @categories_map = CategoryRule.roots.includes(:children).each_with_object({}) do |root, hash|
-      hash[root.name] = root.children.pluck(:name)
-    end
-
-    @categories_list = @categories_map.keys
-    @categories_for_filter = @categories_map.flat_map { |cat, subs| [ cat ] + subs }.uniq.sort
+    prepare_categories_data
     @tarjetas_for_filter = Transaction.where(aprobado: false).where.not(numero_tarjeta: [ nil, "" ]).distinct.pluck(:numero_tarjeta).sort
     @redes_for_filter = Transaction.where(aprobado: false).where.not(red: [ nil, "" ]).distinct.pluck(:red).sort
     @first_time_empty = @pending_count == 0 && Transaction.count.zero?
@@ -147,9 +113,10 @@ class TransactionsController < ApplicationController
 
   def matching_transactions_for_batch(cat, sub, sent)
     base = Transaction.where(aprobado: false)
+    guess_cache = {}
     ids = []
     base.find_each do |t|
-      r = CategorizerService.guess(t.detalles)
+      r = guess_cache[t.detalles] ||= CategorizerService.guess(t.detalles)
       next unless r[:category] == cat && r[:sentimiento] == sent
       next if sub.present? && r[:sub_category] != sub
 
@@ -160,35 +127,5 @@ class TransactionsController < ApplicationController
 
   def transaction_params
     params.require(:transaction).permit(:categoria, :sub_categoria, :sentimiento)
-  end
-
-  def sort_transactions(base_scope, sort_param)
-    case sort_param
-    when "faciles_primero"
-      base_scope.to_a.sort_by do |t|
-        r = CategorizerService.guess(t.detalles)
-        if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
-          r[:sub_category].present? ? 0 : 1 # 0 = más fácil (sugerencia completa), 1 = fácil
-        else
-          2 # requiere revisión manual
-        end
-      end
-    when "dificiles_primero"
-      base_scope.to_a.sort_by do |t|
-        r = CategorizerService.guess(t.detalles)
-        score = if r[:category].present? && r[:category] != "Varios" && r[:sentimiento].present?
-          r[:sub_category].present? ? 0 : 1
-        else
-          2
-        end
-        -score # invierte: difíciles (2) primero
-      end
-    when "monto_asc"
-      base_scope.order(monto: :asc).to_a
-    when "monto_desc"
-      base_scope.order(monto: :desc).to_a
-    else
-      base_scope.order(fecha: :desc).to_a
-    end
   end
 end

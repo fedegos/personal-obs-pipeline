@@ -1,32 +1,36 @@
 import json
 import os
+from typing import Any
 
 import pandas as pd
 from confluent_kafka import Consumer, Producer
 
 from bank_extractors import get_extractor, list_extractors
 from utils.data_standardizer import generate_event_id
+from utils.logging_config import get_logger
 from utils.s3_client import get_s3_client
 
-# Configuración del Productor (para enviar transacciones a Kafka)
+logger = get_logger(__name__)
+
 producer_conf = {"bootstrap.servers": os.getenv("KAFKA_SERVERS", "redpanda:29092")}
 producer = Producer(producer_conf)
 
 
-def json_serial(obj):
+def json_serial(obj: Any) -> str:
+    """Serializa objetos pandas a formato JSON."""
     if isinstance(obj, (pd.Timestamp, pd.DatetimeIndex)):
         return obj.isoformat()
     return str(obj)
 
 
 def send_feedback(
-    source_file_id,
-    status,
-    error=None,
-    extractor=None,
-    transactions_count=None,
-    message=None,
-):
+    source_file_id: int,
+    status: str,
+    error: str | None = None,
+    extractor: str | None = None,
+    transactions_count: int | None = None,
+    message: str | None = None,
+) -> None:
     """Notifica a Rails el resultado del procesamiento."""
     payload = {
         "source_file_id": source_file_id,
@@ -40,8 +44,8 @@ def send_feedback(
     producer.flush()
 
 
-def process_ingestion(data):
-    """Lógica principal que adapta tu ingest_from_s3 al flujo de eventos"""
+def process_ingestion(data: dict[str, Any]) -> None:
+    """Lógica principal que adapta tu ingest_from_s3 al flujo de eventos."""
     metadata = data["metadata"]
     ingestion = data["ingestion"]
     params = data["params"]  # Los **kwargs dinámicos desde Rails
@@ -56,17 +60,15 @@ def process_ingestion(data):
         # CASO 1: Ingesta desde S3 (MinIO)
         if ingestion["type"] == "s3_storage":
             s3 = get_s3_client()
-            print(f"📥 Descargando {ingestion['location']} desde S3...")
+            logger.info("Descargando %s desde S3...", ingestion["location"])
             response = s3.get_object(Bucket=ingestion["bucket"], Key=ingestion["location"])
             file_content = response["Body"].read()
 
-            # Pasamos file_content y los kwargs dinámicos al extractor
             df = extractor_func(file_content, **params)
 
         # CASO 2: Ingesta desde API Externa (AMEX / Google Sheets)
         elif ingestion["type"] == "external_api":
-            print(f"🌐 Iniciando extracción vía API para {bank_name}...")
-            # Aquí el extractor_func debe estar preparado para no recibir un archivo
+            logger.info("Iniciando extracción vía API para %s...", bank_name)
             df = extractor_func(None, **params)
 
         # PROCESAMIENTO COMÚN
@@ -105,7 +107,7 @@ def process_ingestion(data):
                 transactions_count=count,
                 message=f"{count} transacciones procesadas",
             )
-            print(f"✅ '{bank_name}' completada: {count} registros enviados.")
+            logger.info("'%s' completada: %d registros enviados.", bank_name, count)
         else:
             send_feedback(
                 source_id,
@@ -114,10 +116,10 @@ def process_ingestion(data):
                 transactions_count=0,
                 message="Archivo vacío, 0 transacciones extraídas",
             )
-            print(f"⚠️ El extractor de {bank_name} devolvió un DataFrame vacío.")
+            logger.warning("El extractor de %s devolvió un DataFrame vacío.", bank_name)
 
     except Exception as e:
-        print(f"❌ Error procesando {bank_name}: {e}")
+        logger.exception("Error procesando %s: %s", bank_name, e)
         send_feedback(
             source_id,
             "failed",
@@ -128,31 +130,31 @@ def process_ingestion(data):
         )
 
 
-def run_worker():
-    print("running run_worker")
+def run_worker() -> None:
+    """Inicia el worker que consume eventos de Kafka."""
+    logger.info("Iniciando Ingestion Engine worker...")
     consumer_conf = {
         "bootstrap.servers": os.getenv("KAFKA_SERVERS", "redpanda:29092"),
-        "group.id": "ingestion-engine-group-2026",
+        "group.id": os.getenv("KAFKA_CONSUMER_GROUP", "ingestion-engine-group"),
         "auto.offset.reset": "earliest",
     }
 
     consumer = Consumer(consumer_conf)
     consumer.subscribe(["file_uploaded"])
 
-    print(f"🤖 Ingestion Engine activo. Extractores: {list_extractors()}")
+    logger.info("Ingestion Engine activo. Extractores: %s", list_extractors())
 
     try:
         while True:
             msg = consumer.poll(1.0)
-            print(f"msg : {msg}")
             if msg is None:
                 continue
             if msg.error():
-                print(f"Kafka error: {msg.error()}")
+                logger.error("Kafka error: %s", msg.error())
                 continue
 
-            # Parsear el evento que viene de Rails
             event_data = json.loads(msg.value().decode("utf-8"))
+            logger.debug("Mensaje recibido: %s", event_data.get("metadata", {}).get("source_file_id"))
             process_ingestion(event_data)
     finally:
         consumer.close()
