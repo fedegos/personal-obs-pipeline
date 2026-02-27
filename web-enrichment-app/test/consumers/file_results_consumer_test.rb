@@ -6,7 +6,7 @@ class FileResultsConsumerTest < ActiveSupport::TestCase
 
   setup do
     @source_file = source_files(:one)
-    @source_file.update!(status: "pending", processed_at: nil, error_message: nil, transactions_count: nil, processing_message: nil)
+    @source_file.update!(status: "processing", processed_at: nil, error_message: nil, transactions_count: nil, processing_message: nil)
   end
 
   test "consume updates SourceFile to processed when status completed" do

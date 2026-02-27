@@ -22,10 +22,7 @@ class TransactionsConsumerTest < ActiveSupport::TestCase
     consumer.define_singleton_method(:messages) { [ fake_message ] }
 
     original_guess = CategorizerService.method(:guess)
-    original_analyze = SentimentService.method(:analyze)
-
     CategorizerService.define_singleton_method(:guess) { |_| { category: "Hogar", sub_category: "Luz", sentimiento: "Necesario" } }
-    SentimentService.define_singleton_method(:analyze) { |_| "Necesario" }
 
     begin
       assert_difference("Transaction.count", 1) do
@@ -46,7 +43,6 @@ class TransactionsConsumerTest < ActiveSupport::TestCase
       assert_equal "definitivo", t.origen
     ensure
       CategorizerService.define_singleton_method(:guess) { |*args| original_guess.call(*args) }
-      SentimentService.define_singleton_method(:analyze) { |*args| original_analyze.call(*args) }
     end
   end
 
@@ -92,9 +88,7 @@ class TransactionsConsumerTest < ActiveSupport::TestCase
     consumer.define_singleton_method(:messages) { [ fake_message ] }
 
     original_guess = CategorizerService.method(:guess)
-    original_analyze = SentimentService.method(:analyze)
     CategorizerService.define_singleton_method(:guess) { |_| { category: "Hogar", sub_category: "Luz", sentimiento: "Necesario" } }
-    SentimentService.define_singleton_method(:analyze) { |_| "Necesario" }
 
     begin
       assert_difference("Transaction.count", 1) { consumer.consume }
@@ -103,7 +97,6 @@ class TransactionsConsumerTest < ActiveSupport::TestCase
       assert_equal "parcial", t.origen
     ensure
       CategorizerService.define_singleton_method(:guess) { |*args| original_guess.call(*args) }
-      SentimentService.define_singleton_method(:analyze) { |*args| original_analyze.call(*args) }
     end
   end
 end

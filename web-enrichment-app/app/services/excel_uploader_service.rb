@@ -15,7 +15,7 @@ class ExcelUploaderService
     source_file = SourceFile.create!(
       bank: bank_name,
       file_key: file_key,
-      status: "pending",
+      status: "uploaded",
       extra_params: extra_params
     )
 

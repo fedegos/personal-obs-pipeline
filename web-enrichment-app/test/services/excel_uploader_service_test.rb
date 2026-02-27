@@ -22,7 +22,7 @@ class ExcelUploaderServiceTest < ActiveSupport::TestCase
 
       sf = SourceFile.last
       assert_equal "amex", sf.bank
-      assert_equal "pending", sf.status
+      assert_equal "uploaded", sf.status
       assert sf.file_key.start_with?("api/amex/")
       assert_equal({ "credit_card" => "123", "spreadsheet_id" => "x", "sheet" => "y" }, sf.extra_params)
     ensure

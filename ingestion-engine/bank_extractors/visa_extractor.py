@@ -4,8 +4,11 @@ import numpy as np
 import pandas as pd
 
 from utils.data_standardizer import apply_standard_format
+from utils.logging_config import get_logger
 
 from . import register_extractor
+
+logger = get_logger(__name__)
 
 
 @register_extractor("visa")
@@ -70,5 +73,5 @@ def extract_visa(file_content: bytes, **kwargs) -> pd.DataFrame:
         return apply_standard_format(df)
 
     except Exception as e:
-        print("❌ Error procesando archivo Visa.")
-        raise e
+        logger.exception("Error procesando archivo Visa: %s", e)
+        raise

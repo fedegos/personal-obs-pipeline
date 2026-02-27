@@ -1,29 +1,16 @@
 import os
-import traceback
 
 import gspread
 import numpy as np
 import pandas as pd
 
+from utils.cleaning import limpiar_moneda
 from utils.data_standardizer import apply_standard_format
+from utils.logging_config import get_logger
 
 from . import register_extractor
 
-# --- Utilidades de Limpieza ---
-
-
-def limpiar_moneda(columna: pd.Series, **kwargs) -> pd.Series:
-    """Convierte strings de moneda (ej: '$6.446,30') a float64."""
-    return (
-        columna.astype(str)
-        .str.replace(r"[^\d,.-]", "", regex=True)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
-        .pipe(pd.to_numeric, errors="coerce")
-    )
-
-
-# --- Lógica de Extracción ---
+logger = get_logger(__name__)
 
 
 def fetch_gsheet_data(spreadsheet_id: str, sheet_name: str):
@@ -127,7 +114,5 @@ def extract_amex(file_content=None, **kwargs) -> pd.DataFrame:
         return apply_standard_format(df)
 
     except Exception as e:
-        # Este print aparecerá en los logs del contenedor python_worker
-        print(f"\n❌ ERROR en extract_amex (ID: '{spreadsheet_id}'):")
-        traceback.print_exc()
-        raise e  # Re-lanzamos para que main.py envíe el feedback 'failed' a Rails
+        logger.exception("Error en extract_amex (ID: '%s'): %s", spreadsheet_id, e)
+        raise

@@ -27,11 +27,9 @@ class TransactionsConsumer < ApplicationConsumer
         descripcion_cuota: data["descripcion_cuota"].presence,
         fecha_vencimiento: parse_fecha_vencimiento(data["fecha_vencimiento"]),
         origen: origen_val,
-        # El servicio de categorización puede usar Regex o incluso una IA local
         categoria:    results[:category],
         sub_categoria:  results[:sub_category],
-        # El sentimiento ayuda a separar gastos fijos de impulsivos
-        sentimiento:  SentimentService.analyze(data["detalles"])
+        sentimiento:  results[:sentimiento].presence || "Deseo"
       )
 
       if transaction.save

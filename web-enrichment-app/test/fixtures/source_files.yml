@@ -1,17 +1,17 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  bank: MyString
-  file_key: MyString
-  status: MyString
-  error_message: MyText
-  extra_params: 
-  processed_at: 2026-01-12 22:23:23
+  bank: visa
+  file_key: raw/visa/1704067200_test.xlsx
+  status: uploaded
+  error_message:
+  extra_params:
+  processed_at:
 
 two:
-  bank: MyString
-  file_key: MyString
-  status: MyString
-  error_message: MyText
-  extra_params: 
+  bank: bbva
+  file_key: raw/bbva/1704067201_test.xlsx
+  status: processed
+  error_message:
+  extra_params:
   processed_at: 2026-01-12 22:23:23

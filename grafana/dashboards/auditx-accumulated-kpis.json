@@ -64,7 +64,7 @@
       "id": 1,
       "targets": [
         {
-          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> sum(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or r.origen == \"${origen}\")\n  |> filter(fn: (r) => r._field == \"monto\")\n  |> group()\n  |> sum()\n  |> map(fn: (r) => ({ r with _value: r._value }))",
           "refId": "A"
         }
       ],
@@ -116,7 +116,7 @@
       "id": 2,
       "targets": [
         {
-          "query": "import \"date\"\n\ninicio_trimestre = date.truncate(t: now(), unit: 3mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_trimestre)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> sum(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+          "query": "import \"date\"\n\nmes_actual = date.month(t: now())\ntrimestre = (mes_actual - 1) / 3\nmes_inicio_trimestre = trimestre * 3 + 1\ninicio_trimestre = date.time(v: {year: date.year(t: now()), month: mes_inicio_trimestre, day: 1})\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio_trimestre)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or r.origen == \"${origen}\")\n  |> filter(fn: (r) => r._field == \"monto\")\n  |> group()\n  |> sum()",
           "refId": "A"
         }
       ],
@@ -168,7 +168,7 @@
       "id": 3,
       "targets": [
         {
-          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> sum(column: \"monto\")\n  |> map(fn: (r) => ({ r with _value: r.monto }))",
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or r.origen == \"${origen}\")\n  |> filter(fn: (r) => r._field == \"monto\")\n  |> group()\n  |> sum()",
           "refId": "A"
         }
       ],
@@ -220,7 +220,7 @@
       "id": 4,
       "targets": [
         {
-          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => \"${numero_tarjeta}\" == \"__all\" or (exists r.numero_tarjeta and r.numero_tarjeta == \"${numero_tarjeta}\"))\n  |> group()\n  |> aggregateWindow(every: 1d, fn: sum, column: \"monto\", createEmpty: true)\n  |> fill(column: \"monto\", value: 0.0)\n  |> cumulativeSum(columns: [\"monto\"])\n  |> map(fn: (r) => ({ r with _value: r.monto }))\n  |> keep(columns: [\"_time\", \"_value\"])",
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1mo)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or r.origen == \"${origen}\")\n  |> filter(fn: (r) => r._field == \"monto\")\n  |> group()\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: true)\n  |> fill(value: 0.0)\n  |> cumulativeSum()\n  |> keep(columns: [\"_time\", \"_value\"])",
           "refId": "A"
         }
       ],
@@ -272,7 +272,7 @@
       "id": 5,
       "targets": [
         {
-          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"origen\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\", \"event_id\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or (exists r.origen and r.origen == \"${origen}\"))\n  |> filter(fn: (r) => exists r.numero_tarjeta)\n  |> group(columns: [\"numero_tarjeta\"])\n  |> sum(column: \"monto\")\n  |> group()",
+          "query": "import \"date\"\n\ninicio = date.truncate(t: now(), unit: 1y)\n\nfrom(bucket: \"finanzas\")\n  |> range(start: inicio)\n  |> filter(fn: (r) => r._measurement == \"kafka_consumer\")\n  |> filter(fn: (r) => \"${red}\" == \"__all\" or r.red == \"${red}\")\n  |> filter(fn: (r) => \"${origen}\" == \"__all\" or r.origen == \"${origen}\")\n  |> filter(fn: (r) => r._field == \"monto\" or r._field == \"numero_tarjeta\")\n  |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\")\n  |> filter(fn: (r) => exists r.numero_tarjeta)\n  |> group(columns: [\"numero_tarjeta\"])\n  |> sum(column: \"monto\")\n  |> group()",
           "refId": "A"
         }
       ],
@@ -302,7 +302,7 @@
         "label": "Origen de carga",
         "name": "origen",
         "options": [],
-        "query": "from(bucket: \"finanzas\") |> range(start: -24mo) |> filter(fn: (r) => r._measurement == \"kafka_consumer\") |> filter(fn: (r) => r._field == \"origen\") |> keep(columns: [\"_value\"]) |> distinct(column: \"_value\")",
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"finanzas\", tag: \"origen\", start: -24mo)",
         "refresh": 2,
         "type": "query"
       },
