@@ -36,5 +36,6 @@ from . import amex_pdf_extractor as amex_pdf_extractor  # noqa: E402
 from . import bapro_mc_pdf_extractor as bapro_mc_pdf_extractor  # noqa: E402
 from . import bapro_pdf_extractor as bapro_pdf_extractor  # noqa: E402
 from . import bbva_extractor as bbva_extractor  # noqa: E402
+from . import bbva_mc_pdf_extractor as bbva_mc_pdf_extractor  # noqa: E402
 from . import bbva_pdf_extractor as bbva_pdf_extractor  # noqa: E402
 from . import visa_extractor as visa_extractor  # noqa: E402

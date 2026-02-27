@@ -17,10 +17,13 @@ BANK_SCHEMAS = {
     { key: "card_network", label: "Red", type: "string", required: true }
   ] + COMMON_FILE_PARAMS,
   "bbva_pdf_visa" => [
-    { key: "card_number", label: "Número de Tarjeta (ej. 3689)", type: "text", required: true }
+    { key: "card_number", label: "Número de Tarjeta (ej. 9454)", type: "text", required: true }
+  ] + COMMON_FILE_PARAMS,
+  "bbva_pdf_mastercard" => [
+    { key: "card_number", label: "Número de Tarjeta (ej. 3640)", type: "text", required: true }
   ] + COMMON_FILE_PARAMS,
   "bapro_pdf_visa" => [
-    { key: "card_number", label: "Número de Tarjeta (ej. 3689)", type: "text", required: true }
+    { key: "card_number", label: "Número de Tarjeta (ej. 3689)",type: "text", required: true }
   ] + COMMON_FILE_PARAMS,
   "bapro_pdf_mastercard" => [
     { key: "card_number", label: "Número de Tarjeta (ej. 7330)", type: "text", required: true }

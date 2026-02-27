@@ -17,8 +17,8 @@
 
   <!-- SECCIÓN DE CARGA -->
   <section class="source-files-upload-section" data-controller="upload-status">
-    <%= form_with url: source_files_path, method: :post, local: true, multipart: true,
-        data: { action: "submit->upload-status#submit" } do |f| %>
+    <%= form_with url: source_files_path, method: :post, multipart: true,
+        data: { action: "submit->upload-status#submit", turbo: false } do |f| %>
       
       <!-- GRID PRINCIPAL: Banco y Archivo -->
       <div class="source-files-form-grid">
